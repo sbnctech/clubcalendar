@@ -13,24 +13,23 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DOCS_DIR="$SCRIPT_DIR/docs"
-SITE_DIR="$SCRIPT_DIR/site"
-SITE_DOCS_DIR="$SITE_DIR/docs"
-TEMPLATE_FILE="$SITE_DOCS_DIR/template.html"
+MARKDOWN_DIR="$SCRIPT_DIR/docs"
+GUIDES_DIR="$SCRIPT_DIR/docs/guides"
+TEMPLATE_FILE="$SCRIPT_DIR/build-template.html"
 
 echo "Building ClubCalendar documentation site..."
 echo
 
 # Ensure output directory exists
-mkdir -p "$SITE_DOCS_DIR"
+mkdir -p "$GUIDES_DIR"
 
 # Function to convert a markdown file
 convert_doc() {
     local md_file="$1"
     local title="$2"
-    local md_path="$DOCS_DIR/$md_file"
+    local md_path="$MARKDOWN_DIR/$md_file"
     local html_file="${md_file%.md}.html"
-    local html_path="$SITE_DOCS_DIR/$html_file"
+    local html_path="$GUIDES_DIR/$html_file"
 
     echo "  Converting $md_file..."
 
@@ -57,9 +56,9 @@ convert_doc "events_json_schema.md" "JSON Schema Reference"
 
 echo
 echo "Build complete!"
-echo "Site files are in: $SITE_DIR"
+echo "Site files are in: $SCRIPT_DIR/docs"
 echo
 echo "To preview locally:"
-echo "  cd $SITE_DIR"
+echo "  cd $SCRIPT_DIR/docs"
 echo "  python3 -m http.server 8000"
 echo "  Open http://localhost:8000"

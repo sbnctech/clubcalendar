@@ -146,7 +146,7 @@ Contributions welcome! Please read the architecture documentation before submitt
 
 ## Support
 
-- [Open an issue](https://github.com/yourorg/clubcalendar/issues) for bugs or feature requests
+- [Open an issue](https://github.com/edforman-75/clubcalendar/issues) for bugs or feature requests
 - See [Event Tagging Guide](docs/Event_Tagging_Guide.md) for tagging best practices
 
 ---
