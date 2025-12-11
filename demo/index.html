@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .demo-header h1 {
+            margin: 0 0 8px 0;
+            color: #333;
+        }
+        .demo-header p {
+            color: #666;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="demo-header">
+    <h1>ClubCalendar Demo</h1>
+    <p>A filterable event calendar for Wild Apricot organizations</p>
+</div>
+
+<!-- ClubCalendar Widget Container -->
+<div id="clubcalendar"></div>
+
+<script>
+// Demo events data (simulating what would come from events.json)
+const DEMO_EVENTS = {
+    generated: new Date().toISOString(),
+    events: generateDemoEvents()
+};
+
+function generateDemoEvents() {
+    const events = [];
+    const today = new Date();
+
+    const committees = [
+        'Happy Hikers', 'Wine Enthusiasts', 'Book Club', 'Dinner Club',
+        'Games Night', 'Travel Group', 'Fitness Friends', 'Garden Club'
+    ];
+
+    const activities = [
+        { name: 'Trail Walk', committee: 'Happy Hikers', tags: ['activity:outdoors', 'activity:fitness'], cost: 0 },
+        { name: 'Wine Tasting', committee: 'Wine Enthusiasts', tags: ['activity:wine', 'activity:social'], cost: 35 },
+        { name: 'Monthly Discussion', committee: 'Book Club', tags: ['activity:books', 'activity:education'], cost: 0 },
+        { name: 'Restaurant Outing', committee: 'Dinner Club', tags: ['activity:food', 'activity:social'], cost: 50 },
+        { name: 'Board Game Evening', committee: 'Games Night', tags: ['activity:games', 'activity:social'], cost: 5 },
+        { name: 'Day Trip', committee: 'Travel Group', tags: ['activity:travel', 'activity:social'], cost: 75 },
+        { name: 'Morning Yoga', committee: 'Fitness Friends', tags: ['activity:fitness', 'activity:wellness'], cost: 10 },
+        { name: 'Garden Tour', committee: 'Garden Club', tags: ['activity:garden', 'activity:outdoors'], cost: 15 },
+        { name: 'Brewery Tour', committee: 'Wine Enthusiasts', tags: ['activity:beer', 'activity:social'], cost: 25 },
+        { name: 'Craft Workshop', committee: 'Garden Club', tags: ['activity:crafts', 'activity:education'], cost: 20 }
+    ];
+
+    // Generate events for next 60 days
+    for (let i = 0; i < 60; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
+
+        // Add 1-3 events per day randomly
+        const eventsPerDay = Math.floor(Math.random() * 3) + 1;
+
+        for (let j = 0; j < eventsPerDay; j++) {
+            const activity = activities[Math.floor(Math.random() * activities.length)];
+            const hour = [9, 10, 12, 14, 17, 18, 19][Math.floor(Math.random() * 7)];
+
+            const startDate = new Date(date);
+            startDate.setHours(hour, 0, 0, 0);
+
+            const endDate = new Date(startDate);
+            endDate.setHours(hour + 2);
+
+            const maxSpots = [12, 20, 30, 50][Math.floor(Math.random() * 4)];
+            const registered = Math.floor(Math.random() * (maxSpots + 5));
+            const spotsAvailable = Math.max(0, maxSpots - registered);
+
+            // Determine time of day tag
+            let timeTag = 'time:morning';
+            if (hour >= 12 && hour < 17) timeTag = 'time:afternoon';
+            if (hour >= 17) timeTag = 'time:evening';
+
+            // Determine cost tag
+            let costTag = 'cost:free';
+            if (activity.cost > 0 && activity.cost < 25) costTag = 'cost:under-25';
+            else if (activity.cost >= 25 && activity.cost < 50) costTag = 'cost:under-50';
+            else if (activity.cost >= 50 && activity.cost < 100) costTag = 'cost:under-100';
+            else if (activity.cost >= 100) costTag = 'cost:over-100';
+
+            const tags = [
+                ...activity.tags,
+                timeTag,
+                costTag,
+                `committee:${activity.committee.toLowerCase().replace(/\s+/g, '-')}`
+            ];
+
+            // Randomly add newbie-friendly tag
+            if (Math.random() > 0.6) {
+                tags.push('newbie-friendly');
+            }
+
+            events.push({
+                id: `event-${i}-${j}`,
+                name: `${activity.committee}: ${activity.name}`,
+                start: startDate.toISOString(),
+                end: endDate.toISOString(),
+                location: ['Community Center', 'Downtown', 'Member Home', 'Local Restaurant', 'Park'][Math.floor(Math.random() * 5)],
+                tags: tags,
+                spotsAvailable: spotsAvailable,
+                isFull: spotsAvailable === 0,
+                url: '#',
+                registrationUrl: '#'
+            });
+        }
+    }
+
+    return events;
+}
+
+// Mock fetch to return demo data
+const originalFetch = window.fetch;
+window.fetch = function(url) {
+    if (url.includes('events.json') || url === 'demo-events.json') {
+        return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(DEMO_EVENTS)
+        });
+    }
+    return originalFetch.apply(this, arguments);
+};
+
+// Configure the widget
+window.CLUBCALENDAR_CONFIG = {
+    eventsUrl: 'demo-events.json',
+    title: 'Find Events',
+    defaultView: 'dayGridMonth',
+    css: {
+        inheritTheme: false,
+        colors: {
+            primary: '#2c5aa0',
+            accent: '#d4a800'
+        }
+    }
+};
+</script>
+
+<!-- Load the widget -->
+<script src="../widget/clubcalendar-widget.js"></script>
+
+</body>
+</html>

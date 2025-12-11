@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar Widget Preview</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .preview-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .config-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 12px 15px;
+            background: #fff3cd;
+            border: 1px dashed #ffc107;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            align-items: center;
+            font-size: 12px;
+        }
+        .config-bar::before {
+            content: "TEST CONTROLS:";
+            font-weight: 700;
+            color: #856404;
+            font-size: 10px;
+        }
+        .config-bar label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+        }
+        .config-bar select, .config-bar input[type="checkbox"] {
+            margin-left: 6px;
+        }
+        .config-bar select {
+            font-size: 12px;
+            padding: 3px 6px;
+        }
+        .config-bar button {
+            padding: 6px 12px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .config-bar button:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="config-bar">
+            <label>
+                View:
+                <select id="config-view" onchange="updateConfig()">
+                    <option value="dayGridMonth">Month</option>
+                    <option value="listMonth">List</option>
+                    <option value="timeGridWeek">Week</option>
+                </select>
+            </label>
+            <label>
+                <input type="checkbox" id="config-filters" checked onchange="updateConfig()">
+                Filters
+            </label>
+            <label>
+                <input type="checkbox" id="config-header" checked onchange="updateConfig()">
+                Header
+            </label>
+            <label>
+                <input type="checkbox" id="config-myevents" checked onchange="updateConfig()">
+                My Events
+            </label>
+            <label>
+                Member:
+                <select id="config-member-level" onchange="updateConfig()">
+                    <option value="">Public</option>
+                    <option value="Newbie">Newbie</option>
+                    <option value="NewcomerMember" selected>Member</option>
+                    <option value="Alumni">Alumni</option>
+                    <option value="Guest">Guest</option>
+                </select>
+            </label>
+            <button onclick="reloadWidget()">Reload</button>
+        </div>
+
+        <!-- Widget Container -->
+        <div id="clubcalendar"></div>
+    </div>
+
+    <script>
+        // Configuration override
+        // Use eventsUrl for JSON file approach (preferred)
+        // Use apiBase for SQLite API approach (legacy)
+        window.CLUBCALENDAR_CONFIG = {
+            container: '#clubcalendar',
+            eventsUrl: '../data/events.json',  // JSON file approach
+            // apiBase: 'https://mail.sbnewcomers.org',  // SQLite API fallback
+            defaultView: 'dayGridMonth',
+            showFilters: true,
+            showHeader: true,
+            showMyEvents: true,
+            headerTitle: 'Club Events',
+            memberLevel: 'NewcomerMember'
+        };
+
+        function updateConfig() {
+            window.CLUBCALENDAR_CONFIG.defaultView = document.getElementById('config-view').value;
+            window.CLUBCALENDAR_CONFIG.showFilters = document.getElementById('config-filters').checked;
+            window.CLUBCALENDAR_CONFIG.showHeader = document.getElementById('config-header').checked;
+            window.CLUBCALENDAR_CONFIG.showMyEvents = document.getElementById('config-myevents').checked;
+            window.CLUBCALENDAR_CONFIG.memberLevel = document.getElementById('config-member-level').value || null;
+        }
+
+        function reloadWidget() {
+            // Full page reload to pick up JS changes
+            location.reload();
+        }
+    </script>
+
+    <!-- Load the widget -->
+    <script src="clubcalendar-widget.js"></script>
+</body>
+</html>

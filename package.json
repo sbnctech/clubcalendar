@@ -1,0 +1,30 @@
+{
+  "name": "clubcalendar",
+  "version": "1.0.0",
+  "description": "A customizable event calendar widget for Wild Apricot organizations.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edforman-75/clubcalendar.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/edforman-75/clubcalendar/issues"
+  },
+  "homepage": "https://github.com/edforman-75/clubcalendar#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "serve": "^14.2.5"
+  }
+}

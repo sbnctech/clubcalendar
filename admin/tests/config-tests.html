@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar Admin Config Tests</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #2c5aa0; }
+        .test-suite {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-suite h2 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .test-result {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-result.pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .test-result.fail {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .test-result.skip {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .summary {
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .summary.all-pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .summary.has-failures {
+            background: #ffebee;
+            color: #c62828;
+        }
+        button {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover { background: #1e3d6b; }
+        button.secondary {
+            background: #666;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        #testFrame {
+            display: none;
+        }
+        .progress {
+            padding: 12px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            margin: 10px 0;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>ClubCalendar Admin Configuration Tests</h1>
+
+    <div class="controls">
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button class="secondary" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="progress" class="progress" style="display: none;"></div>
+
+    <div id="results"></div>
+
+    <div id="summary"></div>
+
+    <!-- Hidden iframe to load the admin page -->
+    <iframe id="testFrame" src="../index.html"></iframe>
+
+<script>
+// Test framework
+const results = {
+    passed: 0,
+    failed: 0,
+    skipped: 0,
+    details: []
+};
+
+let adminWindow = null;
+let adminDoc = null;
+
+// Wait for iframe to load
+document.getElementById('testFrame').onload = function() {
+    adminWindow = this.contentWindow;
+    adminDoc = this.contentDocument;
+    console.log('Admin page loaded in iframe');
+};
+
+function showProgress(msg) {
+    const el = document.getElementById('progress');
+    el.style.display = 'block';
+    el.textContent = msg;
+}
+
+function hideProgress() {
+    document.getElementById('progress').style.display = 'none';
+}
+
+function clearResults() {
+    results.passed = 0;
+    results.failed = 0;
+    results.skipped = 0;
+    results.details = [];
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('summary').innerHTML = '';
+    hideProgress();
+}
+
+function addResult(suite, testName, passed, message = '') {
+    const status = passed === null ? 'skip' : (passed ? 'pass' : 'fail');
+    if (passed === true) results.passed++;
+    else if (passed === false) results.failed++;
+    else results.skipped++;
+
+    results.details.push({ suite, testName, status, message });
+}
+
+function renderResults() {
+    const container = document.getElementById('results');
+    container.innerHTML = '';
+
+    // Group by suite
+    const suites = {};
+    results.details.forEach(r => {
+        if (!suites[r.suite]) suites[r.suite] = [];
+        suites[r.suite].push(r);
+    });
+
+    Object.keys(suites).forEach(suiteName => {
+        const div = document.createElement('div');
+        div.className = 'test-suite';
+
+        const h2 = document.createElement('h2');
+        h2.textContent = suiteName;
+        div.appendChild(h2);
+
+        suites[suiteName].forEach(r => {
+            const result = document.createElement('div');
+            result.className = `test-result ${r.status}`;
+            const icon = r.status === 'pass' ? '✓' : r.status === 'fail' ? '✗' : '○';
+            result.textContent = `${icon} ${r.testName}${r.message ? ': ' + r.message : ''}`;
+            div.appendChild(result);
+        });
+
+        container.appendChild(div);
+    });
+
+    // Summary
+    const summary = document.getElementById('summary');
+    const total = results.passed + results.failed + results.skipped;
+    const allPass = results.failed === 0;
+    summary.className = `summary ${allPass ? 'all-pass' : 'has-failures'}`;
+    summary.textContent = `${results.passed} passed, ${results.failed} failed, ${results.skipped} skipped (${total} total)`;
+}
+
+// Helper functions
+function getElement(id) {
+    return adminDoc.getElementById(id);
+}
+
+function getValue(id) {
+    const el = getElement(id);
+    if (!el) return undefined;
+    if (el.type === 'checkbox') return el.checked;
+    return el.value;
+}
+
+function setValue(id, value) {
+    const el = getElement(id);
+    if (!el) return false;
+    if (el.type === 'checkbox') {
+        el.checked = value;
+    } else {
+        el.value = value;
+    }
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+}
+
+function clickElement(id) {
+    const el = getElement(id);
+    if (!el) return false;
+    el.click();
+    return true;
+}
+
+function callFunction(fnName, ...args) {
+    return adminWindow[fnName](...args);
+}
+
+// ============================================================================
+// TEST SUITES
+// ============================================================================
+
+async function runAllTests() {
+    clearResults();
+    showProgress('Running tests...');
+
+    // Wait a bit for iframe to be ready
+    await sleep(500);
+
+    if (!adminDoc) {
+        addResult('Setup', 'Admin page loaded', false, 'iframe not ready');
+        renderResults();
+        hideProgress();
+        return;
+    }
+
+    // Clear localStorage before tests
+    adminWindow.localStorage.clear();
+
+    // Reload to get fresh state
+    showProgress('Reloading admin page...');
+    document.getElementById('testFrame').src = '../index.html';
+    await sleep(1000);
+    adminDoc = document.getElementById('testFrame').contentDocument;
+    adminWindow = document.getElementById('testFrame').contentWindow;
+
+    showProgress('Running test suites...');
+
+    await testElementsExist();
+    await testDefaultValues();
+    await testBuildConfig();
+    await testSaveLoadConfig();
+    await testTabNavigation();
+    await testHostingToggle();
+    await testFilterBuilder();
+    await testQuickFilterBuilder();
+    await testColorSync();
+    await testEmbedCodeGeneration();
+
+    hideProgress();
+    renderResults();
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ============================================================================
+// TEST: Elements Exist
+// ============================================================================
+
+async function testElementsExist() {
+    const suite = 'Elements Exist';
+
+    // Setup tab elements
+    const setupElements = [
+        'eventsJsonUrl', 'icsBaseUrl', 'hostingGoogle', 'hostingServer'
+    ];
+
+    // Display tab elements
+    const displayElements = [
+        'widgetTitle', 'defaultView', 'weekStartsOn', 'containerSelector',
+        'showEventDots', 'showEventCount', 'showTimeInTitle', 'showRegistrationStatus', 'hidePastEvents',
+        'showFilterBar', 'showQuickFilters', 'showSearchBox', 'defaultFilter',
+        'eventClickBehavior', 'openLinksNewTab', 'showAddToCalendar',
+        'enableMapDirections', 'mapProvider'
+    ];
+
+    // CSS tab elements
+    const cssElements = [
+        'inheritTheme', 'colorPrimary', 'colorAccent', 'colorHeaderBg', 'colorHeaderText',
+        'fontFamily', 'headerFontSize', 'bodyFontSize', 'labelFontSize', 'customCss'
+    ];
+
+    const allElements = [...setupElements, ...displayElements, ...cssElements];
+
+    allElements.forEach(id => {
+        const exists = getElement(id) !== null;
+        addResult(suite, `Element #${id} exists`, exists);
+    });
+}
+
+// ============================================================================
+// TEST: Default Values
+// ============================================================================
+
+async function testDefaultValues() {
+    const suite = 'Default Values';
+
+    const defaults = {
+        widgetTitle: 'Club Events',
+        defaultView: 'dayGridMonth',
+        weekStartsOn: '0',
+        containerSelector: '#clubcalendar',
+        showEventDots: true,
+        showEventCount: false,
+        showTimeInTitle: true,
+        showRegistrationStatus: true,
+        hidePastEvents: false,
+        showFilterBar: true,
+        showQuickFilters: true,
+        showSearchBox: true,
+        defaultFilter: '',
+        eventClickBehavior: 'popup',
+        openLinksNewTab: true,
+        showAddToCalendar: true,
+        enableMapDirections: true,
+        mapProvider: 'both',
+        inheritTheme: true
+    };
+
+    Object.keys(defaults).forEach(id => {
+        const actual = getValue(id);
+        const expected = defaults[id];
+        const pass = actual === expected;
+        addResult(suite, `#${id} default = ${expected}`, pass, pass ? '' : `got ${actual}`);
+    });
+}
+
+// ============================================================================
+// TEST: buildConfig Function
+// ============================================================================
+
+async function testBuildConfig() {
+    const suite = 'buildConfig()';
+
+    // Set some values
+    setValue('widgetTitle', 'Test Calendar');
+    setValue('eventsJsonUrl', 'https://example.com/events.json');
+    setValue('weekStartsOn', '1');
+    setValue('showEventDots', false);
+    setValue('hidePastEvents', true);
+    setValue('defaultFilter', 'weekend');
+    setValue('enableMapDirections', false);
+    setValue('icsBaseUrl', 'https://example.com/ics.php');
+
+    await sleep(100);
+
+    const config = callFunction('buildConfig');
+
+    addResult(suite, 'Returns object', typeof config === 'object');
+    addResult(suite, 'title captured', config.title === 'Test Calendar');
+    addResult(suite, 'eventsUrl captured', config.eventsUrl === 'https://example.com/events.json');
+    addResult(suite, 'weekStartsOn captured', config.weekStartsOn === 1);
+    addResult(suite, 'display.showEventDots captured', config.display?.showEventDots === false);
+    addResult(suite, 'display.hidePastEvents captured', config.display?.hidePastEvents === true);
+    addResult(suite, 'filterBar.defaultFilter captured', config.filterBar?.defaultFilter === 'weekend');
+    addResult(suite, 'maps.enabled captured', config.maps?.enabled === false);
+    addResult(suite, 'icsBaseUrl captured', config.icsBaseUrl === 'https://example.com/ics.php');
+    addResult(suite, 'behavior object exists', typeof config.behavior === 'object');
+    addResult(suite, 'css object exists', typeof config.css === 'object');
+
+    // Reset values
+    setValue('widgetTitle', 'Club Events');
+    setValue('eventsJsonUrl', '');
+    setValue('weekStartsOn', '0');
+    setValue('showEventDots', true);
+    setValue('hidePastEvents', false);
+    setValue('defaultFilter', '');
+    setValue('enableMapDirections', true);
+    setValue('icsBaseUrl', '');
+}
+
+// ============================================================================
+// TEST: Save/Load Config
+// ============================================================================
+
+async function testSaveLoadConfig() {
+    const suite = 'Save/Load Config';
+
+    // Set unique values
+    const testTitle = 'SaveLoadTest_' + Date.now();
+    setValue('widgetTitle', testTitle);
+    setValue('showEventDots', false);
+    setValue('weekStartsOn', '1');
+    setValue('colorPrimary', '#ff0000');
+
+    await sleep(100);
+
+    // Save
+    callFunction('saveConfig');
+
+    // Change values
+    setValue('widgetTitle', 'Changed');
+    setValue('showEventDots', true);
+    setValue('weekStartsOn', '0');
+
+    await sleep(100);
+
+    // Load
+    callFunction('loadConfig');
+
+    await sleep(100);
+
+    // Verify restored
+    addResult(suite, 'Title restored', getValue('widgetTitle') === testTitle);
+    addResult(suite, 'showEventDots restored', getValue('showEventDots') === false);
+    addResult(suite, 'weekStartsOn restored', getValue('weekStartsOn') === '1');
+
+    // Reset
+    adminWindow.localStorage.clear();
+    setValue('widgetTitle', 'Club Events');
+    setValue('showEventDots', true);
+    setValue('weekStartsOn', '0');
+}
+
+// ============================================================================
+// TEST: Tab Navigation
+// ============================================================================
+
+async function testTabNavigation() {
+    const suite = 'Tab Navigation';
+
+    const tabs = ['setup', 'basic', 'advanced', 'css'];
+
+    for (const tab of tabs) {
+        const btn = adminDoc.querySelector(`[data-tab="${tab}"]`);
+        const content = getElement(`tab-${tab}`);
+
+        if (btn && content) {
+            btn.click();
+            await sleep(50);
+
+            const isActive = btn.classList.contains('active');
+            const contentVisible = content.classList.contains('active');
+
+            addResult(suite, `Tab "${tab}" activates`, isActive && contentVisible);
+        } else {
+            addResult(suite, `Tab "${tab}" elements exist`, false);
+        }
+    }
+}
+
+// ============================================================================
+// TEST: Hosting Toggle
+// ============================================================================
+
+async function testHostingToggle() {
+    const suite = 'Hosting Toggle';
+
+    // Switch to setup tab
+    adminDoc.querySelector('[data-tab="setup"]')?.click();
+    await sleep(50);
+
+    const googleCard = getElement('googleSetupCard');
+    const serverCard = getElement('serverSetupCard');
+
+    // Select Google
+    callFunction('selectHostingOption', 'google');
+    await sleep(50);
+
+    addResult(suite, 'Google card visible when selected',
+        googleCard?.style.display !== 'none');
+    addResult(suite, 'Server card hidden when Google selected',
+        serverCard?.style.display === 'none');
+
+    // Select Server
+    callFunction('selectHostingOption', 'server');
+    await sleep(50);
+
+    addResult(suite, 'Server card visible when selected',
+        serverCard?.style.display !== 'none');
+    addResult(suite, 'Google card hidden when Server selected',
+        googleCard?.style.display === 'none');
+
+    // Reset to Google
+    callFunction('selectHostingOption', 'google');
+}
+
+// ============================================================================
+// TEST: Filter Builder
+// ============================================================================
+
+async function testFilterBuilder() {
+    const suite = 'Filter Builder';
+
+    // Switch to advanced tab
+    adminDoc.querySelector('[data-tab="advanced"]')?.click();
+    await sleep(50);
+
+    const filtersList = getElement('filtersList');
+
+    addResult(suite, 'Filters list container exists', filtersList !== null);
+
+    if (filtersList) {
+        const initialCount = filtersList.children.length;
+        addResult(suite, 'Has default filters', initialCount > 0);
+
+        // Test add filter
+        callFunction('addFilter');
+        await sleep(50);
+
+        const afterAddCount = filtersList.children.length;
+        addResult(suite, 'addFilter() adds new filter', afterAddCount === initialCount + 1);
+    }
+}
+
+// ============================================================================
+// TEST: Quick Filter Builder
+// ============================================================================
+
+async function testQuickFilterBuilder() {
+    const suite = 'Quick Filter Builder';
+
+    // Switch to advanced tab
+    adminDoc.querySelector('[data-tab="advanced"]')?.click();
+    await sleep(50);
+
+    const quickFiltersList = getElement('quickFiltersList');
+
+    addResult(suite, 'Quick filters list container exists', quickFiltersList !== null);
+
+    if (quickFiltersList) {
+        const initialCount = quickFiltersList.children.length;
+        addResult(suite, 'Has default quick filters', initialCount > 0);
+
+        // Default should include 6 filters: openings, weekend, afterhours, free, newbie, public
+        addResult(suite, 'Has expected number of quick filters (6)', initialCount === 6);
+    }
+}
+
+// ============================================================================
+// TEST: Color Picker Sync
+// ============================================================================
+
+async function testColorSync() {
+    const suite = 'Color Picker Sync';
+
+    // Switch to CSS tab
+    adminDoc.querySelector('[data-tab="css"]')?.click();
+    await sleep(50);
+
+    // Disable theme inheritance to show color pickers
+    setValue('inheritTheme', false);
+    await sleep(50);
+
+    const picker = getElement('colorPrimary');
+    const hex = getElement('colorPrimaryHex');
+
+    if (picker && hex) {
+        // Change picker
+        picker.value = '#123456';
+        picker.dispatchEvent(new Event('input', { bubbles: true }));
+        await sleep(50);
+
+        addResult(suite, 'Hex input syncs with color picker', hex.value === '#123456');
+
+        // Change hex input
+        hex.value = '#abcdef';
+        hex.dispatchEvent(new Event('input', { bubbles: true }));
+        await sleep(50);
+
+        addResult(suite, 'Color picker syncs with hex input', picker.value === '#abcdef');
+    } else {
+        addResult(suite, 'Color inputs exist', false);
+    }
+
+    // Reset
+    setValue('inheritTheme', true);
+}
+
+// ============================================================================
+// TEST: Embed Code Generation
+// ============================================================================
+
+async function testEmbedCodeGeneration() {
+    const suite = 'Embed Code Generation';
+
+    // Set some values
+    setValue('eventsJsonUrl', 'https://example.com/events.json');
+    setValue('widgetTitle', 'My Calendar');
+    setValue('weekStartsOn', '1');
+    setValue('showEventDots', false);
+
+    await sleep(100);
+
+    // Generate embed code
+    callFunction('showEmbedCode');
+    await sleep(100);
+
+    const embedCode = getElement('embedCode')?.textContent || '';
+
+    addResult(suite, 'Embed code contains eventsUrl',
+        embedCode.includes('https://example.com/events.json'));
+    addResult(suite, 'Embed code contains headerTitle',
+        embedCode.includes('My Calendar'));
+    addResult(suite, 'Embed code contains weekStartsOn',
+        embedCode.includes('weekStartsOn'));
+    addResult(suite, 'Embed code contains display options',
+        embedCode.includes('showEventDots'));
+    addResult(suite, 'Embed code contains script tag',
+        embedCode.includes('<script'));
+    addResult(suite, 'Embed code contains container div',
+        embedCode.includes('id="clubcalendar"'));
+
+    // Close modal
+    callFunction('closeEmbedModal');
+
+    // Reset
+    setValue('eventsJsonUrl', '');
+    setValue('widgetTitle', 'Club Events');
+    setValue('weekStartsOn', '0');
+    setValue('showEventDots', true);
+}
+
+</script>
+</body>
+</html>
