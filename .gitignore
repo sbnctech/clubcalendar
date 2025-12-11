@@ -45,3 +45,8 @@ site/docs/template.html
 # Local testing
 .env
 .env.local
+
+# Node
+node_modules/
+playwright-report/
+test-results/
