@@ -33,6 +33,50 @@ ClubCalendar is a configurable, filterable event calendar widget designed for Wi
 - **Progressive disclosure**: Simple settings visible by default, advanced settings available on demand
 - **Community-focused**: Designed for clubs, associations, and membership organizations
 
+### Layered Architecture
+
+The codebase follows a strict three-layer architecture with clear separation of concerns:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         UI LAYER                                    │
+│  widget/   - Embeddable calendar widget (JavaScript)                │
+│  admin/    - Configuration interface                                │
+└─────────────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                       SHIM LAYER                                    │
+│  sync/sync.py    - Event fetching and transformation                │
+│  sync/storage.py - Storage backends (GCS, local file)               │
+└─────────────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     LIBRARY LAYER                                   │
+│  sync/config.py  - Configuration management                         │
+│  sync/main.py    - Cloud Function entry point                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Layer Responsibilities
+
+| Layer | Purpose | Dependencies |
+|-------|---------|--------------|
+| **UI** | User interaction, calendar display, configuration forms | Shim layer (via JSON) |
+| **Shim** | Business logic, WA API integration, data transformation | Library layer only |
+| **Library** | Core utilities, configuration, cloud function wiring | Python stdlib, external packages |
+
+### Shim Layer - Separation of Function
+
+Each shim module has a single, well-defined responsibility:
+
+| Module | Function |
+|--------|----------|
+| `sync.py` | Fetch events from WA API, apply auto-tagging rules, transform data |
+| `storage.py` | Write events.json to storage (GCS or local filesystem) |
+| `config.py` | Load and validate configuration from env/files |
+
 ---
 
 ## Product Vision
