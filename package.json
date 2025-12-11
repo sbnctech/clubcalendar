@@ -14,15 +14,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/edforman-75/clubcalendar.git"
+    "url": "git+https://github.com/sbnctech/clubcalendar.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["wild-apricot", "calendar", "widget", "events"],
+  "author": "sbnctech",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/edforman-75/clubcalendar/issues"
+    "url": "https://github.com/sbnctech/clubcalendar/issues"
   },
-  "homepage": "https://github.com/edforman-75/clubcalendar#readme",
+  "homepage": "https://github.com/sbnctech/clubcalendar#readme",
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "serve": "^14.2.5"

@@ -136,6 +136,10 @@ Before embedding the widget, you must whitelist your hosting domain:
 3. Add your domain (e.g., `https://yourserver.com` or `https://storage.googleapis.com`)
 4. Save
 
+## Related Projects
+
+- [clubgallery](https://github.com/sbnctech/clubgallery) - Photo gallery widget for Wild Apricot
+
 ## License
 
 MIT License - See [LICENSE](LICENSE)
@@ -146,7 +150,7 @@ Contributions welcome! Please read the architecture documentation before submitt
 
 ## Support
 
-- [Open an issue](https://github.com/edforman-75/clubcalendar/issues) for bugs or feature requests
+- [Open an issue](https://github.com/sbnctech/clubcalendar/issues) for bugs or feature requests
 - See [Event Tagging Guide](docs/Event_Tagging_Guide.md) for tagging best practices
 
 ---
