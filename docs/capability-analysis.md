@@ -32,11 +32,11 @@ This document compares the original requirements from the event calendar improve
 
 ---
 
-## Not Implemented (API Limitations)
+## Not Yet Implemented
 
 | Requirement | Status | Reason |
 |-------------|--------|--------|
-| Show # people on waitlist | **Skipped** | Wild Apricot API does not expose per-event waitlist counts. Only exposes whether the current user is on a waitlist. |
+| Show # people on waitlist | **Possible but costly** | WA Events API doesn't include waitlist count directly. Would require querying `/eventregistrations?eventId={id}` for each event and counting registrations with waitlist status. This adds one API call per event, which may be slow for calendars with many events. Could be implemented as an optional feature with performance trade-off. |
 
 ---
 
