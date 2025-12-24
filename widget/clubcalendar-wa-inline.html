@@ -100,6 +100,8 @@ window.CLUBCALENDAR_CONFIG = {
         hiddenTags: [],
         // Calendar display
         showEventDots: true,    // Show dots on calendar dates
+        // Waitlist display (requires extra API calls - one per event)
+        showWaitlistCount: false, // Show "X on waitlist" for sold-out events
         // Member/public config overrides
         memberConfig: {},
         publicConfig: {},
@@ -417,8 +419,64 @@ window.CLUBCALENDAR_CONFIG = {
                 log('REGISTRATIONS', '⚠️ Failed to fetch registrations:', e.message);
                 return [];
             }
+        },
+
+        async getEventRegistrations(eventId) {
+            try {
+                const data = await this.call(`/eventregistrations?eventId=${eventId}&includeWaitList=true`);
+                return data.EventRegistrations || data || [];
+            } catch (e) {
+                log('WAITLIST', `⚠️ Failed to fetch registrations for event ${eventId}:`, e.message);
+                return [];
+            }
         }
     };
+
+    // Store for waitlist counts (eventId -> count)
+    let waitlistCounts = {};
+
+    /**
+     * Fetch waitlist counts for sold-out events
+     * Only fetches for events that are full to minimize API calls
+     */
+    async function fetchWaitlistCounts() {
+        if (!CONFIG.showWaitlistCount) return;
+
+        // Find sold-out events
+        const soldOutEvents = allEvents.filter(e => e.spotsAvailable === 0);
+        if (soldOutEvents.length === 0) {
+            log('WAITLIST', 'No sold-out events, skipping waitlist fetch');
+            return;
+        }
+
+        log('WAITLIST', `Fetching waitlist counts for ${soldOutEvents.length} sold-out events...`);
+        const startTime = performance.now();
+
+        // Fetch in parallel with a concurrency limit
+        const CONCURRENCY = 5;
+        for (let i = 0; i < soldOutEvents.length; i += CONCURRENCY) {
+            const batch = soldOutEvents.slice(i, i + CONCURRENCY);
+            await Promise.all(batch.map(async (event) => {
+                try {
+                    const registrations = await WaApi.getEventRegistrations(event.id);
+                    const waitlisted = registrations.filter(r =>
+                        r.OnWaitlist === true ||
+                        (r.Status && r.Status.toLowerCase().includes('waitlist'))
+                    );
+                    waitlistCounts[event.id] = waitlisted.length;
+                } catch (e) {
+                    waitlistCounts[event.id] = null;
+                }
+            }));
+        }
+
+        const elapsed = (performance.now() - startTime).toFixed(0);
+        const totalWaitlisted = Object.values(waitlistCounts).reduce((sum, n) => sum + (n || 0), 0);
+        log('WAITLIST', `✓ Fetched waitlist counts in ${elapsed}ms: ${totalWaitlisted} total waitlisted across ${soldOutEvents.length} events`);
+
+        // Refresh display to show waitlist counts
+        updateDisplay();
+    }
 
     // ═══════════════════════════════════════════════════════════════
     // EVENT TRANSFORMATION (ported from sync.py)
@@ -955,8 +1013,12 @@ window.CLUBCALENDAR_CONFIG = {
         // Don't show for unlimited registration
         if (spots === null || spots === undefined) return '';
 
-        // Sold out
+        // Sold out - include waitlist count if available
         if (spots === 0) {
+            const waitlistCount = waitlistCounts[event.id];
+            if (CONFIG.showWaitlistCount && waitlistCount > 0) {
+                return `<div class="clubcal-availability sold-out">Sold Out</div><div class="clubcal-availability waitlist">${waitlistCount} on waitlist</div>`;
+            }
             return '<div class="clubcal-availability sold-out">Sold Out</div>';
         }
 
@@ -1453,6 +1515,7 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcal-availability.limited { color: #ef6c00; }
 .clubcal-availability.open { color: #2e7d32; }
 .clubcal-availability.coming-soon { color: #1565c0; font-style: italic; }
+.clubcal-availability.waitlist { color: #7b1fa2; font-size: 11px; }
 
 /* Price indicator */
 .clubcal-event-card-header { display: flex; justify-content: space-between; align-items: center; }
@@ -2130,6 +2193,11 @@ window.CLUBCALENDAR_CONFIG = {
             initCalendar(initialView);
             applyFilters();
 
+            // Fetch waitlist counts in background (doesn't block init)
+            if (CONFIG.showWaitlistCount) {
+                fetchWaitlistCounts().catch(e => log('WAITLIST', '⚠️ Failed to fetch waitlist counts:', e.message));
+            }
+
             console.log('═══════════════════════════════════════════════════════════════');
             log('INIT', '✓ ClubCalendar initialized successfully', {
                 user: currentUser?.Email || 'Not logged in',
@@ -2157,7 +2225,11 @@ window.CLUBCALENDAR_CONFIG = {
             allEvents = (await WaApi.getEvents(CONFIG.pastEventsVisible ? CONFIG.pastEventsDays : 0))
                 .filter(e => !(e.Name || '').toUpperCase().includes('CANCELLED')).map(transformEvent);
             filteredEvents = [...allEvents];
+            waitlistCounts = {}; // Clear cached counts
             applyFilters();
+            if (CONFIG.showWaitlistCount) {
+                fetchWaitlistCounts().catch(e => log('WAITLIST', '⚠️ Failed to fetch waitlist counts:', e.message));
+            }
         },
         getUser: () => currentUser,
         getEvents: () => allEvents,

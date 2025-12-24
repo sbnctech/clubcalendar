@@ -113,6 +113,21 @@ These fields are automatically calculated - no manual metadata entry required.
 | Spots Available | RegistrationsLimit - ConfirmedRegistrationsCount | Null if no limit set |
 | Is Full | spotsAvailable === 0 | True when sold out |
 | Availability Status | spotsAvailable | 0 = "Sold Out", 1-5 = "Limited", 6+ = "Open", null = "Unlimited" |
+| Waitlist Count | EventRegistrations API | Count of registrations with OnWaitlist=true (optional, requires extra API calls) |
+
+**Waitlist Count (Optional Feature)**
+
+By default, waitlist counts are not fetched because it requires one additional API call per sold-out event. To enable:
+
+```javascript
+showWaitlistCount: true  // Fetch and display "X on waitlist" for sold-out events
+```
+
+When enabled, the widget will:
+1. Identify all sold-out events (spotsAvailable === 0)
+2. Fetch registrations for each sold-out event in parallel (max 5 concurrent)
+3. Count registrations with `OnWaitlist: true` or status containing "waitlist"
+4. Display "X on waitlist" below the "Sold Out" badge
 
 ### Price Derivations
 
