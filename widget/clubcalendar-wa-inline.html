@@ -92,6 +92,39 @@ window.CLUBCALENDAR_CONFIG = {
     };
 
     // ═══════════════════════════════════════════════════════════════
+    // LOGGING
+    // ═══════════════════════════════════════════════════════════════
+
+    const LOG_PREFIX = '[ClubCalendar]';
+
+    function log(category, message, data = null) {
+        const timestamp = new Date().toISOString().substr(11, 12);
+        const prefix = `${LOG_PREFIX} [${timestamp}] [${category}]`;
+        if (data !== null) {
+            console.log(prefix, message, data);
+        } else {
+            console.log(prefix, message);
+        }
+    }
+
+    function logConfig() {
+        log('CONFIG', 'Configuration loaded:', {
+            waAccountId: CONFIG.waAccountId,
+            waClientId: CONFIG.waClientId ? `${CONFIG.waClientId.substring(0, 8)}...` : 'NOT SET',
+            showMyEvents: CONFIG.showMyEvents,
+            showFilters: CONFIG.showFilters,
+            defaultView: CONFIG.defaultView,
+            autoTagRules: CONFIG.autoTagRules.length + ' rules'
+        });
+        if (!CONFIG.waAccountId || CONFIG.waAccountId === 'YOUR_ACCOUNT_ID') {
+            console.warn(LOG_PREFIX, '⚠️ waAccountId not configured!');
+        }
+        if (!CONFIG.waClientId || CONFIG.waClientId === 'YOUR_CLIENT_ID') {
+            console.warn(LOG_PREFIX, '⚠️ waClientId not configured!');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // WA API CLIENT
     // ═══════════════════════════════════════════════════════════════
 
@@ -101,16 +134,42 @@ window.CLUBCALENDAR_CONFIG = {
             const headers = { 'Accept': 'application/json', ...options.headers };
             if (CONFIG.waClientId) headers['clientId'] = CONFIG.waClientId;
 
-            const response = await fetch(url, { ...options, headers });
-            if (!response.ok) throw new Error(`WA API error: ${response.status}`);
-            return response.json();
+            log('API', `Fetching: ${endpoint}`);
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(url, { ...options, headers });
+                const elapsed = (performance.now() - startTime).toFixed(0);
+
+                if (!response.ok) {
+                    log('API', `❌ Error ${response.status} (${elapsed}ms): ${endpoint}`);
+                    throw new Error(`WA API error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log('API', `✓ Success (${elapsed}ms): ${endpoint}`, {
+                    responseType: Array.isArray(data) ? `Array[${data.length}]` : typeof data,
+                    keys: Object.keys(data).slice(0, 10)
+                });
+                return data;
+            } catch (e) {
+                log('API', `❌ Fetch failed: ${endpoint}`, e.message);
+                throw e;
+            }
         },
 
         async getCurrentUser() {
+            log('AUTH', 'Checking for logged-in user...');
             try {
-                return await this.call('/contacts/me');
+                const user = await this.call('/contacts/me');
+                log('AUTH', '✓ User authenticated:', {
+                    id: user.Id,
+                    email: user.Email,
+                    name: `${user.FirstName} ${user.LastName}`
+                });
+                return user;
             } catch (e) {
-                console.warn('Not logged in or API error:', e);
+                log('AUTH', '⚠️ Not logged in or API error:', e.message);
                 return null;
             }
         },
@@ -120,29 +179,67 @@ window.CLUBCALENDAR_CONFIG = {
             if (includePastDays > 0) startDate.setDate(startDate.getDate() - includePastDays);
             const dateFilter = startDate.toISOString().split('T')[0];
 
+            log('EVENTS', `Fetching events from ${dateFilter}...`);
+
             let allEvts = [];
+            let pageNum = 1;
             // Request includeEventDetails to get RegistrationTypes with pricing
             let pageUrl = `/events?$filter=StartDate ge ${dateFilter}&$sort=StartDate asc&includeEventDetails=true`;
 
             while (pageUrl) {
+                log('EVENTS', `Fetching page ${pageNum}...`);
                 const data = await this.call(pageUrl);
                 if (data.Events) {
                     allEvts = allEvts.concat(data.Events);
                     pageUrl = data.ResultNextPageUrl ?
                         data.ResultNextPageUrl.replace(/^.*\/v2\.2\/accounts\/\d+/, '') : null;
+                    pageNum++;
                 } else {
                     allEvts = allEvts.concat(Array.isArray(data) ? data : []);
                     pageUrl = null;
                 }
             }
+
+            log('EVENTS', `✓ Fetched ${allEvts.length} events in ${pageNum - 1} page(s)`);
+
+            // Log first event structure for debugging
+            if (allEvts.length > 0) {
+                const sample = allEvts[0];
+                log('EVENTS', 'Sample event structure:', {
+                    Id: sample.Id,
+                    Name: sample.Name,
+                    AccessLevel: sample.AccessLevel,
+                    RegistrationEnabled: sample.RegistrationEnabled,
+                    RegistrationTypes: sample.RegistrationTypes ? `Array[${sample.RegistrationTypes.length}]` : 'undefined',
+                    'Details.RegistrationTypes': sample.Details?.RegistrationTypes ? `Array[${sample.Details.RegistrationTypes.length}]` : 'undefined',
+                    hasDetails: !!sample.Details,
+                    allKeys: Object.keys(sample)
+                });
+
+                // Log registration type structure if present
+                const regTypes = sample.RegistrationTypes || sample.Details?.RegistrationTypes;
+                if (regTypes && regTypes.length > 0) {
+                    log('EVENTS', 'Sample RegistrationType structure:', {
+                        keys: Object.keys(regTypes[0]),
+                        BasePrice: regTypes[0].BasePrice,
+                        Price: regTypes[0].Price,
+                        CurrentPrice: regTypes[0].CurrentPrice
+                    });
+                }
+            }
+
             return allEvts;
         },
 
         async getContactRegistrations(contactId) {
+            log('REGISTRATIONS', `Fetching registrations for contact ${contactId}...`);
             try {
                 const data = await this.call(`/eventregistrations?contactId=${contactId}&includeWaitList=true`);
-                return data.EventRegistrations || data || [];
+                const regs = data.EventRegistrations || data || [];
+                log('REGISTRATIONS', `✓ Found ${regs.length} registrations`);
+                return regs;
             } catch (e) {
+                log('REGISTRATIONS', '⚠️ Failed to fetch registrations:', e.message);
                 return [];
             }
         }
@@ -289,7 +386,7 @@ window.CLUBCALENDAR_CONFIG = {
         return null;
     }
 
-    function transformEvent(waEvent) {
+    function transformEvent(waEvent, logSample = false) {
         let waTags = waEvent.Tags || [];
         if (typeof waTags === 'string') waTags = waTags.split(',').map(t => t.trim()).filter(t => t);
 
@@ -324,7 +421,7 @@ window.CLUBCALENDAR_CONFIG = {
         const confirmed = waEvent.ConfirmedRegistrationsCount || 0;
         const spotsAvailable = (limit == null) ? null : Math.max(0, limit - confirmed);
 
-        return {
+        const transformed = {
             id: waEvent.Id,
             name: eventName,
             startDate: startDate,
@@ -346,6 +443,22 @@ window.CLUBCALENDAR_CONFIG = {
             isPublic: isPublicEvent,
             activityType: activityTag ? activityTag.replace('activity:', '') : null
         };
+
+        // Log sample transformation for debugging
+        if (logSample) {
+            log('TRANSFORM', `Event: "${eventName}"`, {
+                waTags: waTags,
+                autoTags: autoTags,
+                pricing: pricing,
+                isPublic: isPublicEvent,
+                isPublicAccess: isPublicAccess,
+                hasNoTicketing: hasNoTicketing,
+                regTypesCount: regTypes.length,
+                accessLevel: waEvent.AccessLevel
+            });
+        }
+
+        return transformed;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -367,6 +480,7 @@ window.CLUBCALENDAR_CONFIG = {
     };
 
     function applyFilters() {
+        const beforeCount = allEvents.length;
         filteredEvents = allEvents.filter(event => {
             const eventDate = new Date(event.startDate);
             if (currentFilters.time === 'upcoming' && eventDate < new Date()) return false;
@@ -376,6 +490,10 @@ window.CLUBCALENDAR_CONFIG = {
                 if (!matches) return false;
             }
             return true;
+        });
+        log('FILTER', `Applied filters: ${filteredEvents.length}/${beforeCount} events`, {
+            activeFilters: currentFilters.quickFilters,
+            timeFilter: currentFilters.time
         });
         updateDisplay();
     }
@@ -684,19 +802,30 @@ window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
 
     async function init() {
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log(LOG_PREFIX, 'ClubCalendar Widget - Wild Apricot Native Edition');
+        console.log('═══════════════════════════════════════════════════════════════');
+
         try {
+            logConfig();
+
             if (!CONFIG.waAccountId || CONFIG.waAccountId === 'YOUR_ACCOUNT_ID') {
                 throw new Error('Please set waAccountId in CLUBCALENDAR_CONFIG');
             }
 
+            log('INIT', 'Injecting styles...');
             injectStyles();
+
+            log('INIT', 'Loading FullCalendar library...');
             await loadFullCalendar();
+            log('INIT', '✓ FullCalendar loaded');
 
             const container = document.querySelector(CONFIG.container);
             if (!container) throw new Error(`Container not found: ${CONFIG.container}`);
 
             container.innerHTML = '<div class="clubcal-loading">Loading ClubCalendar...</div>';
 
+            log('INIT', 'Fetching data from WA API...');
             const [userResult, events] = await Promise.all([
                 (async () => {
                     const user = await WaApi.getCurrentUser();
@@ -708,21 +837,47 @@ window.CLUBCALENDAR_CONFIG = {
 
             currentUser = userResult.user;
             myRegistrations = userResult.registrations;
-            allEvents = events.filter(e => !(e.Name || '').toUpperCase().includes('CANCELLED')).map(transformEvent);
+
+            // Transform events, logging first 3 for debugging
+            log('TRANSFORM', `Transforming ${events.length} events...`);
+            const validEvents = events.filter(e => !(e.Name || '').toUpperCase().includes('CANCELLED'));
+            log('TRANSFORM', `Filtered out ${events.length - validEvents.length} cancelled events`);
+
+            allEvents = validEvents.map((e, i) => transformEvent(e, i < 3));
             filteredEvents = [...allEvents];
+
+            // Log tag summary
+            const tagCounts = {};
+            allEvents.forEach(e => e.tags.forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+            log('TRANSFORM', 'Tag summary:', tagCounts);
+
+            // Log pricing summary
+            const pricingSummary = {
+                free: allEvents.filter(e => e.isFree).length,
+                paid: allEvents.filter(e => !e.isFree).length,
+                public: allEvents.filter(e => e.isPublic).length,
+                membersOnly: allEvents.filter(e => !e.isPublic).length
+            };
+            log('TRANSFORM', 'Pricing/access summary:', pricingSummary);
 
             container.innerHTML = buildWidgetHTML();
             setupEventListeners();
             initCalendar();
             applyFilters();
 
-            console.log('ClubCalendar initialized:', { user: currentUser?.Email, events: allEvents.length, registrations: myRegistrations.length });
+            console.log('═══════════════════════════════════════════════════════════════');
+            log('INIT', '✓ ClubCalendar initialized successfully', {
+                user: currentUser?.Email || 'Not logged in',
+                totalEvents: allEvents.length,
+                myRegistrations: myRegistrations.length
+            });
+            console.log('═══════════════════════════════════════════════════════════════');
 
         } catch (error) {
-            console.error('ClubCalendar error:', error);
+            console.error(LOG_PREFIX, '❌ Initialization failed:', error);
             const container = document.querySelector(CONFIG.container);
             if (container) {
-                container.innerHTML = `<div class="clubcal-error"><h3>Error Loading Calendar</h3><p>${escapeHtml(error.message)}</p><p style="font-size:12px;margin-top:10px;">Make sure you're logged in and waAccountId/waClientId are configured.</p></div>`;
+                container.innerHTML = `<div class="clubcal-error"><h3>Error Loading Calendar</h3><p>${escapeHtml(error.message)}</p><p style="font-size:12px;margin-top:10px;">Check browser console for details. Make sure you're logged in and waAccountId/waClientId are configured.</p></div>`;
             }
         }
     }
