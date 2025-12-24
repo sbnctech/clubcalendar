@@ -5,11 +5,8 @@
   Paste this ENTIRE file into a WA Custom HTML gadget.
   NO external server required. Runs entirely on WA.
 
-  BEFORE USING:
-  1. Replace YOUR_ACCOUNT_ID with your WA Account ID
-     (Find in WA Admin > Settings > Account details)
-  2. Replace YOUR_CLIENT_ID with your API Client ID
-     (Create in WA Admin > Settings > Authorized applications)
+  The widget auto-detects your WA account from the page context.
+  No configuration required for basic use!
 -->
 
 <div id="clubcalendar"></div>
@@ -17,10 +14,10 @@
 <script>
 window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
-    // REQUIRED - Replace these with your values
+    // CREDENTIALS (Auto-detected - only set if auto-detection fails)
     // ═══════════════════════════════════════════════════════════════
-    waAccountId: 'YOUR_ACCOUNT_ID',
-    waClientId: 'YOUR_CLIENT_ID',
+    // waAccountId: '12345',  // Optional: Auto-detected from WA page
+    // waClientId: 'abc123',  // Optional: Only needed for external hosting
 
     // ═══════════════════════════════════════════════════════════════
     // OPTIONAL - Customize as needed
@@ -291,19 +288,13 @@ window.CLUBCALENDAR_CONFIG = {
 
     function logConfig() {
         log('CONFIG', 'Configuration loaded:', {
-            waAccountId: CONFIG.waAccountId,
-            waClientId: CONFIG.waClientId ? `${CONFIG.waClientId.substring(0, 8)}...` : 'NOT SET',
+            waAccountId: CONFIG.waAccountId || '(auto-detect)',
+            waClientId: CONFIG.waClientId ? `${CONFIG.waClientId.substring(0, 8)}...` : '(not needed on WA page)',
             showMyEvents: CONFIG.showMyEvents,
             showFilters: CONFIG.showFilters,
             defaultView: CONFIG.defaultView,
             autoTagRules: CONFIG.autoTagRules.length + ' rules'
         });
-        if (!CONFIG.waAccountId || CONFIG.waAccountId === 'YOUR_ACCOUNT_ID') {
-            console.warn(LOG_PREFIX, '⚠️ waAccountId not configured!');
-        }
-        if (!CONFIG.waClientId || CONFIG.waClientId === 'YOUR_CLIENT_ID') {
-            console.warn(LOG_PREFIX, '⚠️ waClientId not configured!');
-        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -311,6 +302,34 @@ window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
 
     const WaApi = {
+        /**
+         * Auto-discover the WA account ID by calling /accounts endpoint
+         * This works when running on a WA page with a logged-in session
+         */
+        async discoverAccountId() {
+            log('API', 'Auto-discovering account ID...');
+            try {
+                const headers = { 'Accept': 'application/json' };
+                if (CONFIG.waClientId) headers['clientId'] = CONFIG.waClientId;
+
+                const response = await fetch('/sys/api/v2/accounts', { headers });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const accounts = await response.json();
+                if (Array.isArray(accounts) && accounts.length > 0) {
+                    const accountId = accounts[0].Id;
+                    log('API', `✓ Discovered account ID: ${accountId}`);
+                    return accountId;
+                }
+                throw new Error('No accounts returned');
+            } catch (e) {
+                log('API', '⚠️ Account discovery failed:', e.message);
+                return null;
+            }
+        },
+
         async call(endpoint, options = {}) {
             const url = `/sys/api/v2/accounts/${CONFIG.waAccountId}${endpoint}`;
             const headers = { 'Accept': 'application/json', ...options.headers };
@@ -2157,12 +2176,6 @@ window.CLUBCALENDAR_CONFIG = {
         console.log('═══════════════════════════════════════════════════════════════');
 
         try {
-            logConfig();
-
-            if (!CONFIG.waAccountId || CONFIG.waAccountId === 'YOUR_ACCOUNT_ID') {
-                throw new Error('Please set waAccountId in CLUBCALENDAR_CONFIG');
-            }
-
             log('INIT', 'Injecting styles...');
             injectStyles();
 
@@ -2170,6 +2183,19 @@ window.CLUBCALENDAR_CONFIG = {
             if (!container) throw new Error(`Container not found: ${CONFIG.container}`);
 
             container.innerHTML = '<div class="clubcal-loading">Loading ClubCalendar...</div>';
+
+            // Auto-discover account ID if not configured
+            if (!CONFIG.waAccountId || CONFIG.waAccountId === 'YOUR_ACCOUNT_ID') {
+                log('INIT', 'No account ID configured, attempting auto-discovery...');
+                const discoveredId = await WaApi.discoverAccountId();
+                if (discoveredId) {
+                    CONFIG.waAccountId = discoveredId;
+                } else {
+                    throw new Error('Could not auto-discover account ID. Please ensure you are on a Wild Apricot page or configure waAccountId manually.');
+                }
+            }
+
+            logConfig();
 
             // Load FullCalendar library AND fetch API data in parallel for faster init
             log('INIT', 'Loading FullCalendar + fetching API data in parallel...');

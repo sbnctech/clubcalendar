@@ -115,14 +115,21 @@ clubcalendar/
 
 ### API Client Implementation
 
+The widget auto-discovers the WA account ID from the page context, so no configuration is required when running on a WA page.
+
 ```javascript
 const WaApi = {
+    // Auto-discover account ID from WA session
+    async discoverAccountId() {
+        const response = await fetch('/sys/api/v2/accounts');
+        const accounts = await response.json();
+        return accounts[0]?.Id;  // Returns the account ID
+    },
+
     async call(endpoint, options = {}) {
         const url = `/sys/api/v2/accounts/${CONFIG.waAccountId}${endpoint}`;
-        const headers = {
-            'Accept': 'application/json',
-            'clientId': CONFIG.waClientId  // Required for API access
-        };
+        const headers = { 'Accept': 'application/json' };
+        // clientId only needed for external hosting, not on WA pages
 
         const response = await fetch(url, { ...options, headers });
         return response.json();
@@ -331,9 +338,9 @@ function mergeConfig(base, overrides) {
 
 ```javascript
 const DEFAULT_CONFIG = {
-    // Required
-    waAccountId: null,
-    waClientId: null,
+    // Credentials (auto-detected when running on WA page)
+    waAccountId: null,  // Auto-discovered from /sys/api/v2/accounts
+    waClientId: null,   // Only needed for external hosting
 
     // Display options
     container: '#clubcalendar',
@@ -629,15 +636,16 @@ npm run test:all
 ### For Other Organizations
 
 ```
-1. Fork the GitHub repository
+1. Copy the widget HTML file (no need to fork unless customizing code)
 
-2. Customize CLUBCALENDAR_CONFIG in the HTML:
-   - waAccountId: Your WA account ID
-   - waClientId: Your API client ID
-   - titleParsing: { enabled: false } if not using SBNC format
+2. Paste into your WA Custom HTML gadget
+   - Account ID is auto-detected from the page
+   - No credentials configuration needed!
+
+3. Optional: Customize CLUBCALENDAR_CONFIG:
+   - titleParsing: { enabled: false } if not using "Committee: Title" format
    - Adjust filter visibility as needed
-
-3. Paste into your WA Custom HTML gadget
+   - Customize colors, header title, etc.
 ```
 
 ### Version Control
