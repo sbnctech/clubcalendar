@@ -28,6 +28,7 @@ export interface WaEvent {
   RegistrationEnabled?: boolean;
   RegistrationsLimit?: number | null;
   ConfirmedRegistrationsCount?: number;
+  RegistrationStartDate?: string;
   RegistrationTypes?: RegistrationType[];
   Details?: {
     DescriptionHtml?: string;
@@ -58,6 +59,7 @@ export interface TransformedEvent {
   confirmed: number;
   isFull: boolean;
   registrationEnabled: boolean;
+  registrationOpenDate: string | null;
   accessLevel: string;
   minPrice: number;
   maxPrice: number;
@@ -503,6 +505,7 @@ export function transformEvent(waEvent: WaEvent, autoTagRules: AutoTagRule[] = [
     confirmed: confirmed,
     isFull: spotsAvailable === 0,
     registrationEnabled: waEvent.RegistrationEnabled !== false,
+    registrationOpenDate: waEvent.RegistrationStartDate || null,
     accessLevel: waEvent.AccessLevel || 'Public',
     minPrice: pricing.minPrice,
     maxPrice: pricing.maxPrice,
@@ -628,6 +631,54 @@ export function getAvailabilityInfo(spotsAvailable: number | null): Availability
     spots: spotsAvailable,
     label: `${spotsAvailable} spots`
   };
+}
+
+export type RegistrationStatus = 'coming-soon' | 'open' | 'closed' | 'none';
+
+export interface RegistrationStatusInfo {
+  status: RegistrationStatus;
+  opensIn: number | null; // days until registration opens
+  label: string;
+}
+
+/**
+ * Get registration status for an event
+ */
+export function getRegistrationStatus(
+  registrationEnabled: boolean,
+  registrationOpenDate: string | null,
+  isFull: boolean
+): RegistrationStatusInfo {
+  // No registration for this event
+  if (!registrationEnabled) {
+    return { status: 'none', opensIn: null, label: '' };
+  }
+
+  // Check if registration opens in the future
+  if (registrationOpenDate) {
+    const openDate = new Date(registrationOpenDate);
+    const now = new Date();
+    if (openDate > now) {
+      const daysUntil = Math.ceil((openDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysUntil === 0) {
+        return { status: 'coming-soon', opensIn: 0, label: 'Opens today' };
+      } else if (daysUntil === 1) {
+        return { status: 'coming-soon', opensIn: 1, label: 'Opens tomorrow' };
+      } else if (daysUntil <= 7) {
+        return { status: 'coming-soon', opensIn: daysUntil, label: `Opens in ${daysUntil} days` };
+      } else {
+        return { status: 'coming-soon', opensIn: daysUntil, label: 'Coming soon' };
+      }
+    }
+  }
+
+  // Registration is closed (full)
+  if (isFull) {
+    return { status: 'closed', opensIn: null, label: 'Registration closed' };
+  }
+
+  // Registration is open
+  return { status: 'open', opensIn: null, label: 'Register now' };
 }
 
 // ═══════════════════════════════════════════════════════════════

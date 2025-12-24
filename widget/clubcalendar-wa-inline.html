@@ -619,6 +619,7 @@ window.CLUBCALENDAR_CONFIG = {
             confirmed: confirmed,
             isFull: spotsAvailable === 0,
             registrationEnabled: waEvent.RegistrationEnabled !== false,
+            registrationOpenDate: waEvent.RegistrationStartDate || null,
             accessLevel: waEvent.AccessLevel || 'Public',
             minPrice: pricing.minPrice,
             maxPrice: pricing.maxPrice,
@@ -828,10 +829,25 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
-     * Get availability HTML for an event showing spots remaining
-     * Returns empty string if unlimited spots (spotsAvailable is null)
+     * Get availability HTML for an event showing spots remaining or coming soon
+     * Returns empty string if unlimited spots and no registration open date
      */
     function getAvailabilityHtml(event) {
+        // Check if registration opens in the future
+        if (event.registrationOpenDate) {
+            const openDate = new Date(event.registrationOpenDate);
+            const now = new Date();
+            if (openDate > now) {
+                const daysUntil = Math.ceil((openDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                let label;
+                if (daysUntil === 0) label = 'Opens today';
+                else if (daysUntil === 1) label = 'Opens tomorrow';
+                else if (daysUntil <= 7) label = `Opens in ${daysUntil} days`;
+                else label = 'Coming soon';
+                return `<div class="clubcal-availability coming-soon">${label}</div>`;
+            }
+        }
+
         const spots = event.spotsAvailable;
 
         // Don't show for unlimited registration
@@ -1236,7 +1252,13 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcal-filter-chip button:hover { opacity: 1; }
 .clubcal-clear-all { padding: 4px 12px; background: transparent; border: 1px solid #999; border-radius: 16px; font-size: 12px; color: #666; cursor: pointer; }
 .clubcal-clear-all:hover { background: #eee; border-color: #666; }
-.clubcal-results-bar { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #666; }
+.clubcal-results-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; font-size: 14px; color: #666; }
+.clubcal-legend { display: flex; gap: 12px; font-size: 12px; }
+.clubcal-legend-item { display: flex; align-items: center; gap: 4px; }
+.clubcal-legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+.clubcal-legend-dot.morning { background: #ff9800; }
+.clubcal-legend-dot.afternoon { background: #42a5f5; }
+.clubcal-legend-dot.evening { background: #5c6bc0; }
 .clubcalendar-content { min-height: 400px; }
 .clubcal-event-morning { background-color: #ff9800 !important; border-color: #f57c00 !important; }
 .clubcal-event-afternoon { background-color: #42a5f5 !important; border-color: #1e88e5 !important; }
@@ -1270,6 +1292,7 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcal-availability.sold-out { color: #c62828; }
 .clubcal-availability.limited { color: #ef6c00; }
 .clubcal-availability.open { color: #2e7d32; }
+.clubcal-availability.coming-soon { color: #1565c0; font-style: italic; }
 `;
 
         // Get preset extra CSS
@@ -1392,7 +1415,14 @@ window.CLUBCALENDAR_CONFIG = {
                             </div>` : ''}
                             <div id="clubcal-active-filters" class="clubcal-active-filters"></div>
                         </div>` : ''}
-                    <div class="clubcal-results-bar"><span id="clubcal-results-count">Loading events...</span></div>
+                    <div class="clubcal-results-bar">
+                        <span id="clubcal-results-count">Loading events...</span>
+                        <div class="clubcal-legend">
+                            <span class="clubcal-legend-item"><span class="clubcal-legend-dot morning"></span>Morning</span>
+                            <span class="clubcal-legend-item"><span class="clubcal-legend-dot afternoon"></span>Afternoon</span>
+                            <span class="clubcal-legend-item"><span class="clubcal-legend-dot evening"></span>Evening</span>
+                        </div>
+                    </div>
                     <div id="clubcalendar-content" class="clubcalendar-content"></div>
                 </div>
                 ${CONFIG.showMyEvents ? `
@@ -1684,13 +1714,27 @@ window.CLUBCALENDAR_CONFIG = {
                 if (event) {
                     let tooltip = event.name;
                     if (event.location) tooltip += `\n${event.location}`;
-                    // Add availability to tooltip
-                    if (event.spotsAvailable === 0) {
-                        tooltip += '\n⛔ Sold Out';
-                    } else if (event.spotsAvailable !== null && event.spotsAvailable <= 5) {
-                        tooltip += `\n⚠️ ${event.spotsAvailable} spot${event.spotsAvailable === 1 ? '' : 's'} left`;
-                    } else if (event.spotsAvailable !== null) {
-                        tooltip += `\n✓ ${event.spotsAvailable} spots available`;
+                    // Check if registration opens in the future
+                    if (event.registrationOpenDate) {
+                        const openDate = new Date(event.registrationOpenDate);
+                        const now = new Date();
+                        if (openDate > now) {
+                            const daysUntil = Math.ceil((openDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                            if (daysUntil === 0) tooltip += '\n🕐 Registration opens today';
+                            else if (daysUntil === 1) tooltip += '\n🕐 Registration opens tomorrow';
+                            else if (daysUntil <= 7) tooltip += `\n🕐 Registration opens in ${daysUntil} days`;
+                            else tooltip += '\n🕐 Registration coming soon';
+                        }
+                    }
+                    // Add availability to tooltip (only if registration is open)
+                    if (!event.registrationOpenDate || new Date(event.registrationOpenDate) <= new Date()) {
+                        if (event.spotsAvailable === 0) {
+                            tooltip += '\n⛔ Sold Out';
+                        } else if (event.spotsAvailable !== null && event.spotsAvailable <= 5) {
+                            tooltip += `\n⚠️ ${event.spotsAvailable} spot${event.spotsAvailable === 1 ? '' : 's'} left`;
+                        } else if (event.spotsAvailable !== null) {
+                            tooltip += `\n✓ ${event.spotsAvailable} spots available`;
+                        }
                     }
                     info.el.title = tooltip;
                 }
