@@ -2166,17 +2166,15 @@ window.CLUBCALENDAR_CONFIG = {
             log('INIT', 'Injecting styles...');
             injectStyles();
 
-            log('INIT', 'Loading FullCalendar library...');
-            await loadFullCalendar();
-            log('INIT', '✓ FullCalendar loaded');
-
             const container = document.querySelector(CONFIG.container);
             if (!container) throw new Error(`Container not found: ${CONFIG.container}`);
 
             container.innerHTML = '<div class="clubcal-loading">Loading ClubCalendar...</div>';
 
-            log('INIT', 'Fetching data from WA API...');
-            const [userResult, events] = await Promise.all([
+            // Load FullCalendar library AND fetch API data in parallel for faster init
+            log('INIT', 'Loading FullCalendar + fetching API data in parallel...');
+            const [, userResult, events] = await Promise.all([
+                loadFullCalendar().then(() => log('INIT', '✓ FullCalendar loaded')),
                 (async () => {
                     const user = await WaApi.getCurrentUser();
                     const regs = user?.Id ? await WaApi.getContactRegistrations(user.Id) : [];
