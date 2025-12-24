@@ -1,0 +1,68 @@
+<!--
+  ClubCalendar WA Native - Embed Example
+  ═══════════════════════════════════════════════════════════════════════════
+
+  This code goes in a Wild Apricot Custom HTML gadget.
+  NO EXTERNAL SERVER REQUIRED - runs entirely on the WA page.
+
+  REQUIREMENTS:
+  1. User must be logged in to WA to see events
+  2. You need your WA Account ID (find in WA Admin > Settings > Account)
+  3. You need a Client ID (create in WA Admin > Settings > Authorized applications)
+
+  HOW TO GET CLIENT ID:
+  1. Go to WA Admin > Settings > Authorized applications
+  2. Click "New application"
+  3. Name: "ClubCalendar Widget"
+  4. Application type: "JavaScript"
+  5. Redirect URI: Leave blank or use your WA site URL
+  6. Copy the Client ID
+
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+
+<!-- Calendar Container -->
+<div id="clubcalendar"></div>
+
+<!-- Configuration -->
+<script>
+window.CLUBCALENDAR_CONFIG = {
+    // REQUIRED: Your Wild Apricot Account ID
+    // Find in WA Admin > Settings > Account details
+    waAccountId: 'YOUR_ACCOUNT_ID_HERE',  // e.g., '123456'
+
+    // REQUIRED: Your WA API Client ID
+    // Create in WA Admin > Settings > Authorized applications
+    waClientId: 'YOUR_CLIENT_ID_HERE',     // e.g., 'abc123def456'
+
+    // Optional customization
+    headerTitle: 'Club Events',
+    showMyEvents: true,                    // Show "My Events" tab (auto-loads user's registrations)
+    showFilters: true,                     // Show filter buttons
+    defaultView: 'dayGridMonth',           // 'dayGridMonth', 'timeGridWeek', 'listMonth'
+    primaryColor: '#2c5aa0',               // Match your WA theme
+    accentColor: '#d4a800',
+
+    // Auto-tagging rules (customize for your club's event naming conventions)
+    autoTagRules: [
+        // Add rules for your committees/groups
+        // Format: { type: 'name-prefix', pattern: 'Committee Name:', tag: 'committee:tag-name' }
+        { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
+        { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
+        { type: 'name-prefix', pattern: 'Wine Appreciation:', tag: 'committee:wine' },
+        { type: 'name-prefix', pattern: 'TGIF:', tag: 'committee:tgif' },
+        // Add activity-based tags
+        { type: 'name-contains', pattern: 'hike', tag: 'activity:outdoors' },
+        { type: 'name-contains', pattern: 'wine', tag: 'activity:wine' }
+    ]
+};
+</script>
+
+<!-- Load the widget (host this file or use CDN) -->
+<script src="https://your-hosting.com/clubcalendar-widget-wa.js"></script>
+
+<!--
+  ALTERNATIVE: Inline the script directly in WA
+  If you can't host the JS file externally, you can paste the entire
+  clubcalendar-widget-wa.js contents here between <script></script> tags.
+-->
