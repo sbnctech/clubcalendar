@@ -231,6 +231,34 @@ export function deriveCostCategory(minPrice: number | null | undefined): string 
   return 'cost:over-100';
 }
 
+export interface PriceIndicator {
+  symbol: string;  // "$", "$$", "$$$", "$$$$", or "Free"
+  label: string;   // Human-readable label
+  level: number;   // 0-4 (for styling)
+}
+
+/**
+ * Get Yelp-style price indicator from price
+ */
+export function getPriceIndicator(minPrice: number | null | undefined): PriceIndicator {
+  if (minPrice === null || minPrice === undefined) {
+    return { symbol: '', label: '', level: -1 };
+  }
+  if (minPrice === 0) {
+    return { symbol: 'Free', label: 'Free', level: 0 };
+  }
+  if (minPrice < 25) {
+    return { symbol: '$', label: 'Under $25', level: 1 };
+  }
+  if (minPrice < 50) {
+    return { symbol: '$$', label: '$25-49', level: 2 };
+  }
+  if (minPrice < 100) {
+    return { symbol: '$$$', label: '$50-99', level: 3 };
+  }
+  return { symbol: '$$$$', label: '$100+', level: 4 };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // ACTIVITY TYPE
 // ═══════════════════════════════════════════════════════════════
