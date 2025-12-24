@@ -1329,6 +1329,14 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcal-price-indicator.level-2 { color: #f9a825; background: #fffde7; }
 .clubcal-price-indicator.level-3 { color: #ef6c00; background: #fff3e0; }
 .clubcal-price-indicator.level-4 { color: #c62828; background: #ffebee; }
+
+/* List view enhancements */
+.clubcal-list-event { display: flex; flex-direction: column; gap: 2px; }
+.clubcal-list-event-main { display: flex; align-items: center; gap: 8px; }
+.clubcal-list-event-title { font-weight: 500; }
+.clubcal-list-event-details { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #666; }
+.clubcal-list-location { color: #666; }
+.clubcal-list-event .clubcal-availability { margin-top: 0; }
 `;
 
         // Get preset extra CSS
@@ -1750,6 +1758,33 @@ window.CLUBCALENDAR_CONFIG = {
             eventClick: (info) => {
                 const event = info.event.extendedProps.originalEvent;
                 if (event?.url) window.open(event.url, '_blank');
+            },
+            eventContent: (arg) => {
+                // Enhanced content for list view
+                if (arg.view.type.startsWith('list')) {
+                    const event = arg.event.extendedProps.originalEvent;
+                    if (!event) return { html: arg.event.title };
+
+                    const priceHtml = getPriceIndicatorHtml(event.minPrice);
+                    const availHtml = getAvailabilityHtml(event);
+                    const location = event.location ? `<span class="clubcal-list-location">${escapeHtml(event.location)}</span>` : '';
+
+                    return {
+                        html: `
+                            <div class="clubcal-list-event">
+                                <div class="clubcal-list-event-main">
+                                    <span class="clubcal-list-event-title">${escapeHtml(arg.event.title)}</span>
+                                    ${priceHtml}
+                                </div>
+                                <div class="clubcal-list-event-details">
+                                    ${location}${availHtml}
+                                </div>
+                            </div>
+                        `
+                    };
+                }
+                // Default for other views
+                return { html: arg.event.title };
             },
             eventDidMount: (info) => {
                 const event = info.event.extendedProps.originalEvent;
