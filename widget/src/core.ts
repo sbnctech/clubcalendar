@@ -592,6 +592,45 @@ export function filterBySearch(
 }
 
 // ═══════════════════════════════════════════════════════════════
+// AVAILABILITY DISPLAY
+// ═══════════════════════════════════════════════════════════════
+
+export type AvailabilityStatus = 'unlimited' | 'sold-out' | 'limited' | 'open';
+
+export interface AvailabilityInfo {
+  status: AvailabilityStatus;
+  spots: number | null;
+  label: string;
+}
+
+/**
+ * Get availability information for an event
+ */
+export function getAvailabilityInfo(spotsAvailable: number | null): AvailabilityInfo {
+  if (spotsAvailable === null || spotsAvailable === undefined) {
+    return { status: 'unlimited', spots: null, label: '' };
+  }
+
+  if (spotsAvailable === 0) {
+    return { status: 'sold-out', spots: 0, label: 'Sold Out' };
+  }
+
+  if (spotsAvailable <= 5) {
+    return {
+      status: 'limited',
+      spots: spotsAvailable,
+      label: `${spotsAvailable} spot${spotsAvailable === 1 ? '' : 's'} left`
+    };
+  }
+
+  return {
+    status: 'open',
+    spots: spotsAvailable,
+    label: `${spotsAvailable} spots`
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // THEME DETECTION & CSS SYSTEM
 // ═══════════════════════════════════════════════════════════════
 

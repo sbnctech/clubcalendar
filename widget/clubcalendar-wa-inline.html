@@ -828,6 +828,30 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
+     * Get availability HTML for an event showing spots remaining
+     * Returns empty string if unlimited spots (spotsAvailable is null)
+     */
+    function getAvailabilityHtml(event) {
+        const spots = event.spotsAvailable;
+
+        // Don't show for unlimited registration
+        if (spots === null || spots === undefined) return '';
+
+        // Sold out
+        if (spots === 0) {
+            return '<div class="clubcal-availability sold-out">Sold Out</div>';
+        }
+
+        // Limited spots (5 or fewer)
+        if (spots <= 5) {
+            return `<div class="clubcal-availability limited">${spots} spot${spots === 1 ? '' : 's'} left</div>`;
+        }
+
+        // Available spots
+        return `<div class="clubcal-availability open">${spots} spots</div>`;
+    }
+
+    /**
      * Build options HTML for a dropdown
      */
     function buildDropdownOptions(options, selectedValue) {
@@ -1240,6 +1264,12 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcal-login-required { text-align: center; padding: 40px; background: #fff3e0; border-radius: var(--clubcal-card-radius); color: #e65100; }
 .clubcal-event-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .clubcal-tag { padding: 2px 8px; background: #e0e0e0; border-radius: 12px; font-size: 11px; color: #555; }
+
+/* Availability indicator */
+.clubcal-availability { font-size: 12px; font-weight: 500; margin-top: 4px; }
+.clubcal-availability.sold-out { color: #c62828; }
+.clubcal-availability.limited { color: #ef6c00; }
+.clubcal-availability.open { color: #2e7d32; }
 `;
 
         // Get preset extra CSS
@@ -1449,6 +1479,9 @@ window.CLUBCALENDAR_CONFIG = {
                         ${displayTags.map(t => `<span class="clubcal-tag">${escapeHtml(t)}</span>`).join('')}
                     </div>` : '';
 
+        // Build availability indicator
+        const availHtml = getAvailabilityHtml(event);
+
         return `
             <div class="clubcal-event-card" onclick="window.open('${event.url}', '_blank')">
                 <div class="clubcal-event-card-date">
@@ -1462,7 +1495,7 @@ window.CLUBCALENDAR_CONFIG = {
                     <div class="clubcal-event-card-meta">
                         <span>${time}</span>
                         ${event.location ? `<span>${escapeHtml(event.location)}</span>` : ''}
-                    </div>${tagsHtml}
+                    </div>${tagsHtml}${availHtml}
                 </div>
                 <div class="clubcal-event-card-status">${badge}</div>
             </div>`;
@@ -1648,7 +1681,19 @@ window.CLUBCALENDAR_CONFIG = {
             },
             eventDidMount: (info) => {
                 const event = info.event.extendedProps.originalEvent;
-                if (event) info.el.title = `${event.name}\n${event.location || ''}`;
+                if (event) {
+                    let tooltip = event.name;
+                    if (event.location) tooltip += `\n${event.location}`;
+                    // Add availability to tooltip
+                    if (event.spotsAvailable === 0) {
+                        tooltip += '\n⛔ Sold Out';
+                    } else if (event.spotsAvailable !== null && event.spotsAvailable <= 5) {
+                        tooltip += `\n⚠️ ${event.spotsAvailable} spot${event.spotsAvailable === 1 ? '' : 's'} left`;
+                    } else if (event.spotsAvailable !== null) {
+                        tooltip += `\n✓ ${event.spotsAvailable} spots available`;
+                    }
+                    info.el.title = tooltip;
+                }
             }
         });
         calendarInstance.render();
