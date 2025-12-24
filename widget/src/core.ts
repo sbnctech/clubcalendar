@@ -15,6 +15,35 @@ export interface AutoTagRule {
   tag: string;
 }
 
+/**
+ * Configuration for parsing event titles
+ * SBNC uses "Committee: Event Title" format, but other orgs may not
+ */
+export interface TitleParsingConfig {
+  enabled: boolean;              // If false, use full title as-is
+  separator: string;             // Character(s) separating prefix from title
+  maxSeparatorPosition: number;  // How far into title to look for separator
+  defaultCategory: string;       // Category when no prefix found
+  stripChars: string;            // Characters to strip from prefix
+}
+
+export const DEFAULT_TITLE_PARSING: TitleParsingConfig = {
+  enabled: true,
+  separator: ':',
+  maxSeparatorPosition: 30,
+  defaultCategory: 'General',
+  stripChars: '*-()'
+};
+
+// Disabled title parsing - use for orgs that don't pack metadata into titles
+export const DISABLED_TITLE_PARSING: TitleParsingConfig = {
+  enabled: false,
+  separator: ':',
+  maxSeparatorPosition: 30,
+  defaultCategory: '',
+  stripChars: ''
+};
+
 export interface WaEvent {
   Id: number;
   Name: string;
@@ -435,19 +464,33 @@ export function isPublicEvent(waEvent: WaEvent): boolean {
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Extract committee name from event name (before the colon)
+ * Extract committee/category name from event name (before the separator)
+ * With config.enabled=false, returns defaultCategory (typically empty string)
  */
-export function extractCommittee(name: string): string {
-  const idx = name.indexOf(':');
-  return (idx > 0 && idx < 30) ? name.substring(0, idx).replace(/[*\-()]/g, '').trim() : 'General';
+export function extractCommittee(name: string, config: TitleParsingConfig = DEFAULT_TITLE_PARSING): string {
+  if (!config.enabled) return config.defaultCategory;
+
+  const idx = name.indexOf(config.separator);
+  if (idx > 0 && idx < config.maxSeparatorPosition) {
+    // Build regex to strip specified characters
+    const stripRegex = config.stripChars
+      ? new RegExp(`[${config.stripChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`, 'g')
+      : null;
+    const prefix = name.substring(0, idx);
+    return stripRegex ? prefix.replace(stripRegex, '').trim() : prefix.trim();
+  }
+  return config.defaultCategory;
 }
 
 /**
- * Get clean title from event name (after the colon)
+ * Get clean title from event name (after the separator)
+ * With config.enabled=false, returns the full name unchanged
  */
-export function getCleanTitle(name: string): string {
-  const idx = name.indexOf(':');
-  return (idx > 0 && idx < 30) ? name.substring(idx + 1).trim() : name;
+export function getCleanTitle(name: string, config: TitleParsingConfig = DEFAULT_TITLE_PARSING): string {
+  if (!config.enabled) return name;
+
+  const idx = name.indexOf(config.separator);
+  return (idx > 0 && idx < config.maxSeparatorPosition) ? name.substring(idx + config.separator.length).trim() : name;
 }
 
 /**

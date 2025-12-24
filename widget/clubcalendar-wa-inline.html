@@ -107,7 +107,15 @@ window.CLUBCALENDAR_CONFIG = {
         autoTheme: true,           // Auto-detect theme from WA page elements
         stylePreset: 'default',    // 'default', 'compact', 'minimal', 'wa-compatible'
         cssVars: {},               // Custom CSS variable overrides
-        customCSS: ''              // Raw CSS to inject (highest priority)
+        customCSS: '',             // Raw CSS to inject (highest priority)
+        // Title parsing - set enabled:false for orgs that don't use "Committee: Title" format
+        titleParsing: {
+            enabled: true,           // If false, use full title as-is
+            separator: ':',          // Character separating prefix from title
+            maxSeparatorPosition: 30,// How far into title to look for separator
+            defaultCategory: 'General', // Category when no prefix found
+            stripChars: '*-()'       // Characters to strip from prefix
+        }
     };
 
     let CONFIG = Object.assign({}, DEFAULT_CONFIG, window.CLUBCALENDAR_CONFIG || {});
@@ -824,13 +832,34 @@ window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
 
     function extractCommittee(name) {
-        const idx = name.indexOf(':');
-        return (idx > 0 && idx < 30) ? name.substring(0, idx).replace(/[*\-()]/g, '').trim() : 'General';
+        const tp = CONFIG.titleParsing || {};
+        if (tp.enabled === false) return tp.defaultCategory || '';
+
+        const sep = tp.separator || ':';
+        const maxPos = tp.maxSeparatorPosition || 30;
+        const defaultCat = tp.defaultCategory || 'General';
+        const stripChars = tp.stripChars || '*-()';
+
+        const idx = name.indexOf(sep);
+        if (idx > 0 && idx < maxPos) {
+            const stripRegex = stripChars
+                ? new RegExp(`[${stripChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`, 'g')
+                : null;
+            const prefix = name.substring(0, idx);
+            return stripRegex ? prefix.replace(stripRegex, '').trim() : prefix.trim();
+        }
+        return defaultCat;
     }
 
     function getCleanTitle(name) {
-        const idx = name.indexOf(':');
-        return (idx > 0 && idx < 30) ? name.substring(idx + 1).trim() : name;
+        const tp = CONFIG.titleParsing || {};
+        if (tp.enabled === false) return name;
+
+        const sep = tp.separator || ':';
+        const maxPos = tp.maxSeparatorPosition || 30;
+
+        const idx = name.indexOf(sep);
+        return (idx > 0 && idx < maxPos) ? name.substring(idx + sep.length).trim() : name;
     }
 
     function getTimeOfDayClass(startDate) {

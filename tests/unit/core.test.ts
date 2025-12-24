@@ -21,6 +21,9 @@ import {
   ACTIVITY_TYPE_MAP,
   AutoTagRule,
   WaEvent,
+  TitleParsingConfig,
+  DEFAULT_TITLE_PARSING,
+  DISABLED_TITLE_PARSING,
 } from '../../widget/src/core';
 
 import {
@@ -355,6 +358,51 @@ describe('extractCommittee', () => {
     expect(extractCommittee('Games*: Something')).toBe('Games');
     expect(extractCommittee('Test-Group: Event')).toBe('TestGroup');
   });
+
+  describe('with custom config', () => {
+    it('should return empty string when parsing disabled', () => {
+      expect(extractCommittee('Happy Hikers: Morning Walk', DISABLED_TITLE_PARSING)).toBe('');
+      expect(extractCommittee('Games!: Board Game Night', DISABLED_TITLE_PARSING)).toBe('');
+    });
+
+    it('should use custom separator', () => {
+      const config: TitleParsingConfig = {
+        ...DEFAULT_TITLE_PARSING,
+        separator: ' - ',
+      };
+      expect(extractCommittee('Happy Hikers - Morning Walk', config)).toBe('Happy Hikers');
+      expect(extractCommittee('TGIF - Beach Party', config)).toBe('TGIF');
+    });
+
+    it('should use custom default category', () => {
+      const config: TitleParsingConfig = {
+        ...DEFAULT_TITLE_PARSING,
+        defaultCategory: 'Uncategorized',
+      };
+      expect(extractCommittee('Monthly Meeting', config)).toBe('Uncategorized');
+    });
+
+    it('should respect maxSeparatorPosition', () => {
+      const config: TitleParsingConfig = {
+        ...DEFAULT_TITLE_PARSING,
+        maxSeparatorPosition: 5,
+      };
+      // Colon at position 12 - beyond max, so returns default
+      expect(extractCommittee('Happy Hikers: Morning Walk', config)).toBe('General');
+      // Colon at position 4 - within max
+      expect(extractCommittee('TGIF: Beach Party', config)).toBe('TGIF');
+    });
+
+    it('should use custom stripChars', () => {
+      const config: TitleParsingConfig = {
+        ...DEFAULT_TITLE_PARSING,
+        stripChars: '!@#',
+      };
+      // Only strips specified chars, not - or *
+      expect(extractCommittee('Games!: Something', config)).toBe('Games');
+      expect(extractCommittee('Test*: Event', config)).toBe('Test*');
+    });
+  });
 });
 
 describe('getCleanTitle', () => {
@@ -365,6 +413,33 @@ describe('getCleanTitle', () => {
 
   it('should return full name if no colon', () => {
     expect(getCleanTitle('Monthly Meeting')).toBe('Monthly Meeting');
+  });
+
+  describe('with custom config', () => {
+    it('should return full name when parsing disabled', () => {
+      expect(getCleanTitle('Happy Hikers: Morning Walk', DISABLED_TITLE_PARSING)).toBe('Happy Hikers: Morning Walk');
+      expect(getCleanTitle('TGIF: Beach Party', DISABLED_TITLE_PARSING)).toBe('TGIF: Beach Party');
+    });
+
+    it('should use custom separator', () => {
+      const config: TitleParsingConfig = {
+        ...DEFAULT_TITLE_PARSING,
+        separator: ' | ',
+      };
+      expect(getCleanTitle('Category | Event Name', config)).toBe('Event Name');
+      expect(getCleanTitle('No Separator Here', config)).toBe('No Separator Here');
+    });
+
+    it('should respect maxSeparatorPosition', () => {
+      const config: TitleParsingConfig = {
+        ...DEFAULT_TITLE_PARSING,
+        maxSeparatorPosition: 5,
+      };
+      // Colon at position 12 - beyond max, returns full name
+      expect(getCleanTitle('Happy Hikers: Morning Walk', config)).toBe('Happy Hikers: Morning Walk');
+      // Colon at position 4 - within max
+      expect(getCleanTitle('TGIF: Beach Party', config)).toBe('Beach Party');
+    });
   });
 });
 
