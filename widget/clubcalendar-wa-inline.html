@@ -123,6 +123,11 @@ window.CLUBCALENDAR_CONFIG = {
     let CONFIG = Object.assign({}, DEFAULT_CONFIG, window.CLUBCALENDAR_CONFIG || {});
     let allEvents = [];
     let filteredEvents = [];
+    let eventIndex = new Map();  // O(1) event lookup by ID
+
+    // Dropdown option caches (invalidated when events change)
+    let cachedCommittees = null;
+    let cachedTags = null;
 
     /**
      * Deep merge config objects (one level deep for nested objects)
@@ -432,30 +437,62 @@ window.CLUBCALENDAR_CONFIG = {
         }
     };
 
-    // Store for waitlist counts (eventId -> count)
-    let waitlistCounts = {};
+    // Store for waitlist counts with TTL (eventId -> {count, timestamp})
+    let waitlistCache = {};
+    const WAITLIST_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+    /**
+     * Get cached waitlist count if still valid
+     */
+    function getCachedWaitlistCount(eventId) {
+        const cached = waitlistCache[eventId];
+        if (cached && Date.now() - cached.timestamp < WAITLIST_CACHE_TTL) {
+            return cached.count;
+        }
+        return null;
+    }
+
+    // Legacy accessor for display functions
+    const waitlistCounts = new Proxy({}, {
+        get(target, eventId) {
+            const cached = waitlistCache[eventId];
+            return cached ? cached.count : undefined;
+        }
+    });
 
     /**
      * Fetch waitlist counts for sold-out events
      * Only fetches for events that are full to minimize API calls
+     * Uses caching to avoid refetching within TTL window
      */
     async function fetchWaitlistCounts() {
         if (!CONFIG.showWaitlistCount) return;
 
-        // Find sold-out events
+        // Find sold-out events that need fetching (not cached or cache expired)
+        const now = Date.now();
         const soldOutEvents = allEvents.filter(e => e.spotsAvailable === 0);
+        const eventsToFetch = soldOutEvents.filter(e => {
+            const cached = waitlistCache[e.id];
+            return !cached || (now - cached.timestamp >= WAITLIST_CACHE_TTL);
+        });
+
         if (soldOutEvents.length === 0) {
             log('WAITLIST', 'No sold-out events, skipping waitlist fetch');
             return;
         }
 
-        log('WAITLIST', `Fetching waitlist counts for ${soldOutEvents.length} sold-out events...`);
+        if (eventsToFetch.length === 0) {
+            log('WAITLIST', `All ${soldOutEvents.length} sold-out events have cached waitlist counts`);
+            return;
+        }
+
+        log('WAITLIST', `Fetching waitlist counts for ${eventsToFetch.length}/${soldOutEvents.length} sold-out events (${soldOutEvents.length - eventsToFetch.length} cached)...`);
         const startTime = performance.now();
 
         // Fetch in parallel with a concurrency limit
         const CONCURRENCY = 5;
-        for (let i = 0; i < soldOutEvents.length; i += CONCURRENCY) {
-            const batch = soldOutEvents.slice(i, i + CONCURRENCY);
+        for (let i = 0; i < eventsToFetch.length; i += CONCURRENCY) {
+            const batch = eventsToFetch.slice(i, i + CONCURRENCY);
             await Promise.all(batch.map(async (event) => {
                 try {
                     const registrations = await WaApi.getEventRegistrations(event.id);
@@ -463,15 +500,15 @@ window.CLUBCALENDAR_CONFIG = {
                         r.OnWaitlist === true ||
                         (r.Status && r.Status.toLowerCase().includes('waitlist'))
                     );
-                    waitlistCounts[event.id] = waitlisted.length;
+                    waitlistCache[event.id] = { count: waitlisted.length, timestamp: Date.now() };
                 } catch (e) {
-                    waitlistCounts[event.id] = null;
+                    waitlistCache[event.id] = { count: null, timestamp: Date.now() };
                 }
             }));
         }
 
         const elapsed = (performance.now() - startTime).toFixed(0);
-        const totalWaitlisted = Object.values(waitlistCounts).reduce((sum, n) => sum + (n || 0), 0);
+        const totalWaitlisted = Object.values(waitlistCache).reduce((sum, c) => sum + (c.count || 0), 0);
         log('WAITLIST', `✓ Fetched waitlist counts in ${elapsed}ms: ${totalWaitlisted} total waitlisted across ${soldOutEvents.length} events`);
 
         // Refresh display to show waitlist counts
@@ -727,13 +764,16 @@ window.CLUBCALENDAR_CONFIG = {
         const confirmed = waEvent.ConfirmedRegistrationsCount || 0;
         const spotsAvailable = (limit == null) ? null : Math.max(0, limit - confirmed);
 
+        const location = waEvent.Location || '';
+        const description = waEvent.Details?.DescriptionHtml || '';
+
         const transformed = {
             id: waEvent.Id,
             name: eventName,
             startDate: startDate,
             endDate: waEvent.EndDate || '',
-            location: waEvent.Location || '',
-            description: waEvent.Details?.DescriptionHtml || '',
+            location: location,
+            description: description,
             url: waEvent.Url || `https://sbnewcomers.org/event-${waEvent.Id}`,
             registrationUrl: waEvent.RegistrationUrl || '',
             tags: allTags,
@@ -748,7 +788,11 @@ window.CLUBCALENDAR_CONFIG = {
             maxPrice: pricing.maxPrice,
             isFree: pricing.isFree,
             isPublic: isPublicEvent,
-            activityType: activityTag ? activityTag.replace('activity:', '') : null
+            activityType: activityTag ? activityTag.replace('activity:', '') : null,
+            // Pre-computed search fields for O(1) filtering
+            _searchName: eventName.toLowerCase(),
+            _searchLocation: location.toLowerCase(),
+            _searchDescription: description.toLowerCase()
         };
 
         // Log sample transformation for debugging
@@ -842,12 +886,12 @@ window.CLUBCALENDAR_CONFIG = {
                 if (!event.tags.includes(currentFilters.tag)) return false;
             }
 
-            // Text search filter (searches name and description)
+            // Text search filter (uses pre-computed lowercase fields for performance)
             if (currentFilters.search && currentFilters.search.trim()) {
                 const searchTerm = currentFilters.search.toLowerCase().trim();
-                const nameMatch = event.name.toLowerCase().includes(searchTerm);
-                const descMatch = event.description && event.description.toLowerCase().includes(searchTerm);
-                const locationMatch = event.location && event.location.toLowerCase().includes(searchTerm);
+                const nameMatch = event._searchName.includes(searchTerm);
+                const descMatch = event._searchDescription.includes(searchTerm);
+                const locationMatch = event._searchLocation.includes(searchTerm);
                 if (!nameMatch && !descMatch && !locationMatch) return false;
             }
 
@@ -936,9 +980,11 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
-     * Get available committees from events for dropdown
+     * Get available committees from events for dropdown (cached)
      */
     function getAvailableCommittees() {
+        if (cachedCommittees !== null) return cachedCommittees;
+
         const committees = new Map();
         for (const event of allEvents) {
             const committee = extractCommittee(event.name);
@@ -949,9 +995,10 @@ window.CLUBCALENDAR_CONFIG = {
                 }
             }
         }
-        return Array.from(committees.entries())
+        cachedCommittees = Array.from(committees.entries())
             .sort((a, b) => a[1].localeCompare(b[1]))
             .map(([value, label]) => ({ value, label }));
+        return cachedCommittees;
     }
 
     /**
@@ -964,9 +1011,11 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
-     * Get available manual tags from events for dropdown
+     * Get available manual tags from events for dropdown (cached)
      */
     function getAvailableTags() {
+        if (cachedTags !== null) return cachedTags;
+
         const tags = new Set();
         for (const event of allEvents) {
             for (const tag of event.tags) {
@@ -975,7 +1024,8 @@ window.CLUBCALENDAR_CONFIG = {
                 }
             }
         }
-        return Array.from(tags).sort().map(tag => ({ value: tag, label: tag }));
+        cachedTags = Array.from(tags).sort().map(tag => ({ value: tag, label: tag }));
+        return cachedTags;
     }
 
     /**
@@ -1701,7 +1751,8 @@ window.CLUBCALENDAR_CONFIG = {
 
         const now = new Date();
         const myEvents = myRegistrations.map(reg => {
-            const event = allEvents.find(e => e.id === reg.Event?.Id);
+            // Use eventIndex for O(1) lookup instead of O(n) find()
+            const event = eventIndex.get(reg.Event?.Id);
             if (!event) return null;
             const eventDate = new Date(event.startDate);
             return { ...event, registrationStatus: reg.Status, isWaitlist: reg.Status?.toLowerCase().includes('waitlist'), isPast: eventDate < now };
@@ -2154,6 +2205,12 @@ window.CLUBCALENDAR_CONFIG = {
             allEvents = validEvents.map((e, i) => transformEvent(e, i < 3));
             filteredEvents = [...allEvents];
 
+            // Build event index for O(1) lookups and invalidate dropdown caches
+            eventIndex.clear();
+            allEvents.forEach(e => eventIndex.set(e.id, e));
+            cachedCommittees = null;
+            cachedTags = null;
+
             // Log tag summary
             const tagCounts = {};
             allEvents.forEach(e => e.tags.forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
@@ -2225,7 +2282,12 @@ window.CLUBCALENDAR_CONFIG = {
             allEvents = (await WaApi.getEvents(CONFIG.pastEventsVisible ? CONFIG.pastEventsDays : 0))
                 .filter(e => !(e.Name || '').toUpperCase().includes('CANCELLED')).map(transformEvent);
             filteredEvents = [...allEvents];
-            waitlistCounts = {}; // Clear cached counts
+            // Build event index and invalidate caches
+            eventIndex.clear();
+            allEvents.forEach(e => eventIndex.set(e.id, e));
+            cachedCommittees = null;
+            cachedTags = null;
+            waitlistCache = {}; // Clear cached waitlist counts
             applyFilters();
             if (CONFIG.showWaitlistCount) {
                 fetchWaitlistCounts().catch(e => log('WAITLIST', '⚠️ Failed to fetch waitlist counts:', e.message));
