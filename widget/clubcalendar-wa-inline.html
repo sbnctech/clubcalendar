@@ -132,7 +132,12 @@ window.CLUBCALENDAR_CONFIG = {
     let currentUser = null;
     let myRegistrations = [];
     let calendarInstance = null;
-    let currentFilters = {
+
+    // Storage key for user preferences
+    const STORAGE_KEY = 'clubcalendar_preferences';
+
+    // Default filter state
+    const DEFAULT_FILTERS = {
         quickFilters: [],
         committee: null,
         activity: null,
@@ -144,6 +149,56 @@ window.CLUBCALENDAR_CONFIG = {
         search: '',
         time: 'upcoming'
     };
+
+    let currentFilters = { ...DEFAULT_FILTERS };
+
+    /**
+     * Save current preferences to localStorage
+     */
+    function savePreferences() {
+        try {
+            const prefs = {
+                filters: currentFilters,
+                view: calendarInstance?.view?.type || CONFIG.defaultView,
+                savedAt: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+            log('PREFS', 'Saved preferences', prefs);
+        } catch (e) {
+            log('PREFS', 'Failed to save preferences', e);
+        }
+    }
+
+    /**
+     * Load preferences from localStorage
+     */
+    function loadPreferences() {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return null;
+            const prefs = JSON.parse(stored);
+            // Check if preferences are less than 30 days old
+            if (prefs.savedAt && Date.now() - prefs.savedAt < 30 * 24 * 60 * 60 * 1000) {
+                log('PREFS', 'Loaded preferences', prefs);
+                return prefs;
+            }
+        } catch (e) {
+            log('PREFS', 'Failed to load preferences', e);
+        }
+        return null;
+    }
+
+    /**
+     * Clear saved preferences
+     */
+    function clearPreferences() {
+        try {
+            localStorage.removeItem(STORAGE_KEY);
+            log('PREFS', 'Cleared preferences');
+        } catch (e) {
+            log('PREFS', 'Failed to clear preferences', e);
+        }
+    }
 
     // Filter display labels
     const FILTER_LABELS = {
@@ -744,6 +799,7 @@ window.CLUBCALENDAR_CONFIG = {
         });
         renderActiveFilterChips();
         updateDisplay();
+        savePreferences();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1746,12 +1802,46 @@ window.CLUBCALENDAR_CONFIG = {
     // CALENDAR
     // ═══════════════════════════════════════════════════════════════
 
-    function initCalendar() {
+    /**
+     * Apply current filter state to UI elements
+     */
+    function applyFilterStateToUI() {
+        // Quick filters
+        document.querySelectorAll('.clubcal-quick-filter').forEach(btn => {
+            const filter = btn.dataset.filter;
+            if (currentFilters.quickFilters.includes(filter)) {
+                btn.classList.add('active');
+            }
+        });
+
+        // Dropdown filters
+        const committeeSelect = document.getElementById('clubcal-filter-committee');
+        if (committeeSelect && currentFilters.committee) committeeSelect.value = currentFilters.committee;
+
+        const activitySelect = document.getElementById('clubcal-filter-activity');
+        if (activitySelect && currentFilters.activity) activitySelect.value = currentFilters.activity;
+
+        const priceSelect = document.getElementById('clubcal-filter-price');
+        if (priceSelect && currentFilters.price) priceSelect.value = currentFilters.price;
+
+        const tagSelect = document.getElementById('clubcal-filter-tag');
+        if (tagSelect && currentFilters.tag) tagSelect.value = currentFilters.tag;
+
+        // Search input
+        const searchInput = document.getElementById('clubcal-search-input');
+        if (searchInput && currentFilters.search) {
+            searchInput.value = currentFilters.search;
+            const clearBtn = document.getElementById('clubcal-search-clear');
+            if (clearBtn) clearBtn.style.display = currentFilters.search ? 'block' : 'none';
+        }
+    }
+
+    function initCalendar(initialView) {
         const el = document.getElementById('clubcalendar-content');
         if (!el) return;
 
         calendarInstance = new FullCalendar.Calendar(el, {
-            initialView: CONFIG.defaultView,
+            initialView: initialView || CONFIG.defaultView,
             headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listMonth' },
             events: transformEventsForCalendar(filteredEvents),
             eventDisplay: CONFIG.showEventDots !== false ? 'auto' : 'none',
@@ -1815,6 +1905,10 @@ window.CLUBCALENDAR_CONFIG = {
                     }
                     info.el.title = tooltip;
                 }
+            },
+            datesSet: (info) => {
+                // Save preferences when view changes
+                savePreferences();
             }
         });
         calendarInstance.render();
@@ -1907,7 +2001,25 @@ window.CLUBCALENDAR_CONFIG = {
             setupEventListeners();
             populateCommitteeDropdown();
             populateTagsDropdown();
-            initCalendar();
+
+            // Load saved preferences
+            const savedPrefs = loadPreferences();
+            let initialView = CONFIG.defaultView;
+            if (savedPrefs) {
+                // Restore saved filters
+                if (savedPrefs.filters) {
+                    Object.assign(currentFilters, savedPrefs.filters);
+                    // Restore UI state for filters
+                    applyFilterStateToUI();
+                }
+                // Use saved view
+                if (savedPrefs.view) {
+                    initialView = savedPrefs.view;
+                }
+                log('INIT', 'Restored saved preferences', savedPrefs);
+            }
+
+            initCalendar(initialView);
             applyFilters();
 
             console.log('═══════════════════════════════════════════════════════════════');
@@ -1942,10 +2054,15 @@ window.CLUBCALENDAR_CONFIG = {
         getUser: () => currentUser,
         getEvents: () => allEvents,
         clearFilters: () => {
-            currentFilters.quickFilters = [];
+            currentFilters = { ...DEFAULT_FILTERS };
             document.querySelectorAll('.clubcal-quick-filter').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.clubcal-dropdown-filter').forEach(s => s.value = '');
+            const searchInput = document.getElementById('clubcal-search-input');
+            if (searchInput) searchInput.value = '';
             applyFilters();
-        }
+        },
+        clearPreferences: clearPreferences,
+        savePreferences: savePreferences
     };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
