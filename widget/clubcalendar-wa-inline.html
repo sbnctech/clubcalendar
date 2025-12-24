@@ -147,7 +147,9 @@ window.CLUBCALENDAR_CONFIG = {
         venue: null,
         tag: null,
         search: '',
-        time: 'upcoming'
+        time: 'upcoming',
+        dateFrom: null,
+        dateTo: null
     };
 
     let currentFilters = { ...DEFAULT_FILTERS };
@@ -783,6 +785,21 @@ window.CLUBCALENDAR_CONFIG = {
                 if (!nameMatch && !descMatch && !locationMatch) return false;
             }
 
+            // Date range filter
+            if (currentFilters.dateFrom || currentFilters.dateTo) {
+                const eventDate = new Date(event.startDate);
+                if (currentFilters.dateFrom) {
+                    const fromDate = new Date(currentFilters.dateFrom);
+                    fromDate.setHours(0, 0, 0, 0);
+                    if (eventDate < fromDate) return false;
+                }
+                if (currentFilters.dateTo) {
+                    const toDate = new Date(currentFilters.dateTo);
+                    toDate.setHours(23, 59, 59, 999);
+                    if (eventDate > toDate) return false;
+                }
+            }
+
             return true;
         });
         log('FILTER', `Applied filters: ${filteredEvents.length}/${beforeCount} events`, {
@@ -1029,6 +1046,19 @@ window.CLUBCALENDAR_CONFIG = {
             chips.push(`<span class="clubcal-filter-chip clubcal-filter-chip-search" data-type="search" data-value="${escapeHtml(currentFilters.search)}">Search: "${escapeHtml(currentFilters.search)}"<button type="button" aria-label="Remove">&times;</button></span>`);
         }
 
+        // Date range chip
+        if (currentFilters.dateFrom || currentFilters.dateTo) {
+            let dateLabel = '';
+            if (currentFilters.dateFrom && currentFilters.dateTo) {
+                dateLabel = `${currentFilters.dateFrom} to ${currentFilters.dateTo}`;
+            } else if (currentFilters.dateFrom) {
+                dateLabel = `From ${currentFilters.dateFrom}`;
+            } else {
+                dateLabel = `Until ${currentFilters.dateTo}`;
+            }
+            chips.push(`<span class="clubcal-filter-chip" data-type="dateRange">Dates: ${dateLabel}<button type="button" aria-label="Remove">&times;</button></span>`);
+        }
+
         // Add clear all button if there are active filters
         if (chips.length > 0) {
             chips.push(`<button class="clubcal-clear-all" type="button">Clear all</button>`);
@@ -1096,6 +1126,13 @@ window.CLUBCALENDAR_CONFIG = {
             const searchClear = document.getElementById('clubcal-search-clear');
             if (searchInput) searchInput.value = '';
             if (searchClear) searchClear.style.display = 'none';
+        } else if (type === 'dateRange') {
+            currentFilters.dateFrom = null;
+            currentFilters.dateTo = null;
+            const dateFrom = document.getElementById('clubcal-date-from');
+            const dateTo = document.getElementById('clubcal-date-to');
+            if (dateFrom) dateFrom.value = '';
+            if (dateTo) dateTo.value = '';
         }
         applyFilters();
     }
@@ -1113,6 +1150,8 @@ window.CLUBCALENDAR_CONFIG = {
         currentFilters.venue = null;
         currentFilters.tag = null;
         currentFilters.search = '';
+        currentFilters.dateFrom = null;
+        currentFilters.dateTo = null;
 
         // Reset UI
         document.querySelectorAll('.clubcal-quick-filter').forEach(btn => btn.classList.remove('active'));
@@ -1125,6 +1164,8 @@ window.CLUBCALENDAR_CONFIG = {
         const tagDropdown = document.getElementById('clubcal-tag-filter');
         const searchInput = document.getElementById('clubcal-search-input');
         const searchClear = document.getElementById('clubcal-search-clear');
+        const dateFrom = document.getElementById('clubcal-date-from');
+        const dateTo = document.getElementById('clubcal-date-to');
         if (committeeDropdown) committeeDropdown.value = '';
         if (activityDropdown) activityDropdown.value = '';
         if (priceDropdown) priceDropdown.value = '';
@@ -1134,6 +1175,8 @@ window.CLUBCALENDAR_CONFIG = {
         if (tagDropdown) tagDropdown.value = '';
         if (searchInput) searchInput.value = '';
         if (searchClear) searchClear.style.display = 'none';
+        if (dateFrom) dateFrom.value = '';
+        if (dateTo) dateTo.value = '';
 
         applyFilters();
     }
@@ -1328,6 +1371,11 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcal-dropdown-group label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
 .clubcal-dropdown { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 13px; cursor: pointer; min-width: 120px; font-family: var(--clubcal-body-font); }
 .clubcal-dropdown:focus { outline: none; border-color: var(--clubcal-primary); box-shadow: 0 0 0 2px rgba(44,90,160,0.1); }
+.clubcal-date-range { min-width: 200px; }
+.clubcal-date-inputs { display: flex; align-items: center; gap: 6px; }
+.clubcal-date-input { padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; width: 120px; font-family: var(--clubcal-body-font); }
+.clubcal-date-input:focus { outline: none; border-color: var(--clubcal-primary); box-shadow: 0 0 0 2px rgba(44,90,160,0.1); }
+.clubcal-date-separator { color: #666; font-size: 12px; }
 .clubcal-active-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid #e0e0e0; }
 .clubcal-active-filters:empty { display: none; padding: 0; border: none; }
 .clubcal-filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--clubcal-primary); color: white; border-radius: 16px; font-size: 12px; }
@@ -1485,6 +1533,15 @@ window.CLUBCALENDAR_CONFIG = {
                                     <select id="clubcal-tag-filter" class="clubcal-dropdown">
                                         <option value="">Any</option>
                                     </select>
+                                </div>` : '',
+            df.dateRange !== false ? `
+                                <div class="clubcal-dropdown-group clubcal-date-range">
+                                    <label>Date Range</label>
+                                    <div class="clubcal-date-inputs">
+                                        <input type="date" id="clubcal-date-from" class="clubcal-date-input" placeholder="From">
+                                        <span class="clubcal-date-separator">to</span>
+                                        <input type="date" id="clubcal-date-to" class="clubcal-date-input" placeholder="To">
+                                    </div>
                                 </div>` : ''
         ].filter(h => h).join('');
 
@@ -1730,6 +1787,22 @@ window.CLUBCALENDAR_CONFIG = {
             });
         }
 
+        // Date range inputs
+        const dateFrom = document.getElementById('clubcal-date-from');
+        const dateTo = document.getElementById('clubcal-date-to');
+        if (dateFrom) {
+            dateFrom.addEventListener('change', () => {
+                currentFilters.dateFrom = dateFrom.value || null;
+                applyFilters();
+            });
+        }
+        if (dateTo) {
+            dateTo.addEventListener('change', () => {
+                currentFilters.dateTo = dateTo.value || null;
+                applyFilters();
+            });
+        }
+
         // Search input
         const searchInput = document.getElementById('clubcal-search-input');
         const searchClear = document.getElementById('clubcal-search-clear');
@@ -1834,6 +1907,12 @@ window.CLUBCALENDAR_CONFIG = {
             const clearBtn = document.getElementById('clubcal-search-clear');
             if (clearBtn) clearBtn.style.display = currentFilters.search ? 'block' : 'none';
         }
+
+        // Date range inputs
+        const dateFrom = document.getElementById('clubcal-date-from');
+        const dateTo = document.getElementById('clubcal-date-to');
+        if (dateFrom && currentFilters.dateFrom) dateFrom.value = currentFilters.dateFrom;
+        if (dateTo && currentFilters.dateTo) dateTo.value = currentFilters.dateTo;
     }
 
     function initCalendar(initialView) {
