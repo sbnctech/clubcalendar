@@ -8,15 +8,23 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:all": "vitest run && playwright test"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sbnctech/clubcalendar.git"
   },
-  "keywords": ["wild-apricot", "calendar", "widget", "events"],
+  "keywords": [
+    "wild-apricot",
+    "calendar",
+    "widget",
+    "events"
+  ],
   "author": "sbnctech",
   "license": "ISC",
   "bugs": {
@@ -25,6 +33,7 @@
   "homepage": "https://github.com/sbnctech/clubcalendar#readme",
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "serve": "^14.2.5"
+    "serve": "^14.2.5",
+    "vitest": "^4.0.16"
   }
 }
