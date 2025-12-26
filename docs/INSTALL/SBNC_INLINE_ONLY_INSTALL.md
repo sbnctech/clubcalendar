@@ -1,6 +1,17 @@
 # SBNC Inline-Only Install Guide
 
-This document is the canonical reference for embedding ClubCalendar in Wild Apricot using the inline-only method (no external server required).
+This document is the canonical reference for embedding ClubCalendar in Wild Apricot using the inline-only method.
+
+---
+
+> **NO EXTERNAL DEPENDENCIES**
+>
+> - No `mail.sbnewcomers.org` required
+> - No external server hosting required
+> - No `<script src="...">` loading required
+> - Runs entirely within Wild Apricot
+>
+> Use the canonical snippet: `docs/INSTALL/SBNC_INLINE_SNIPPET.html`
 
 ---
 
@@ -8,11 +19,13 @@ This document is the canonical reference for embedding ClubCalendar in Wild Apri
 
 | Property | Value |
 |----------|-------|
-| **Entrypoint** | `widget/clubcalendar-wa-inline.html` (self-contained) |
+| **Canonical Snippet** | `docs/INSTALL/SBNC_INLINE_SNIPPET.html` (SBNC-specific) |
+| **Generic Template** | `widget/clubcalendar-wa-inline.html` (for other orgs) |
 | **DOM Mount Point** | `<div id="clubcalendar"></div>` |
 | **Config Mechanism** | `window.CLUBCALENDAR_CONFIG` (inline object) |
 | **External Dependencies** | None (all code inlined) |
 | **Authentication** | WA session cookie (auto-detected) |
+| **SBNC Account ID** | `176353` (pre-configured in snippet) |
 
 ---
 
@@ -55,71 +68,38 @@ window.CLUBCALENDAR_CONFIG = {
 
 ## Canonical SBNC Install Snippet
 
-Copy this entire block into a Wild Apricot **Custom HTML gadget**:
+**Use this file:** `docs/INSTALL/SBNC_INLINE_SNIPPET.html`
 
-```html
-<!-- ClubCalendar for SBNC - Inline Install -->
-<div id="clubcalendar"></div>
+This file contains the complete, ready-to-paste widget with:
 
-<script>
-window.CLUBCALENDAR_CONFIG = {
-    // SBNC-specific configuration
-    waAccountId: '176353',
-    headerTitle: 'SBNC Events',
-    showMyEvents: true,
-    showFilters: true,
-    defaultView: 'dayGridMonth',
-    primaryColor: '#2c5aa0',
-    accentColor: '#d4a800',
+- SBNC branding ("SBNC Events" header)
+- SBNC Account ID pre-configured (`176353`)
+- All 18 SBNC activity committee auto-tagging rules
+- Full widget code (no assembly required)
 
-    // SBNC activity committee auto-tagging
-    autoTagRules: [
-        { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
-        { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
-        { type: 'name-prefix', pattern: 'Wine Appreciation:', tag: 'committee:wine' },
-        { type: 'name-prefix', pattern: 'Epicurious:', tag: 'committee:epicurious' },
-        { type: 'name-prefix', pattern: 'TGIF:', tag: 'committee:tgif' },
-        { type: 'name-prefix', pattern: 'Cycling:', tag: 'committee:cycling' },
-        { type: 'name-prefix', pattern: 'Golf:', tag: 'committee:golf' },
-        { type: 'name-prefix', pattern: 'Performing Arts:', tag: 'committee:performing-arts' },
-        { type: 'name-prefix', pattern: 'Local Heritage:', tag: 'committee:local-heritage' },
-        { type: 'name-prefix', pattern: 'Wellness:', tag: 'committee:wellness' },
-        { type: 'name-prefix', pattern: 'Garden:', tag: 'committee:garden' },
-        { type: 'name-prefix', pattern: 'Arts:', tag: 'committee:arts' },
-        { type: 'name-prefix', pattern: 'Current Events:', tag: 'committee:current-events' },
-        { type: 'name-prefix', pattern: 'Pop-Up:', tag: 'committee:popup' },
-        { type: 'name-prefix', pattern: 'Beer Lovers:', tag: 'committee:beer' },
-        { type: 'name-prefix', pattern: 'Out to Lunch:', tag: 'committee:out-to-lunch' },
-        { type: 'name-prefix', pattern: 'Afternoon Book:', tag: 'committee:book-clubs' },
-        { type: 'name-prefix', pattern: 'Evening Book:', tag: 'committee:book-clubs' }
-    ]
-};
-</script>
+**To install:**
 
-<!--
-  INLINE WIDGET CODE BELOW
-  Copy the entire contents of widget/clubcalendar-wa-inline.html
-  starting from the second <script> tag
--->
-```
-
-**Important:** After the config script, paste the entire widget code from `widget/clubcalendar-wa-inline.html` (the second `<script>` block containing the IIFE).
+1. Open `docs/INSTALL/SBNC_INLINE_SNIPPET.html` in a text editor
+2. Select All (Cmd+A) and Copy (Cmd+C)
+3. Paste into a Wild Apricot Custom HTML gadget
+4. Save and view the page
 
 ---
 
 ## Installation Steps
 
-1. **Open Wild Apricot Admin**
+1. **Get the snippet file**
+   - Open `docs/INSTALL/SBNC_INLINE_SNIPPET.html` in a text editor
+   - Select All (Cmd+A) and Copy (Cmd+C)
+
+2. **Open Wild Apricot Admin**
    - Navigate to Website > Site pages
    - Edit the page where you want the calendar
 
-2. **Add Custom HTML Gadget**
+3. **Add Custom HTML Gadget**
    - Insert a new gadget
    - Select "Custom HTML"
-
-3. **Paste the Code**
-   - Copy the canonical snippet above
-   - Append the widget JavaScript from `widget/clubcalendar-wa-inline.html`
+   - Paste the entire snippet (Cmd+V)
 
 4. **Save and Test**
    - Save the page
@@ -140,16 +120,22 @@ window.CLUBCALENDAR_CONFIG = {
 
 ## File Reference
 
-| File | Purpose |
-|------|---------|
-| `widget/clubcalendar-wa-inline.html` | Self-contained inline version (copy entire file) |
-| `widget/clubcalendar-widget-wa.js` | External JS version (requires hosting) |
-| `widget/wa-embed-example.html` | Example showing external JS usage |
+| File | Purpose | Use When |
+|------|---------|----------|
+| `docs/INSTALL/SBNC_INLINE_SNIPPET.html` | **SBNC canonical snippet** (ready to paste) | Installing on SBNC site |
+| `widget/clubcalendar-wa-inline.html` | Generic template (for other orgs) | Customizing for other clubs |
+| `widget/wa-embed-example.html` | External JS example | Using hosted JS approach |
+
+### Deprecated (Archived)
+
+Server-hosted deployment docs have been archived to `_quarantine/server-hosted/`.
+SBNC uses inline-only deployment - no external server required.
 
 ---
 
 ## Version
 
 - **Widget Version:** 2.0.0 (WA Native Edition)
+- **Install Pack:** v1.0.0 (Inline Only)
 - **Last Updated:** December 2024
 - **Maintainer:** ClubCalendar / SBNC Tech

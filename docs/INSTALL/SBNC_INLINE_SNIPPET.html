@@ -1,23 +1,23 @@
 <!--
-  ClubCalendar - Wild Apricot Native (Self-Contained)
-  ════════════════════════════════════════════════════════════════════════════
-
-  GENERIC TEMPLATE - For organizations customizing their own installation.
-
-  SBNC USERS: Use docs/INSTALL/SBNC_INLINE_SNIPPET.html instead!
-              That file has SBNC-specific configuration pre-set.
-
-  ════════════════════════════════════════════════════════════════════════════
-
-  INSTALLATION:
-  1. Customize the configuration below for your organization
-  2. Paste this ENTIRE file into a WA Custom HTML gadget
-  3. Save and view the page while logged in
-
-  NO EXTERNAL DEPENDENCIES:
-  - No external server required
-  - No script src loading required
-  - Runs entirely within Wild Apricot
+  ╔════════════════════════════════════════════════════════════════════════════╗
+  ║  SBNC ClubCalendar Widget - INLINE ONLY Edition                            ║
+  ║  Santa Barbara Newcomers Club                                               ║
+  ╠════════════════════════════════════════════════════════════════════════════╣
+  ║                                                                             ║
+  ║  INSTALLATION:                                                              ║
+  ║  1. Copy this ENTIRE file                                                   ║
+  ║  2. Paste into a Wild Apricot Custom HTML gadget                           ║
+  ║  3. Save and view the page while logged in                                 ║
+  ║                                                                             ║
+  ║  NO EXTERNAL DEPENDENCIES:                                                  ║
+  ║  - No mail.sbnewcomers.org required                                        ║
+  ║  - No external server hosting required                                      ║
+  ║  - No script src loading required                                          ║
+  ║  - Runs entirely within Wild Apricot                                       ║
+  ║                                                                             ║
+  ║  This is the CANONICAL snippet for SBNC. Use this file, not others.        ║
+  ║                                                                             ║
+  ╚════════════════════════════════════════════════════════════════════════════╝
 -->
 
 <div id="clubcalendar"></div>
@@ -25,22 +25,19 @@
 <script>
 window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
-    // CREDENTIALS (Auto-detected - only set if auto-detection fails)
+    // SBNC CONFIGURATION (Pre-configured for Santa Barbara Newcomers)
     // ═══════════════════════════════════════════════════════════════
-    // waAccountId: '12345',  // Optional: Auto-detected from WA page
-    // waClientId: 'abc123',  // Optional: Only needed for external hosting
+    waAccountId: '176353',           // SBNC Wild Apricot Account ID
 
-    // ═══════════════════════════════════════════════════════════════
-    // OPTIONAL - Customize as needed
-    // ═══════════════════════════════════════════════════════════════
-    headerTitle: 'Club Events',
+    // Display settings
+    headerTitle: 'SBNC Events',
     showMyEvents: true,
     showFilters: true,
     defaultView: 'dayGridMonth',
     primaryColor: '#2c5aa0',
     accentColor: '#d4a800',
 
-    // Auto-tagging rules - customize for your club
+    // SBNC Activity Committee auto-tagging rules
     autoTagRules: [
         { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
         { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
