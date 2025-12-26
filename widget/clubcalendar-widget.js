@@ -229,8 +229,8 @@
         refreshInterval: 0,                    // Auto-refresh interval (0 = disabled)
         memberLevel: null,                     // Member level: 'Newbie', 'NewcomerMember', 'Alumni', 'Guest', or null for public
         useLiveApi: false,                     // Use live WA API instead of SQLite-cached data
-        showAddToCalendar: true,               // Show "Add to Calendar" button in event popup
-        icsBaseUrl: 'https://mail.sbnewcomers.org/ics/event.php'  // ICS generator endpoint URL
+        showAddToCalendar: false,              // Show "Add to Calendar" button in event popup (requires icsBaseUrl)
+        icsBaseUrl: null                       // ICS generator endpoint URL (if null, Add to Calendar is disabled)
     };
 
     /**
@@ -1864,12 +1864,8 @@
             }
         }
 
-        // Fall back to hostname detection
-        if (window.location.hostname === 'mail.sbnewcomers.org') {
-            return '';
-        }
-
-        return 'https://mail.sbnewcomers.org';
+        // No hardcoded fallback - inline-only mode doesn't need external server
+        return '';
     }
 
     /**

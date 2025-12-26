@@ -144,7 +144,7 @@ EXAMPLE_CONFIG = """
     },
 
     "data_directory": "/var/www/clubcalendar/data",
-    "base_url": "https://mail.sbnewcomers.org/clubcalendar",
+    "base_url": "https://your-server.example.com/clubcalendar",
 
     "sync": {
         "interval_minutes": 15,

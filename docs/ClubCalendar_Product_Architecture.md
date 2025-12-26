@@ -149,9 +149,11 @@ ClubCalendar adds powerful filtering on top of Wild Apricot event data:
                       └────────────────────────────────────────────────┘
 ```
 
-### Alternative: Custom Server Architecture
+### Alternative: Custom Server Architecture (Archived)
 
-For organizations preferring their own server (like mail.sbnewcomers.org):
+> **Note:** Custom server deployment is deprecated for SBNC. See `_quarantine/server-hosted/` for archived docs. SBNC uses the inline-only path documented in `docs/INSTALL/SBNC_INLINE_ONLY_INSTALL.md`.
+
+For organizations preferring their own server:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
