@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WA Calendar vs ClubCalendar: Tradeoff Analysis &amp; Strategy</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <style>
+        /* Base styles for standalone viewing */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4ECDC4 0%, #7B2CBF 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        header .tagline {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        header .emoji {
+            font-size: 3rem;
+        }
+
+        nav {
+            background: #333;
+            padding: 0;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        nav li {
+            margin: 0;
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background: #4ECDC4;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: #4ECDC4;
+        }
+
+        .content-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4ECDC4;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        h2 {
+            color: #4ECDC4;
+            border-bottom: 2px solid #4ECDC4;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        h3 {
+            color: #7B2CBF;
+            margin-top: 1.5rem;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 2rem 0;
+        }
+
+        .executive-summary {
+            background: #f0faf9;
+            border: 1px solid #4ECDC4;
+            border-left: 4px solid #4ECDC4;
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .executive-summary h2 {
+            margin-top: 0;
+            border: none;
+        }
+
+        .core-problem {
+            background: #fff8e1;
+            border: 1px solid #FFB627;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .core-problem h2 {
+            margin-top: 0;
+            border: none;
+        }
+
+        .analysis-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .analysis-section h3 {
+            margin-top: 0;
+        }
+
+        .winner {
+            background: #e8f5e9;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 0.75rem;
+        }
+
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .diagram {
+            background: #f5f5f5;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1.3;
+            font-size: 0.8rem;
+            overflow-x: auto;
+        }
+
+        .recommendation {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-left: 4px solid #4caf50;
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin: 2rem 0;
+        }
+
+        .recommendation h2 {
+            margin-top: 0;
+            border: none;
+            color: #2e7d32;
+        }
+
+        .decision-box {
+            background: #fff8e1;
+            border: 1px solid #FFB627;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .decision-box h4 {
+            margin-top: 0;
+            color: #e65100;
+        }
+
+        .decision-box.recommended {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .decision-box.recommended h4 {
+            color: #2e7d32;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            .diagram {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-section">
+            <div class="emoji">📊</div>
+            <h1>WA Calendar vs ClubCalendar</h1>
+            <p class="tagline">Tradeoff Analysis &amp; Strategy</p>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="index.html">ClubCalendar Package</a></li>
+            <li><a href="../../resources/">Resources</a></li>
+            <li><a href="../../meeting-notes/">Meeting Notes</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="content-wrapper">
+
+<div class="executive-summary">
+    <h2>Executive Summary</h2>
+    <p>ClubCalendar provides significantly better member experience for finding events, but requires custom code maintenance. The recommended strategy is a <strong>hybrid deployment</strong> with automatic fallback&mdash;members get the rich experience when it works, and seamlessly fall back to the standard WA calendar if it doesn't.</p>
+</div>
+
+<div class="core-problem">
+    <h2>The Core Problem</h2>
+    <p>SBNC has <strong>150+ events per month</strong> across 30+ committees. Members need to:</p>
+    <ul>
+        <li>Find events they can actually attend (not sold out)</li>
+        <li>Find events that fit their budget</li>
+        <li>Find events that match their interests and schedule</li>
+    </ul>
+    <p><strong>The WA Calendar shows events. ClubCalendar helps members find the right events.</strong></p>
+</div>
+
+<h2>Comparison Matrix</h2>
+
+<table>
+    <tr>
+        <th>Dimension</th>
+        <th>WA Calendar</th>
+        <th>ClubCalendar</th>
+    </tr>
+    <tr>
+        <td><strong>Member Experience</strong></td>
+        <td>Basic browsing</td>
+        <td>Smart filtering &amp; search</td>
+    </tr>
+    <tr>
+        <td><strong>Maintenance Burden</strong></td>
+        <td>Zero</td>
+        <td>Low (single file, no dependencies)</td>
+    </tr>
+    <tr>
+        <td><strong>Event Creator Work</strong></td>
+        <td>Standard WA entry</td>
+        <td>Same + title conventions</td>
+    </tr>
+    <tr>
+        <td><strong>Configurability</strong></td>
+        <td>Limited</td>
+        <td>Extensive</td>
+    </tr>
+    <tr>
+        <td><strong>Reliability</strong></td>
+        <td>Guaranteed</td>
+        <td>High (with fallback)</td>
+    </tr>
+</table>
+
+<h2>Detailed Analysis</h2>
+
+<div class="analysis-section">
+    <h3>1. Member Experience</h3>
+    <p><strong>WA Calendar:</strong></p>
+    <ul>
+        <li>Shows events on a calendar</li>
+        <li>Click each event to see details, price, availability</li>
+        <li>Filter by tags only</li>
+        <li>My Events on separate page</li>
+    </ul>
+    <p><strong>ClubCalendar:</strong></p>
+    <ul>
+        <li>At-a-glance availability ("5 spots left", "Sold Out")</li>
+        <li>At-a-glance pricing ($, $$, $$$)</li>
+        <li>Quick filters: Weekend, Has Openings, After Hours</li>
+        <li>Dropdown filters: Committee, Activity, Price, Event Type</li>
+        <li>Full-text search</li>
+        <li>Integrated My Events tab</li>
+        <li>Saved preferences</li>
+    </ul>
+    <div class="winner"><strong>Winner:</strong> ClubCalendar (significantly better for discovery)</div>
+</div>
+
+<div class="analysis-section">
+    <h3>2. Maintenance Burden</h3>
+    <p><strong>WA Calendar:</strong></p>
+    <ul>
+        <li>Zero maintenance</li>
+        <li>Updates handled by Wild Apricot</li>
+        <li>Always works</li>
+    </ul>
+    <p><strong>ClubCalendar:</strong></p>
+    <ul>
+        <li>Single HTML file (~2,400 lines)</li>
+        <li>No build process or external dependencies</li>
+        <li>617 unit tests for confidence</li>
+        <li>Potential issues: WA API changes (rare), FullCalendar CDN issues (rare), Browser compatibility (tested)</li>
+    </ul>
+    <div class="winner"><strong>Winner:</strong> WA Calendar (but ClubCalendar burden is low)</div>
+</div>
+
+<div class="analysis-section">
+    <h3>3. Event Creator Workload</h3>
+    <p><strong>WA Calendar:</strong> Standard WA event entry, no special formatting required.</p>
+    <p><strong>ClubCalendar:</strong> Same WA event entry, plus use "Committee: Event Title" format for best filtering.</p>
+    <p><strong>Note:</strong> SBNC already uses this format, so no additional work required.</p>
+    <div class="winner"><strong>Winner:</strong> Tie for SBNC (format already in use)</div>
+</div>
+
+<div class="analysis-section">
+    <h3>4. Configurability</h3>
+    <p><strong>WA Calendar:</strong> Section title, margins, week start day, show/hide past events, tag checkboxes.</p>
+    <p><strong>ClubCalendar:</strong> Every filter can be enabled/disabled, different configs for members vs public, custom colors, title parsing options, fallback configuration.</p>
+    <div class="winner"><strong>Winner:</strong> ClubCalendar</div>
+</div>
+
+<div class="analysis-section">
+    <h3>5. Reliability</h3>
+    <p><strong>WA Calendar:</strong> Always works (vendor supported), no failure modes.</p>
+    <p><strong>ClubCalendar (with fallback):</strong> Works reliably in normal conditions. On any error, automatically shows WA Calendar. Members never see a broken page.</p>
+    <div class="winner"><strong>Winner:</strong> Tie (with fallback strategy)</div>
+</div>
+
+<h2>Recommended Strategy: Hybrid Deployment</h2>
+
+<h3>The Approach</h3>
+<p>Deploy <strong>both calendars</strong> on the same page, with ClubCalendar as primary and WA Calendar as automatic fallback.</p>
+
+<div class="diagram">┌─────────────────────────────────────────────────────┐
+│                    Normal Operation                  │
+│  ┌───────────────────────────────────────────────┐  │
+│  │              ClubCalendar                      │  │
+│  │  • Rich filtering and search                   │  │
+│  │  • Availability and pricing badges             │  │
+│  │  • Integrated My Events                        │  │
+│  └───────────────────────────────────────────────┘  │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐  │
+│  │     WA Calendar (hidden, but initialized)      │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│                    If Error Occurs                   │
+│  ┌───────────────────────────────────────────────┐  │
+│  │          ClubCalendar (hidden)                 │  │
+│  └───────────────────────────────────────────────┘  │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐  │
+│  │              WA Calendar                       │  │
+│  │  • Automatically revealed                      │  │
+│  │  • Already initialized (instant)              │  │
+│  │  • Full functionality                          │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘</div>
+
+<h3>Why This Works</h3>
+
+<table>
+    <tr>
+        <th>Benefit</th>
+        <th>Explanation</th>
+    </tr>
+    <tr><td><strong>Best of both worlds</strong></td><td>Rich experience when possible, reliable fallback always</td></tr>
+    <tr><td><strong>No broken pages</strong></td><td>Members always see a working calendar</td></tr>
+    <tr><td><strong>Instant fallback</strong></td><td>WA Calendar pre-initialized, no loading delay</td></tr>
+    <tr><td><strong>Low risk</strong></td><td>Can always revert to WA-only if needed</td></tr>
+    <tr><td><strong>Gradual confidence</strong></td><td>Monitor error rates, tune over time</td></tr>
+</table>
+
+<h2>Risk Assessment</h2>
+
+<table>
+    <tr>
+        <th>Risk</th>
+        <th>Likelihood</th>
+        <th>Impact</th>
+        <th>Mitigation</th>
+    </tr>
+    <tr><td>WA API changes</td><td>Low</td><td>High</td><td>Automatic fallback to WA Calendar</td></tr>
+    <tr><td>FullCalendar CDN down</td><td>Very Low</td><td>High</td><td>Automatic fallback to WA Calendar</td></tr>
+    <tr><td>JavaScript error</td><td>Low</td><td>Medium</td><td>Automatic fallback to WA Calendar</td></tr>
+    <tr><td>Maintainer unavailable</td><td>Medium</td><td>Medium</td><td>Code is simple, documented, tested</td></tr>
+    <tr><td>Members confused by two calendars</td><td>Very Low</td><td>Low</td><td>Only one visible at a time</td></tr>
+</table>
+
+<h2>Decision Framework</h2>
+
+<div class="decision-box">
+    <h4>Choose WA Calendar Only If:</h4>
+    <ul>
+        <li>You have fewer than 30 events per month</li>
+        <li>Members don't struggle to find events</li>
+        <li>No one can maintain any custom code</li>
+        <li>Minimizing any technical risk is the absolute priority</li>
+    </ul>
+</div>
+
+<div class="decision-box recommended">
+    <h4>Choose Hybrid (Recommended) If:</h4>
+    <ul>
+        <li>You have many events (50+/month)</li>
+        <li>Members need better filtering and search</li>
+        <li>You want the best experience with a safety net</li>
+        <li>Someone can do occasional maintenance (a few hours/year)</li>
+    </ul>
+</div>
+
+<div class="decision-box">
+    <h4>Choose ClubCalendar Only If:</h4>
+    <ul>
+        <li>You're confident in ongoing maintenance</li>
+        <li>You want the richest possible experience</li>
+        <li>You're comfortable with some risk of broken pages</li>
+    </ul>
+</div>
+
+<div class="recommendation">
+    <h2>Summary: Recommendation</h2>
+    <p><strong>Hybrid Deployment with Automatic Fallback</strong></p>
+    <p>This gives SBNC members:</p>
+    <ul>
+        <li><strong>Rich discovery experience</strong> for finding events among 150+ options</li>
+        <li><strong>Automatic safety net</strong> if anything goes wrong</li>
+        <li><strong>Zero broken pages</strong> &mdash; always a working calendar</li>
+        <li><strong>Low maintenance burden</strong> &mdash; simple code, comprehensive tests</li>
+    </ul>
+    <p>The hybrid approach eliminates the primary concern with custom code (what if it breaks?) while delivering the full member experience improvement.</p>
+</div>
+
+<hr>
+
+<p><strong>Developer:</strong> Ed Forman<br>
+<strong>Co-Developer:</strong> Claude (Anthropic)<br>
+<strong>Repository:</strong> <a href="https://github.com/sbnctech/clubcalendar">github.com/sbnctech/clubcalendar</a><br>
+<strong>Based on:</strong> SBNC's calendar solution evaluation rubric<br>
+<strong>Last Updated:</strong> December 2024</p>
+
+<p><a href="index.html">&larr; Back to Package Index</a></p>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Santa Barbara Newcomers Club</p>
+        <p>Questions? Contact <a href="mailto:technology@sbnewcomers.org">technology@sbnewcomers.org</a></p>
+    </footer>
+</body>
+</html>

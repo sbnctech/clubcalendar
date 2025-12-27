@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar for Wild Apricot - Installation Package</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <style>
+        /* Base styles for standalone viewing */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4ECDC4 0%, #7B2CBF 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        header .tagline {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        header .emoji {
+            font-size: 3rem;
+        }
+
+        nav {
+            background: #333;
+            padding: 0;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        nav li {
+            margin: 0;
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background: #4ECDC4;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: #4ECDC4;
+        }
+
+        .content-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4ECDC4;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        h2 {
+            color: #4ECDC4;
+            border-bottom: 2px solid #4ECDC4;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        h3 {
+            color: #7B2CBF;
+            margin-top: 1.5rem;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 1.5rem 0;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #4ECDC4;
+        }
+
+        .card p {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .card a.button {
+            display: inline-block;
+            background: #4ECDC4;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .card a.button:hover {
+            background: #3dbdb5;
+        }
+
+        .card.primary {
+            background: #f0faf9;
+            border-color: #4ECDC4;
+        }
+
+        .card.widget {
+            background: #f0faf9;
+            border-color: #7B2CBF;
+        }
+
+        .card.widget a.button {
+            background: #7B2CBF;
+        }
+
+        .card.widget a.button:hover {
+            background: #6a26a6;
+        }
+
+        .info-box {
+            background-color: #f0faf9;
+            border: 1px solid #4ECDC4;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .rubric-box {
+            background-color: #f9f4fc;
+            border: 1px solid #7B2CBF;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .rubric-box h3 {
+            margin-top: 0;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 2rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-section">
+            <div class="emoji">📅</div>
+            <h1>ClubCalendar for Wild Apricot</h1>
+            <p class="tagline">Installation Package &amp; Documentation</p>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="index.html">Development Resources</a></li>
+            <li><a href="../../resources/">Resources</a></li>
+            <li><a href="../../meeting-notes/">Meeting Notes</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="content-wrapper">
+
+<p>ClubCalendar is an enhanced calendar widget for Wild Apricot that helps members find events with rich filtering, search, and at-a-glance availability information.</p>
+
+<h2>Quick Start</h2>
+
+<div class="card-grid">
+    <div class="card widget">
+        <h3>Widget File</h3>
+        <p>The single HTML file to paste into your Wild Apricot page. Contains all code, styles, and configuration.</p>
+        <a href="clubcalendar-wa-inline.html" download class="button">Download Widget</a>
+    </div>
+
+    <div class="card primary">
+        <h3>Installation Guide</h3>
+        <p>Step-by-step instructions for installing ClubCalendar on your WA site, including automatic fallback setup.</p>
+        <a href="installation-guide.html" class="button">View Guide</a>
+    </div>
+
+    <div class="card">
+        <h3>Troubleshooting Guide</h3>
+        <p>Diagnosing issues, testing the fallback, debugging with browser console, and recovery procedures.</p>
+        <a href="troubleshooting.html" class="button">View Guide</a>
+    </div>
+</div>
+
+<h2>Technical Documentation</h2>
+
+<div class="card-grid">
+    <div class="card primary">
+        <h3>Operator Checklist</h3>
+        <p>Step-by-step checklists for publishing, verifying, and rolling back ClubCalendar.</p>
+        <a href="../docs/INSTALL/ClubCalendar_SBNC_OPERATOR_CHECKLIST.md" class="button">View Checklist</a>
+    </div>
+
+    <div class="card">
+        <h3>Events Page Install</h3>
+        <p>Complete installation guide for the Events page with visibility rules.</p>
+        <a href="../docs/INSTALL/WA_EVENTS_PAGE_INLINE.md" class="button">View Guide</a>
+    </div>
+
+    <div class="card">
+        <h3>Config Page Install</h3>
+        <p>Configuration page setup with validation and editing instructions.</p>
+        <a href="../docs/INSTALL/WA_CONFIG_PAGE_INLINE.md" class="button">View Guide</a>
+    </div>
+
+    <div class="card">
+        <h3>Config Reference</h3>
+        <p>Complete field reference for all configuration options.</p>
+        <a href="../docs/INSTALL/CONFIG_CONTRACT.md" class="button">View Reference</a>
+    </div>
+</div>
+
+<h2>Analysis &amp; Recommendations</h2>
+
+<div class="card-grid">
+    <div class="card">
+        <h3>Functional Comparison</h3>
+        <p>Task-by-task comparison of how WA Calendar and ClubCalendar help members find events.</p>
+        <a href="functional-comparison.html" class="button">View Comparison</a>
+    </div>
+
+    <div class="card">
+        <h3>Tradeoffs &amp; Strategy</h3>
+        <p>Analysis of maintainability, configurability, and recommended deployment strategy.</p>
+        <a href="tradeoffs-and-strategy.html" class="button">View Analysis</a>
+    </div>
+</div>
+
+<div class="rubric-box">
+    <h3>Evaluation Rubric</h3>
+    <p>The analysis and recommendations in this package are based on a rubric developed for SBNC's calendar solution assessment. The evaluation criteria include:</p>
+    <ul>
+        <li><strong>Member Experience</strong> &mdash; How easily can members find events that match their interests, schedule, and budget?</li>
+        <li><strong>Technical Maintainability</strong> &mdash; What is the ongoing maintenance burden? What happens if something breaks?</li>
+        <li><strong>Event Creator Workload</strong> &mdash; Does the solution add work for committee chairs who create events?</li>
+        <li><strong>Configurability</strong> &mdash; Can the solution be customized to meet different needs?</li>
+        <li><strong>Reliability</strong> &mdash; Will members always see a working calendar?</li>
+    </ul>
+</div>
+
+<h2>Package Contents</h2>
+
+<table>
+    <tr>
+        <th>File</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td><code>clubcalendar-wa-inline.html</code></td>
+        <td>The widget file (~2,400 lines, paste into WA)</td>
+    </tr>
+    <tr>
+        <td><code>installation-guide.html</code></td>
+        <td>Complete installation instructions</td>
+    </tr>
+    <tr>
+        <td><code>troubleshooting.html</code></td>
+        <td>Diagnosing issues and recovery procedures</td>
+    </tr>
+    <tr>
+        <td><code>functional-comparison.html</code></td>
+        <td>WA vs ClubCalendar feature comparison</td>
+    </tr>
+    <tr>
+        <td><code>tradeoffs-and-strategy.html</code></td>
+        <td>Analysis and deployment recommendation</td>
+    </tr>
+    <tr>
+        <td><code>WA-vs-ClubCalendar-Comparison.md</code></td>
+        <td>Functional comparison (Markdown source)</td>
+    </tr>
+    <tr>
+        <td><code>WA-vs-ClubCalendar-Tradeoffs.md</code></td>
+        <td>Tradeoffs analysis (Markdown source)</td>
+    </tr>
+</table>
+
+<h2>Key Features</h2>
+
+<ul>
+    <li><strong>At-a-glance availability</strong> &mdash; See "Sold Out", "5 spots left", or "Waitlist" without clicking</li>
+    <li><strong>Price indicators</strong> &mdash; $, $$, $$$ badges show event costs at a glance</li>
+    <li><strong>Quick filters</strong> &mdash; Weekend, Has Openings, After Hours, Free, Public</li>
+    <li><strong>Dropdown filters</strong> &mdash; Committee, Activity, Price, Venue</li>
+    <li><strong>Full-text search</strong> &mdash; Find events by keyword</li>
+    <li><strong>My Events tab</strong> &mdash; See registered events without leaving the page</li>
+    <li><strong>Automatic fallback</strong> &mdash; Falls back to WA Calendar if any error occurs</li>
+    <li><strong>No external server</strong> &mdash; Runs entirely within Wild Apricot</li>
+</ul>
+
+<hr>
+
+<p><strong>Developer:</strong> Ed Forman<br>
+<strong>Co-Developer:</strong> Claude (Anthropic)<br>
+<strong>Repository:</strong> <a href="https://github.com/sbnctech/clubcalendar">github.com/sbnctech/clubcalendar</a><br>
+<strong>Unit Tests:</strong> 617 tests for reliability and maintainability<br>
+<strong>Last Updated:</strong> December 2024</p>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Santa Barbara Newcomers Club</p>
+        <p>Questions? Contact <a href="mailto:technology@sbnewcomers.org">technology@sbnewcomers.org</a></p>
+    </footer>
+</body>
+</html>

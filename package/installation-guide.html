@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar Installation Guide for Wild Apricot</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <style>
+        /* Base styles for standalone viewing */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4ECDC4 0%, #7B2CBF 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        header .tagline {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        header .emoji {
+            font-size: 3rem;
+        }
+
+        nav {
+            background: #333;
+            padding: 0;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        nav li {
+            margin: 0;
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background: #4ECDC4;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: #4ECDC4;
+        }
+
+        .content-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4ECDC4;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        h2 {
+            color: #4ECDC4;
+            border-bottom: 2px solid #4ECDC4;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        h3 {
+            color: #7B2CBF;
+            margin-top: 1.5rem;
+        }
+
+        h4 {
+            color: #333;
+            margin-top: 1rem;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        blockquote {
+            border-left: 4px solid #7B2CBF;
+            margin: 1rem 0;
+            padding: 0.5rem 1rem;
+            background-color: #f9f4fc;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 2rem 0;
+        }
+
+        .step {
+            background: #f0faf9;
+            border-left: 4px solid #4ECDC4;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .step h3 {
+            margin-top: 0;
+        }
+
+        .warning {
+            background: #fff8e1;
+            border-left: 4px solid #FFB627;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .toc ul {
+            margin: 0.5rem 0 0 0;
+            padding-left: 1.5rem;
+        }
+
+        .toc li {
+            margin: 0.5rem 0;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-section">
+            <div class="emoji">📋</div>
+            <h1>ClubCalendar Installation Guide</h1>
+            <p class="tagline">Wild Apricot Native Edition</p>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="index.html">ClubCalendar Package</a></li>
+            <li><a href="../../resources/">Resources</a></li>
+            <li><a href="../../meeting-notes/">Meeting Notes</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="content-wrapper">
+
+<p>This guide covers installing ClubCalendar on your Wild Apricot website with automatic fallback to the standard WA calendar.</p>
+
+<div class="toc">
+    <strong>Contents</strong>
+    <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#basic-install">Basic Installation (5 minutes)</a></li>
+        <li><a href="#fallback-install">Installation with Automatic Fallback (10 minutes)</a></li>
+        <li><a href="#configuration">Configuration Options</a></li>
+        <li><a href="#testing">Testing Your Installation</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+    </ul>
+</div>
+
+<h2 id="overview">Overview</h2>
+
+<p>ClubCalendar is a <strong>single HTML file</strong> that you paste into a Wild Apricot page. It:</p>
+<ul>
+    <li>Automatically discovers your WA account</li>
+    <li>Fetches events directly from WA's API</li>
+    <li>Provides rich filtering, search, and at-a-glance availability</li>
+    <li>Shows "My Events" for logged-in members</li>
+    <li>Requires no external server or configuration</li>
+</ul>
+
+<h2 id="prerequisites">Prerequisites</h2>
+
+<ul>
+    <li>Wild Apricot administrator access</li>
+    <li>The <code>clubcalendar-wa-inline.html</code> file (included in this package)</li>
+    <li>A text editor to open and copy the file contents</li>
+</ul>
+
+<div class="success">
+    <strong>No external server required!</strong> Unlike previous versions, this widget runs entirely within Wild Apricot using WA's built-in API.
+</div>
+
+<h2 id="basic-install">Basic Installation (5 minutes)</h2>
+
+<div class="step">
+    <h3>Step 1: Open the Widget File</h3>
+    <p>Open <code>clubcalendar-wa-inline.html</code> in a text editor (TextEdit, Notepad, VS Code, etc.).</p>
+    <p>Select all the content (Cmd+A or Ctrl+A) and copy it (Cmd+C or Ctrl+C).</p>
+</div>
+
+<div class="step">
+    <h3>Step 2: Create or Edit Your Calendar Page</h3>
+    <ol>
+        <li>Log into Wild Apricot as an administrator</li>
+        <li>Go to <strong>Website &rarr; Site pages</strong></li>
+        <li>Either create a new page or edit an existing calendar page</li>
+        <li>Click <strong>Edit content</strong> to enter the page editor</li>
+    </ol>
+</div>
+
+<div class="step">
+    <h3>Step 3: Add an HTML Content Gadget with Configuration</h3>
+    <ol>
+        <li>Click <strong>Add gadget</strong></li>
+        <li>Select <strong>HTML content</strong> (may also be called "Custom HTML" or "Code")</li>
+        <li>Click the <strong>HTML</strong> button to switch to HTML/source mode</li>
+        <li><strong>First</strong>, paste this configuration block (customize as needed):</li>
+    </ol>
+<pre><code>&lt;script&gt;
+window.CLUBCALENDAR_CONFIG = {
+    // Header
+    headerTitle: 'Club Events',
+
+    // Colors (use your club's brand colors)
+    primaryColor: '#2c5aa0',
+    accentColor: '#d4a800',
+
+    // Features
+    showMyEvents: true,          // Show "My Events" tab for members
+    showFilters: true,           // Show filter controls
+    defaultView: 'dayGridMonth', // 'dayGridMonth', 'listMonth', 'timeGridWeek'
+
+    // Fallback settings (for hybrid deployment)
+    fallbackContainerId: 'wa-fallback',
+    fallbackEventsUrl: '/events'
+};
+&lt;/script&gt;</code></pre>
+    <ol start="5">
+        <li><strong>Then</strong>, paste the entire widget code from <code>clubcalendar-wa-inline.html</code> directly below the config</li>
+        <li>Click <strong>OK</strong> to save the gadget</li>
+    </ol>
+    <p><em>The config block must come before the widget code in the same gadget.</em></p>
+</div>
+
+<div class="step">
+    <h3>Step 4: Save and View</h3>
+    <ol>
+        <li>Click <strong>Done</strong> or <strong>Save</strong> to exit the page editor</li>
+        <li>View the page (not in edit mode) to see ClubCalendar</li>
+        <li>The widget should load and display your events</li>
+    </ol>
+</div>
+
+<div class="warning">
+    <strong>Important:</strong> The widget must be viewed on the actual WA site (not in edit mode) to work. It uses your WA session to access the API.
+</div>
+
+<h2 id="fallback-install">Installation with Automatic Fallback (Recommended)</h2>
+
+<p>This setup ensures members always see a working calendar, even if ClubCalendar encounters an error.</p>
+
+<div class="step">
+    <h3>Step 1: Add ClubCalendar with Configuration (Primary)</h3>
+    <p>Follow Steps 1-3 from Basic Installation above, including the configuration block.</p>
+    <p><strong>Important:</strong> Make sure <code>fallbackContainerId: 'wa-fallback'</code> is in your config for fallback to work.</p>
+</div>
+
+<div class="step">
+    <h3>Step 2: Add the Fallback Container Opening Tag</h3>
+    <ol>
+        <li>Click <strong>Add gadget</strong> (below the ClubCalendar gadget)</li>
+        <li>Select <strong>HTML content</strong></li>
+        <li>Switch to HTML mode and paste:</li>
+    </ol>
+<pre><code>&lt;div id="wa-fallback" style="display:none;"&gt;</code></pre>
+    <p>Click <strong>OK</strong> to save.</p>
+</div>
+
+<div class="step">
+    <h3>Step 3: Add the WA Event Calendar Gadget</h3>
+    <ol>
+        <li>Click <strong>Add gadget</strong></li>
+        <li>Select <strong>Event calendar</strong> (the standard WA calendar)</li>
+        <li>Configure it as you normally would (tags, date range, etc.)</li>
+    </ol>
+</div>
+
+<div class="step">
+    <h3>Step 4: Add the Fallback Container Closing Tag</h3>
+    <ol>
+        <li>Click <strong>Add gadget</strong></li>
+        <li>Select <strong>HTML content</strong></li>
+        <li>Switch to HTML mode and paste:</li>
+    </ol>
+<pre><code>&lt;/div&gt;</code></pre>
+    <p>Click <strong>OK</strong> to save.</p>
+</div>
+
+<h3>Final Page Structure</h3>
+
+<p>Your page should have these gadgets in order:</p>
+
+<table>
+    <tr>
+        <th>#</th>
+        <th>Gadget Type</th>
+        <th>Contains</th>
+    </tr>
+    <tr>
+        <td>1</td>
+        <td>HTML content</td>
+        <td>Configuration block + ClubCalendar widget code</td>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>HTML content</td>
+        <td><code>&lt;div id="wa-fallback" style="display:none;"&gt;</code></td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>Event calendar</td>
+        <td>Standard WA calendar gadget</td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>HTML content</td>
+        <td><code>&lt;/div&gt;</code></td>
+    </tr>
+</table>
+
+<h3>How Fallback Works</h3>
+
+<ul>
+    <li><strong>Normal operation:</strong> ClubCalendar displays, WA Calendar stays hidden</li>
+    <li><strong>If ClubCalendar fails:</strong> ClubCalendar hides, WA Calendar automatically appears</li>
+    <li><strong>Result:</strong> Members always see a working calendar</li>
+</ul>
+
+<h2 id="configuration">Configuration Options</h2>
+
+<table>
+    <tr>
+        <th>Option</th>
+        <th>Default</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td><code>headerTitle</code></td>
+        <td>'Club Events'</td>
+        <td>Title shown at top of calendar</td>
+    </tr>
+    <tr>
+        <td><code>primaryColor</code></td>
+        <td>'#2c5aa0'</td>
+        <td>Main accent color</td>
+    </tr>
+    <tr>
+        <td><code>accentColor</code></td>
+        <td>'#d4a800'</td>
+        <td>Secondary accent color</td>
+    </tr>
+    <tr>
+        <td><code>showMyEvents</code></td>
+        <td>true</td>
+        <td>Show/hide My Events tab</td>
+    </tr>
+    <tr>
+        <td><code>showFilters</code></td>
+        <td>true</td>
+        <td>Show/hide filter controls</td>
+    </tr>
+    <tr>
+        <td><code>defaultView</code></td>
+        <td>'dayGridMonth'</td>
+        <td>Initial calendar view</td>
+    </tr>
+    <tr>
+        <td><code>fallbackContainerId</code></td>
+        <td>'wa-fallback'</td>
+        <td>ID of fallback container</td>
+    </tr>
+    <tr>
+        <td><code>fallbackEventsUrl</code></td>
+        <td>'/events'</td>
+        <td>Link shown if no fallback container</td>
+    </tr>
+</table>
+
+<h2 id="testing">Testing Your Installation</h2>
+
+<h3>Basic Test</h3>
+<ol>
+    <li>View the page (not in edit mode)</li>
+    <li>Verify events load and display</li>
+    <li>Test the filter buttons (Weekend, Has Openings, etc.)</li>
+    <li>Click an event to see the detail popup</li>
+    <li>If logged in, check the "My Events" tab</li>
+</ol>
+
+<h3>Test the Fallback (if configured)</h3>
+<ol>
+    <li>View the page normally (ClubCalendar should show)</li>
+    <li>Open browser developer tools (F12 or right-click &rarr; Inspect)</li>
+    <li>Go to the Console tab</li>
+    <li>Type: <code>throw new Error('test fallback')</code> and press Enter</li>
+    <li>ClubCalendar should hide and the WA Calendar should appear</li>
+    <li>Refresh the page to restore ClubCalendar</li>
+</ol>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<h3>"Could not auto-discover account ID"</h3>
+<p><strong>Cause:</strong> You're viewing in edit mode or not on a WA page.</p>
+<p><strong>Fix:</strong> Save the page and view it normally (not in edit mode).</p>
+
+<h3>Calendar shows "Loading..." forever</h3>
+<p><strong>Cause:</strong> API request failed or is blocked.</p>
+<p><strong>Fix:</strong> Check browser console (F12) for error messages. Ensure you're logged into WA.</p>
+
+<h3>Fallback triggers unexpectedly</h3>
+<p><strong>Cause:</strong> An error occurred during initialization.</p>
+<p><strong>Fix:</strong> Check browser console for the specific error. Common causes:</p>
+<ul>
+    <li>Network issues loading FullCalendar from CDN</li>
+    <li>WA API temporarily unavailable</li>
+    <li>JavaScript conflict with other page elements</li>
+</ul>
+
+<h3>Styles look wrong</h3>
+<p><strong>Cause:</strong> CSS conflict with WA theme.</p>
+<p><strong>Fix:</strong> The widget uses scoped styles, but some themes may conflict. Try a different page template.</p>
+
+<h3>No events showing</h3>
+<p><strong>Cause:</strong> No future events, or events are filtered out.</p>
+<p><strong>Fix:</strong> Clear all filters and verify events exist in WA with future dates.</p>
+
+<hr>
+
+<p><strong>Developer:</strong> Ed Forman<br>
+<strong>Co-Developer:</strong> Claude (Anthropic)<br>
+<strong>Repository:</strong> <a href="https://github.com/sbnctech/clubcalendar">github.com/sbnctech/clubcalendar</a><br>
+<strong>Last Updated:</strong> December 2024</p>
+
+<p><a href="index.html">&larr; Back to Package Index</a></p>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Santa Barbara Newcomers Club</p>
+        <p>Questions? Contact <a href="mailto:technology@sbnewcomers.org">technology@sbnewcomers.org</a></p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,74 @@
+{
+  "_comment": "SBNC ClubCalendar Configuration - Edit values, not keys",
+  "_docs": "See CONFIG_CONTRACT.md for field descriptions",
+
+  "waAccountId": "176353",
+
+  "headerTitle": "SBNC Events",
+  "showHeader": true,
+  "showFilters": true,
+  "showMyEvents": true,
+  "defaultView": "dayGridMonth",
+
+  "audienceMode": "member",
+
+  "primaryColor": "#2c5aa0",
+  "accentColor": "#d4a800",
+  "stylePreset": "default",
+
+  "quickFilters": {
+    "weekend": true,
+    "openings": true,
+    "afterhours": true,
+    "public": true,
+    "free": false
+  },
+
+  "dropdownFilters": {
+    "committee": true,
+    "activity": true,
+    "price": true,
+    "eventType": true,
+    "recurring": true,
+    "venue": true,
+    "tags": true
+  },
+
+  "showEventTags": true,
+  "hiddenTags": [],
+  "allowedTags": null,
+
+  "autoTagRules": [
+    { "type": "name-prefix", "pattern": "Happy Hikers:", "tag": "committee:happy-hikers" },
+    { "type": "name-prefix", "pattern": "Games!:", "tag": "committee:games" },
+    { "type": "name-prefix", "pattern": "Wine Appreciation:", "tag": "committee:wine" },
+    { "type": "name-prefix", "pattern": "Epicurious:", "tag": "committee:epicurious" },
+    { "type": "name-prefix", "pattern": "TGIF:", "tag": "committee:tgif" },
+    { "type": "name-prefix", "pattern": "Cycling:", "tag": "committee:cycling" },
+    { "type": "name-prefix", "pattern": "Golf:", "tag": "committee:golf" },
+    { "type": "name-prefix", "pattern": "Performing Arts:", "tag": "committee:performing-arts" },
+    { "type": "name-prefix", "pattern": "Local Heritage:", "tag": "committee:local-heritage" },
+    { "type": "name-prefix", "pattern": "Wellness:", "tag": "committee:wellness" },
+    { "type": "name-prefix", "pattern": "Garden:", "tag": "committee:garden" },
+    { "type": "name-prefix", "pattern": "Arts:", "tag": "committee:arts" },
+    { "type": "name-prefix", "pattern": "Current Events:", "tag": "committee:current-events" },
+    { "type": "name-prefix", "pattern": "Pop-Up:", "tag": "committee:popup" },
+    { "type": "name-prefix", "pattern": "Beer Lovers:", "tag": "committee:beer" },
+    { "type": "name-prefix", "pattern": "Out to Lunch:", "tag": "committee:out-to-lunch" },
+    { "type": "name-prefix", "pattern": "Afternoon Book:", "tag": "committee:book-clubs" },
+    { "type": "name-prefix", "pattern": "Evening Book:", "tag": "committee:book-clubs" }
+  ],
+
+  "labels": {
+    "noEvents": "No events found",
+    "loading": "Loading events...",
+    "error": "Unable to load events",
+    "myEvents": "My Events",
+    "allEvents": "All Events"
+  },
+
+  "pastEventsVisible": false,
+  "pastEventsDays": 14,
+  "showEventDots": true,
+  "showWaitlistCount": false
+}
