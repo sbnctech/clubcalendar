@@ -120,11 +120,22 @@ This file contains the complete, ready-to-paste widget with:
 
 ## File Reference
 
+### Installation Files
+
 | File | Purpose | Use When |
 |------|---------|----------|
 | `docs/INSTALL/SBNC_INLINE_SNIPPET.html` | **SBNC canonical snippet** (ready to paste) | Installing on SBNC site |
 | `widget/clubcalendar-wa-inline.html` | Generic template (for other orgs) | Customizing for other clubs |
 | `widget/wa-embed-example.html` | External JS example | Using hosted JS approach |
+
+### Configuration Documentation
+
+| File | Purpose | Audience |
+|------|---------|----------|
+| `docs/INSTALL/CONFIG_QUICK_REFERENCE.md` | Simple editing guide | Non-technical admins |
+| `docs/INSTALL/CONFIG_CONTRACT.md` | Complete field reference | Technical admins |
+| `docs/INSTALL/SBNC_CONFIG_EXAMPLE.json` | Working example config | Reference/testing |
+| `docs/INSTALL/config-validator.js` | Validation function | Widget integration |
 
 ### Deprecated (Archived)
 
