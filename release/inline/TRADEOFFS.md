@@ -1,14 +1,12 @@
-# WA Calendar vs ClubCalendar: Tradeoff Analysis & Strategy
+# WA Calendar vs ClubCalendar: Tradeoff Analysis
 
 ## Executive Summary
 
-ClubCalendar provides significantly better member experience for finding events, but requires custom code maintenance. The recommended strategy is a **hybrid deployment** with automatic fallback—members get the rich experience when it works, and seamlessly fall back to the standard WA calendar if it doesn't.
-
----
+ClubCalendar provides significantly better member experience for finding events. The inline version runs entirely within Wild Apricot with no external dependencies.
 
 ## The Core Problem
 
-Your organization has **150+ events per month** across 30+ committees. Members need to:
+Organizations with many events (50-200+ per month) across multiple committees need members to:
 
 - Find events they can actually attend (not sold out)
 - Find events that fit their budget
@@ -16,19 +14,14 @@ Your organization has **150+ events per month** across 30+ committees. Members n
 
 **The WA Calendar shows events. ClubCalendar helps members find the right events.**
 
----
-
 ## Comparison Matrix
 
 | Dimension | WA Calendar | ClubCalendar |
 |-----------|-------------|--------------|
-| **Member Experience** | Basic browsing | Smart filtering & search |
-| **Maintenance Burden** | Zero | Low (single file, no dependencies) |
-| **Event Creator Work** | Standard WA entry | Same + title conventions |
-| **Configurability** | Limited | Extensive |
-| **Reliability** | Guaranteed | High (with fallback) |
-
----
+| Member Experience | Basic browsing | Smart filtering and search |
+| Maintenance Burden | Zero | Very Low (single HTML file) |
+| External Dependencies | None | FullCalendar CDN only |
+| Reliability | Guaranteed | High (graceful error handling) |
 
 ## Detailed Analysis
 
@@ -51,169 +44,52 @@ Your organization has **150+ events per month** across 30+ committees. Members n
 
 **Winner:** ClubCalendar (significantly better for discovery)
 
----
-
 ### 2. Maintenance Burden
 
 **WA Calendar:**
 - Zero maintenance
 - Updates handled by Wild Apricot
-- Always works
 
-**ClubCalendar:**
-- Single HTML file (~2,400 lines)
-- No build process or external dependencies
-- 617 unit tests for confidence
-- Potential issues:
-  - WA API changes (rare)
-  - FullCalendar CDN issues (rare)
-  - Browser compatibility (tested)
+**ClubCalendar Inline:**
+- Single HTML file (no build process)
+- No external server to maintain
+- No sync jobs to monitor
+- Only updates needed: occasional FullCalendar version bumps
 
-**Winner:** WA Calendar (but ClubCalendar burden is low)
+**Winner:** WA Calendar, but ClubCalendar inline burden is minimal
 
----
-
-### 3. Event Creator Workload
+### 3. Technical Architecture
 
 **WA Calendar:**
-- Standard WA event entry
-- No special formatting required
+- Fully managed by Wild Apricot
+- No customization possible
 
-**ClubCalendar:**
-- Same WA event entry, plus:
-- Use "Committee: Event Title" format for best filtering
-- Example: `Happy Hikers: Morning Walk at Douglas Preserve`
+**ClubCalendar Inline:**
+- Runs 100% within Wild Apricot page
+- Uses WA's internal API for event data
+- FullCalendar library loaded from public CDN
+- No external servers involved
+- Event data never leaves Wild Apricot
 
-**Note:** Your organization already uses this format, so no additional work required.
-
-**Winner:** Tie for Your organization (format already in use)
-
----
-
-### 4. Configurability
-
-**WA Calendar:**
-- Section title, margins, week start day
-- Show/hide past events
-- Tag checkboxes
-
-**ClubCalendar:**
-- Every filter can be enabled/disabled
-- Different configs for members vs public
-- Custom colors, title parsing options
-- Fallback configuration
-
-**Winner:** ClubCalendar
-
----
-
-### 5. Reliability
+### 4. Reliability
 
 **WA Calendar:**
 - Always works (vendor supported)
-- No failure modes
 
-**ClubCalendar (with fallback):**
-- Works reliably in normal conditions
-- On any error, automatically shows WA Calendar
-- Members never see a broken page
+**ClubCalendar Inline:**
+- Depends on: WA being up (same as WA Calendar)
+- Depends on: FullCalendar CDN (99.9%+ uptime)
+- Graceful error handling shows message if issues occur
 
-**Winner:** Tie (with fallback strategy)
-
----
-
-## Recommended Strategy: Hybrid Deployment
-
-### The Approach
-
-Deploy **both calendars** on the same page, with ClubCalendar as primary and WA Calendar as automatic fallback.
-
-```
-┌─────────────────────────────────────────────────────┐
-│                    Normal Operation                  │
-│  ┌───────────────────────────────────────────────┐  │
-│  │              ClubCalendar                      │  │
-│  │  • Rich filtering and search                   │  │
-│  │  • Availability and pricing badges             │  │
-│  │  • Integrated My Events                        │  │
-│  └───────────────────────────────────────────────┘  │
-│                                                     │
-│  ┌───────────────────────────────────────────────┐  │
-│  │     WA Calendar (hidden, but initialized)      │  │
-│  └───────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────┐
-│                    If Error Occurs                   │
-│  ┌───────────────────────────────────────────────┐  │
-│  │          ClubCalendar (hidden)                 │  │
-│  └───────────────────────────────────────────────┘  │
-│                                                     │
-│  ┌───────────────────────────────────────────────┐  │
-│  │              WA Calendar                       │  │
-│  │  • Automatically revealed                      │  │
-│  │  • Already initialized (instant)              │  │
-│  │  • Full functionality                          │  │
-│  └───────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────┘
-```
-
-### Why This Works
-
-| Benefit | Explanation |
-|---------|-------------|
-| **Best of both worlds** | Rich experience when possible, reliable fallback always |
-| **No broken pages** | Members always see a working calendar |
-| **Instant fallback** | WA Calendar pre-initialized, no loading delay |
-| **Low risk** | Can always revert to WA-only if needed |
-| **Gradual confidence** | Monitor error rates, tune over time |
-
-### Implementation Steps
-
-**Step 1: Set up the page structure**
-```html
-<!-- Primary: ClubCalendar -->
-<div id="clubcalendar"></div>
-[Paste ClubCalendar widget code]
-
-<!-- Fallback: WA Calendar (hidden) -->
-<div id="wa-fallback" style="display:none;">
-    [Drag WA Event Calendar gadget here]
-</div>
-```
-
-**Step 2: Configure ClubCalendar**
-```javascript
-window.CLUBCALENDAR_CONFIG = {
-    fallbackContainerId: 'wa-fallback',
-    fallbackEventsUrl: '/events',
-    // ... other config
-};
-```
-
-**Step 3: Test the fallback**
-- Open browser console
-- Run: `throw new Error('test')`
-- Verify WA Calendar appears
-
-**Step 4: Monitor and maintain**
-- Check browser console periodically for errors
-- Update FullCalendar version annually
-- Watch for WA API changes in release notes
-
----
+**Winner:** Tie for practical purposes
 
 ## Risk Assessment
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| WA API changes | Low | High | Automatic fallback to WA Calendar |
-| FullCalendar CDN down | Very Low | High | Automatic fallback to WA Calendar |
-| JavaScript error | Low | Medium | Automatic fallback to WA Calendar |
-| Maintainer unavailable | Medium | Medium | Code is simple, documented, tested |
-| Members confused by two calendars | Very Low | Low | Only one visible at a time |
-
----
+| WA API changes | Low | Medium | Widget uses stable WA APIs |
+| FullCalendar CDN down | Very Low | Medium | Could self-host if needed |
+| JavaScript error | Low | Low | Error handling shows message |
 
 ## Decision Framework
 
@@ -221,33 +97,16 @@ window.CLUBCALENDAR_CONFIG = {
 
 - You have fewer than 30 events per month
 - Members don't struggle to find events
-- No one can maintain any custom code
-- Minimizing any technical risk is the absolute priority
+- Zero tolerance for any custom code
 
-### Choose Hybrid (Recommended) If:
+### Choose ClubCalendar Inline If:
 
 - You have many events (50+/month)
 - Members need better filtering and search
-- You want the best experience with a safety net
-- Someone can do occasional maintenance (a few hours/year)
-
-### Choose ClubCalendar Only If:
-
-- You're confident in ongoing maintenance
-- You want the richest possible experience
-- You're comfortable with some risk of broken pages
-
----
+- You want improved experience with minimal maintenance
 
 ## Summary
 
-**Recommendation: Hybrid Deployment with Automatic Fallback**
+The inline version of ClubCalendar provides significant member experience improvements with minimal maintenance overhead. Since it runs entirely within Wild Apricot and has no external server dependencies, the risk profile is very low.
 
-This gives Your organization members:
-
-- **Rich discovery experience** for finding events among 150+ options
-- **Automatic safety net** if anything goes wrong
-- **Zero broken pages** - always a working calendar
-- **Low maintenance burden** - simple code, comprehensive tests
-
-The hybrid approach eliminates the primary concern with custom code (what if it breaks?) while delivering the full member experience improvement.
+For organizations with many events across multiple committees, the filtering and search capabilities make it much easier for members to find relevant events.

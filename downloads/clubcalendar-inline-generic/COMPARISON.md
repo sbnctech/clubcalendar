@@ -22,8 +22,8 @@ Your organization has 150+ events per month across 30+ committees. Members need 
 **With WA Calendar:**
 
 1. Look at Saturday and Sunday on the calendar
-2. Click on first event -> check if sold out -> click back
-3. Click on second event -> check if sold out -> click back
+2. Click on first event → check if sold out → click back
+3. Click on second event → check if sold out → click back
 4. Repeat until you find one with availability
 5. Hope you remember which ones were full
 
@@ -41,8 +41,8 @@ Your organization has 150+ events per month across 30+ committees. Members need 
 
 **With WA Calendar:**
 
-1. Click on first event -> scroll to see price -> click back
-2. Click on second event -> scroll to see price -> click back
+1. Click on first event → scroll to see price → click back
+2. Click on second event → scroll to see price → click back
 3. Mentally track which were affordable
 4. Repeat for every event of interest
 
