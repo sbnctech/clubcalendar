@@ -785,7 +785,7 @@ window.CLUBCALENDAR_CONFIG = {
             endDate: waEvent.EndDate || '',
             location: location,
             description: description,
-            url: waEvent.Url || `${window.location.origin}/event-${waEvent.Id}`,
+            url: waEvent.Url || (typeof window !== 'undefined' ? `${window.location.origin}/event-${waEvent.Id}` : `/event-${waEvent.Id}`),
             registrationUrl: waEvent.RegistrationUrl || '',
             tags: allTags,
             spotsAvailable: spotsAvailable,
@@ -1827,7 +1827,7 @@ window.CLUBCALENDAR_CONFIG = {
         const priceHtml = getPriceIndicatorHtml(event.minPrice);
 
         return `
-            <div class="clubcal-event-card" onclick="window.open('${event.url}', '_blank')">
+            <div class="clubcal-event-card" data-event-url="${event.url}" tabindex="0" role="button">
                 <div class="clubcal-event-card-date">
                     <span class="month">${month}</span>
                     <span class="day">${day}</span>
@@ -1995,6 +1995,27 @@ window.CLUBCALENDAR_CONFIG = {
                 currentFilters.search = '';
                 searchClear.style.display = 'none';
                 applyFilters();
+            });
+        }
+
+        // Event card click delegation (avoid inline onclick handlers)
+        const container = document.querySelector(CONFIG.container || '#clubcalendar');
+        if (container) {
+            container.addEventListener('click', (e) => {
+                const eventCard = e.target.closest('[data-event-url]');
+                if (eventCard && eventCard.dataset.eventUrl) {
+                    window.open(eventCard.dataset.eventUrl, '_blank');
+                }
+            });
+            // Keyboard accessibility for event cards
+            container.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    const eventCard = e.target.closest('[data-event-url]');
+                    if (eventCard && eventCard.dataset.eventUrl) {
+                        e.preventDefault();
+                        window.open(eventCard.dataset.eventUrl, '_blank');
+                    }
+                }
             });
         }
     }
@@ -2281,10 +2302,24 @@ window.CLUBCALENDAR_CONFIG = {
 
         } catch (error) {
             console.error(LOG_PREFIX, '❌ Initialization failed:', error);
-            const container = document.querySelector(CONFIG.container);
-            if (container) {
-                container.innerHTML = `<div class="clubcal-error"><h3>Error Loading Calendar</h3><p>${escapeHtml(error.message)}</p><p style="font-size:12px;margin-top:10px;">Check browser console for details. Make sure you're logged in and waAccountId/waClientId are configured.</p></div>`;
-            }
+            showFallback(error);
+        }
+    }
+
+    /**
+     * Display fallback error message when calendar fails to load
+     */
+    function showFallback(error) {
+        const container = document.querySelector(CONFIG.container || '#clubcalendar');
+        if (container) {
+            container.innerHTML = `
+                <div class="clubcal-fallback clubcal-error" style="padding: 20px; text-align: center; border: 1px solid #ddd; border-radius: 8px; background: #fff3cd;">
+                    <h3 style="margin: 0 0 10px;">Calendar Unavailable</h3>
+                    <p style="margin: 0 0 10px;">Unable to load the calendar. Please try refreshing the page.</p>
+                    <p style="color: #666; font-size: 0.9em; margin: 0 0 10px;">Error: ${escapeHtml(error.message || String(error))}</p>
+                    <p style="margin: 0;"><a href="/events">View events on Wild Apricot →</a></p>
+                </div>
+            `;
         }
     }
 
