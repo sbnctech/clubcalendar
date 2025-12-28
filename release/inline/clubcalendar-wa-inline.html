@@ -295,31 +295,183 @@ window.CLUBCALENDAR_CONFIG = {
 
     const WaApi = {
         /**
-         * Auto-discover the WA account ID by calling /accounts endpoint
-         * This works when running on a WA page with a logged-in session
+         * Auto-discover the WA account ID using multiple methods
+         * Tries various sources in order of reliability
          */
         async discoverAccountId() {
             log('API', 'Auto-discovering account ID...');
+
+            // Method 1: Check window globals (some WA pages expose this)
+            const globalId = this._tryWindowGlobals();
+            if (globalId) {
+                log('API', `✓ Discovered account ID from window global: ${globalId}`);
+                return globalId;
+            }
+
+            // Method 2: Extract from page scripts/meta tags
+            const pageId = this._tryPageExtraction();
+            if (pageId) {
+                log('API', `✓ Discovered account ID from page content: ${pageId}`);
+                return pageId;
+            }
+
+            // Method 3: Try /accounts API endpoint
+            const apiId = await this._tryAccountsApi();
+            if (apiId) {
+                log('API', `✓ Discovered account ID from /accounts API: ${apiId}`);
+                return apiId;
+            }
+
+            // Method 4: Try /contacts/me to infer from response URL
+            const meId = await this._tryContactsMeApi();
+            if (meId) {
+                log('API', `✓ Discovered account ID from /contacts/me: ${meId}`);
+                return meId;
+            }
+
+            log('API', '⚠️ All auto-discovery methods failed');
+            return null;
+        },
+
+        /**
+         * Method 1: Check various window globals that WA might expose
+         */
+        _tryWindowGlobals() {
+            const candidates = [
+                window.waAccountId,
+                window.accountId,
+                window.WA?.accountId,
+                window.Wa?.accountId,
+                window.wildApricot?.accountId,
+                window.companyUid,  // Sometimes exposed on WA pages
+                window.BONAPAGE?.accountId,
+            ];
+
+            for (const candidate of candidates) {
+                if (candidate && /^\d+$/.test(String(candidate))) {
+                    return String(candidate);
+                }
+            }
+            return null;
+        },
+
+        /**
+         * Method 2: Extract account ID from page content
+         * Look for patterns in script tags, URLs, or data attributes
+         */
+        _tryPageExtraction() {
+            try {
+                // Check for account ID in any script content
+                const scripts = document.querySelectorAll('script');
+                for (const script of scripts) {
+                    const content = script.textContent || '';
+                    // Look for patterns like accountId: 123456 or accounts/123456
+                    const patterns = [
+                        /accountId['":\s]+(\d{5,7})/i,
+                        /accounts\/(\d{5,7})/,
+                        /waAccountId['":\s]+['"]?(\d{5,7})/i,
+                    ];
+                    for (const pattern of patterns) {
+                        const match = content.match(pattern);
+                        if (match && match[1]) {
+                            return match[1];
+                        }
+                    }
+                }
+
+                // Check meta tags
+                const metas = document.querySelectorAll('meta[name*="account"], meta[property*="account"]');
+                for (const meta of metas) {
+                    const content = meta.getAttribute('content');
+                    if (content && /^\d{5,7}$/.test(content)) {
+                        return content;
+                    }
+                }
+
+                // Check data attributes on common WA elements
+                const waElements = document.querySelectorAll('[data-account-id], [data-accountid]');
+                for (const el of waElements) {
+                    const id = el.getAttribute('data-account-id') || el.getAttribute('data-accountid');
+                    if (id && /^\d{5,7}$/.test(id)) {
+                        return id;
+                    }
+                }
+
+                // Check URL for account patterns (some WA setups)
+                const urlMatch = window.location.href.match(/accounts\/(\d{5,7})/);
+                if (urlMatch) {
+                    return urlMatch[1];
+                }
+
+            } catch (e) {
+                log('API', 'Page extraction error:', e.message);
+            }
+            return null;
+        },
+
+        /**
+         * Method 3: Try the /accounts API endpoint
+         */
+        async _tryAccountsApi() {
             try {
                 const headers = { 'Accept': 'application/json' };
                 if (CONFIG.waClientId) headers['clientId'] = CONFIG.waClientId;
 
                 const response = await fetch('/sys/api/v2/accounts', { headers });
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    log('API', `/accounts returned HTTP ${response.status}`);
+                    return null;
                 }
 
-                const accounts = await response.json();
-                if (Array.isArray(accounts) && accounts.length > 0) {
-                    const accountId = accounts[0].Id;
-                    log('API', `✓ Discovered account ID: ${accountId}`);
-                    return accountId;
+                const data = await response.json();
+
+                // Handle array response
+                if (Array.isArray(data) && data.length > 0) {
+                    const accountId = data[0].Id;
+                    if (accountId) return String(accountId);
                 }
-                throw new Error('No accounts returned');
+
+                // Handle single object response
+                if (data && data.Id) {
+                    return String(data.Id);
+                }
+
+                // Handle nested structure
+                if (data && data.Accounts && data.Accounts.length > 0) {
+                    return String(data.Accounts[0].Id);
+                }
+
             } catch (e) {
-                log('API', '⚠️ Account discovery failed:', e.message);
-                return null;
+                log('API', '/accounts API error:', e.message);
             }
+            return null;
+        },
+
+        /**
+         * Method 4: Call /contacts/me on a guessed account ID range
+         * or parse error response for account info
+         */
+        async _tryContactsMeApi() {
+            try {
+                // First, try without account ID to see if WA infers it
+                const headers = { 'Accept': 'application/json' };
+                if (CONFIG.waClientId) headers['clientId'] = CONFIG.waClientId;
+
+                // Try the publicview endpoint which sometimes works differently
+                const response = await fetch('/sys/api/publicview/v1/contacts/me', { headers });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Check if response contains account reference
+                    if (data && data.Url) {
+                        const match = data.Url.match(/accounts\/(\d+)/);
+                        if (match) return match[1];
+                    }
+                }
+            } catch (e) {
+                log('API', '/contacts/me API error:', e.message);
+            }
+            return null;
         },
 
         async call(endpoint, options = {}) {
