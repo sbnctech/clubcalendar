@@ -62,33 +62,33 @@ These require you to add tags:
 ### Use Lowercase
 
 ```
-[OK] activity:wine
-[NO] Activity:Wine
-[NO] ACTIVITY:WINE
+✓ activity:wine
+✗ Activity:Wine
+✗ ACTIVITY:WINE
 ```
 
 ### Use Hyphens, Not Spaces
 
 ```
-[OK] newbie-friendly
-[NO] newbie friendly
-[NO] newbie_friendly
+✓ newbie-friendly
+✗ newbie friendly
+✗ newbie_friendly
 ```
 
 ### Use Category:Value for Structured Tags
 
 ```
-[OK] activity:hiking
-[OK] cost:under-25
-[OK] level:beginner
+✓ activity:hiking
+✓ cost:under-25
+✓ level:beginner
 ```
 
 ### Use Single Words for Simple Tags
 
 ```
-[OK] outdoor
-[OK] indoor
-[OK] newbie-friendly
+✓ outdoor
+✓ indoor
+✓ newbie-friendly
 ```
 
 ---

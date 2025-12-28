@@ -1,6 +1,6 @@
 # ClubCalendar Configuration Guide
 
-The widget is configured via the `CLUBCALENDAR_CONFIG` object near the top of the HTML file.
+The widget is configured via the `CLUBCALENDAR_CONFIG` object at the top of the HTML file.
 
 ## Basic Configuration
 ```javascript
@@ -21,13 +21,13 @@ window.CLUBCALENDAR_CONFIG = {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| headerTitle | string | 'Club Events' | Title displayed above calendar |
-| primaryColor | string | '#2c5aa0' | Primary theme color (hex) |
-| accentColor | string | '#d4a800' | Accent/highlight color (hex) |
-| showMyEvents | boolean | true | Show "My Events" tab |
-| showFilters | boolean | true | Show filter buttons and dropdowns |
-| defaultView | string | 'dayGridMonth' | Initial view |
-| container | string | '#clubcalendar' | CSS selector for widget container |
+| `headerTitle` | string | 'Club Events' | Title displayed above calendar |
+| `primaryColor` | string | '#2c5aa0' | Primary theme color |
+| `accentColor` | string | '#d4a800' | Accent/highlight color |
+| `showMyEvents` | boolean | true | Show "My Events" tab for registered events |
+| `showFilters` | boolean | true | Show filter buttons and dropdowns |
+| `defaultView` | string | 'dayGridMonth' | Initial view: dayGridMonth, dayGridWeek, listWeek |
+| `container` | string | '#clubcalendar' | CSS selector for widget container |
 
 ## Calendar Views
 
@@ -37,9 +37,9 @@ window.CLUBCALENDAR_CONFIG = {
 
 ## Quick Filters
 
-Built-in quick filter buttons:
+The widget includes built-in quick filter buttons:
 
-- **Weekend** - Saturday/Sunday events only
+- **Weekend** - Shows only Saturday/Sunday events
 - **Has Openings** - Hides sold-out events
 - **After Hours** - Events starting after 5 PM
 
@@ -52,19 +52,13 @@ Automatically generated from your event data:
 - **Price** - Free, $, $$, $$$
 - **Type** - Multi-day, Single session, etc.
 
-## Color Examples
+## Auto-Tagging
 
-| Color | Hex Code | Use For |
-|-------|----------|---------|
-| Blue | #2c5aa0 | Default, professional |
-| Green | #2e7d32 | Nature, outdoors |
-| Purple | #6a1b9a | Elegant, creative |
-| Orange | #e65100 | Energetic, active |
-| Teal | #00796b | Fresh, modern |
+Events are automatically tagged based on title patterns. See EVENT_TAGGING.md for details.
 
-## Styling Overrides
+## Styling
 
-The widget uses CSS custom properties you can override:
+The widget uses CSS custom properties that you can override:
 ```css
 #clubcalendar {
     --clubcal-primary: #2c5aa0;
@@ -79,7 +73,7 @@ The widget uses CSS custom properties you can override:
 ### Widget not loading?
 
 1. Ensure you're logged into Wild Apricot
-2. Check browser console for errors (F12 -> Console)
+2. Check browser console for errors (F12 → Console)
 3. Verify the entire HTML was pasted (not truncated)
 
 ### Events not showing?
@@ -90,7 +84,7 @@ The widget uses CSS custom properties you can override:
 
 ### Styling conflicts?
 
-Add !important to CSS overrides if WA styles conflict:
+Add `!important` to CSS overrides if WA styles are conflicting:
 ```css
 #clubcalendar .fc-button {
     background-color: #2c5aa0 !important;
