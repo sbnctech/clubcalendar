@@ -1,18 +1,12 @@
 <!--
-  ClubCalendar - Wild Apricot Inline Widget
-  ══════════════════════════════════════════════════════════════════
+  ClubCalendar - Wild Apricot Native (Self-Contained)
+  ════════════════════════════════════════════════════
 
-  INSTALLATION:
-  1. Paste this ENTIRE file into a WA Custom HTML gadget
-  2. Set your waAccountId in the config section below
-  3. Save and view the page while logged in
+  Paste this ENTIRE file into a WA Custom HTML gadget.
+  NO external server required. Runs entirely on WA.
 
-  NO external server required. Runs entirely on Wild Apricot.
-
-  HOW TO FIND YOUR ACCOUNT ID:
-  - Log into WA Admin -> Settings (gear) -> Account Details
-  - Your Account ID is shown at the top of the page
-  - It's a 5-6 digit number like "123456"
+  The widget auto-detects your WA account from the page context.
+  No configuration required for basic use!
 -->
 
 <div id="clubcalendar"></div>
@@ -20,10 +14,10 @@
 <script>
 window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
-    // REQUIRED: Your Wild Apricot Account ID
-    // Find it: WA Admin -> Settings -> Account Details
+    // CREDENTIALS (Auto-detected - only set if auto-detection fails)
     // ═══════════════════════════════════════════════════════════════
-    waAccountId: 'YOUR_ACCOUNT_ID',  // <-- REPLACE with your account ID (e.g., '123456')
+    // waAccountId: '12345',  // Optional: Auto-detected from WA page
+    // waClientId: 'abc123',  // Optional: Only needed for external hosting
 
     // ═══════════════════════════════════════════════════════════════
     // OPTIONAL - Customize as needed
@@ -35,12 +29,26 @@ window.CLUBCALENDAR_CONFIG = {
     primaryColor: '#2c5aa0',
     accentColor: '#d4a800',
 
-    // Auto-tagging rules - customize for YOUR club's event naming conventions
-    // Example: If your events are named "Hiking: Mt. Tamalpais Trail"
-    // add a rule like: { type: 'name-prefix', pattern: 'Hiking:', tag: 'activity:hiking' }
+    // Auto-tagging rules - customize for your club
     autoTagRules: [
-        // { type: 'name-prefix', pattern: 'Committee Name:', tag: 'committee:committee-name' },
-        // { type: 'name-prefix', pattern: 'Activity:', tag: 'activity:activity-type' }
+        { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
+        { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
+        { type: 'name-prefix', pattern: 'Wine Appreciation:', tag: 'committee:wine' },
+        { type: 'name-prefix', pattern: 'Epicurious:', tag: 'committee:epicurious' },
+        { type: 'name-prefix', pattern: 'TGIF:', tag: 'committee:tgif' },
+        { type: 'name-prefix', pattern: 'Cycling:', tag: 'committee:cycling' },
+        { type: 'name-prefix', pattern: 'Golf:', tag: 'committee:golf' },
+        { type: 'name-prefix', pattern: 'Performing Arts:', tag: 'committee:performing-arts' },
+        { type: 'name-prefix', pattern: 'Local Heritage:', tag: 'committee:local-heritage' },
+        { type: 'name-prefix', pattern: 'Wellness:', tag: 'committee:wellness' },
+        { type: 'name-prefix', pattern: 'Garden:', tag: 'committee:garden' },
+        { type: 'name-prefix', pattern: 'Arts:', tag: 'committee:arts' },
+        { type: 'name-prefix', pattern: 'Current Events:', tag: 'committee:current-events' },
+        { type: 'name-prefix', pattern: 'Pop-Up:', tag: 'committee:popup' },
+        { type: 'name-prefix', pattern: 'Beer Lovers:', tag: 'committee:beer' },
+        { type: 'name-prefix', pattern: 'Out to Lunch:', tag: 'committee:out-to-lunch' },
+        { type: 'name-prefix', pattern: 'Afternoon Book:', tag: 'committee:book-clubs' },
+        { type: 'name-prefix', pattern: 'Evening Book:', tag: 'committee:book-clubs' }
     ]
 };
 </script>
@@ -94,6 +102,10 @@ window.CLUBCALENDAR_CONFIG = {
         // Member/public config overrides
         memberConfig: {},
         publicConfig: {},
+        // Guest mode options
+        showGuestIndicator: true,      // Show "Guest mode" indicator when not logged in
+        guestLoginPrompt: true,        // Show "Log in to see more events" message
+        filterPublicForGuests: false,  // If true, only show public events to guests (safety net)
         // Theme/CSS options
         autoTheme: true,           // Auto-detect theme from WA page elements
         stylePreset: 'default',    // 'default', 'compact', 'minimal', 'wa-compatible'
@@ -1653,6 +1665,10 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcalendar-header h2 { margin: 0; color: var(--clubcal-primary); font-size: 24px; font-weight: 600; font-family: var(--clubcal-heading-font); }
 .clubcal-user-info { background: #e3f2fd; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
 .clubcal-user-info .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--clubcal-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+.clubcal-guest-info { background: #fff8e1; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; color: #f57c00; font-size: 14px; }
+.clubcal-guest-info .guest-icon { font-size: 18px; }
+.clubcal-guest-prompt { background: #fff3e0; padding: 12px 16px; border-radius: 6px; margin-bottom: 15px; text-align: center; color: #e65100; font-size: 13px; }
+.clubcal-guest-prompt a { color: var(--clubcal-primary); text-decoration: underline; font-weight: 500; }
 .clubcal-tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
 .clubcal-tab-btn { padding: 12px 24px; border: none; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #666; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: var(--clubcal-body-font); }
 .clubcal-tab-btn:hover { color: var(--clubcal-primary); }
@@ -1771,11 +1787,20 @@ window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
 
     function buildWidgetHTML() {
-        const userDisplay = currentUser ? `
+        let userDisplay = '';
+        if (currentUser) {
+            userDisplay = `
             <div class="clubcal-user-info">
                 <div class="avatar">${(currentUser.FirstName || 'U')[0]}</div>
                 <span>Welcome, ${escapeHtml(currentUser.FirstName || 'Member')}!</span>
-            </div>` : '';
+            </div>`;
+        } else if (CONFIG.showGuestIndicator) {
+            userDisplay = `
+            <div class="clubcal-guest-info">
+                <span class="guest-icon">👤</span>
+                <span>Guest Mode</span>
+            </div>`;
+        }
 
         // Build quick filters based on config
         const qf = CONFIG.quickFilters || {};
@@ -1853,10 +1878,17 @@ window.CLUBCALENDAR_CONFIG = {
         const hasQuickFilters = quickFiltersHtml.length > 0;
         const hasDropdownFilters = dropdownFiltersHtml.length > 0;
 
+        // Guest login prompt - shown when not logged in and configured
+        const guestPrompt = (!currentUser && CONFIG.guestLoginPrompt) ? `
+            <div class="clubcal-guest-prompt">
+                <a href="#" data-action="login">Log in</a> to see member-only events and manage your registrations.
+            </div>` : '';
+
         return `
             <div class="clubcalendar-widget">
                 ${CONFIG.showHeader ? `<div class="clubcalendar-header"><h2>${escapeHtml(CONFIG.headerTitle)}</h2></div>` : ''}
                 ${userDisplay}
+                ${guestPrompt}
                 ${CONFIG.showMyEvents ? `
                     <div class="clubcal-tabs">
                         <button class="clubcal-tab-btn active" data-tab="find-events">Find Events</button>
@@ -2154,9 +2186,23 @@ window.CLUBCALENDAR_CONFIG = {
         const container = document.querySelector(CONFIG.container || '#clubcalendar');
         if (container) {
             container.addEventListener('click', (e) => {
+                // Handle event card clicks
                 const eventCard = e.target.closest('[data-event-url]');
                 if (eventCard && eventCard.dataset.eventUrl) {
                     window.open(eventCard.dataset.eventUrl, '_blank');
+                    return;
+                }
+                // Handle login action
+                const loginLink = e.target.closest('[data-action="login"]');
+                if (loginLink) {
+                    e.preventDefault();
+                    if (window.waMemberLoginUrl) {
+                        window.location.href = window.waMemberLoginUrl;
+                    } else {
+                        const existingLogin = document.querySelector('[href*="login"], [href*="Login"], .wa-login, #loginLink');
+                        if (existingLogin) existingLogin.click();
+                    }
+                    return;
                 }
             });
             // Keyboard accessibility for event cards
@@ -2392,6 +2438,14 @@ window.CLUBCALENDAR_CONFIG = {
             log('TRANSFORM', `Filtered out ${events.length - validEvents.length} cancelled events`);
 
             allEvents = validEvents.map((e, i) => transformEvent(e, i < 3));
+
+            // Filter to public-only for guests if configured (safety net)
+            if (!currentUser && CONFIG.filterPublicForGuests) {
+                const beforeCount = allEvents.length;
+                allEvents = allEvents.filter(e => e.isPublic);
+                log('INIT', `Guest mode: filtered to ${allEvents.length} public events (was ${beforeCount})`);
+            }
+
             filteredEvents = [...allEvents];
 
             // Build event index for O(1) lookups and invalidate dropdown caches
