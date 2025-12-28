@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WA Event Calendar vs ClubCalendar: Functional Comparison</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <style>
+        /* Base styles for standalone viewing */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4ECDC4 0%, #7B2CBF 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        header .tagline {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        header .emoji {
+            font-size: 3rem;
+        }
+
+        nav {
+            background: #333;
+            padding: 0;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        nav li {
+            margin: 0;
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background: #4ECDC4;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: #4ECDC4;
+        }
+
+        .content-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4ECDC4;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        h2 {
+            color: #4ECDC4;
+            border-bottom: 2px solid #4ECDC4;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        h3 {
+            color: #7B2CBF;
+            margin-top: 1.5rem;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 2rem 0;
+        }
+
+        .task {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .task h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .wa-steps, .cc-steps {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 6px;
+        }
+
+        .wa-steps {
+            background: #fff8e1;
+            border-left: 4px solid #FFB627;
+        }
+
+        .cc-steps {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+
+        .wa-steps strong, .cc-steps strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .advantage {
+            background: #f0faf9;
+            border: 1px solid #4ECDC4;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            margin-top: 0.75rem;
+            font-style: italic;
+        }
+
+        ol {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin: 0.3rem 0;
+        }
+
+        .core-problem {
+            background: #fff8e1;
+            border: 1px solid #FFB627;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .core-problem h2 {
+            margin-top: 0;
+            border: none;
+            padding-bottom: 0;
+        }
+
+        .bottom-line {
+            background: #f0faf9;
+            border: 1px solid #4ECDC4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .bottom-line h2 {
+            margin-top: 0;
+            border: none;
+            padding-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-section">
+            <div class="emoji">⚖️</div>
+            <h1>WA Event Calendar vs ClubCalendar</h1>
+            <p class="tagline">Functional Comparison</p>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="index.html">ClubCalendar Package</a></li>
+            <li><a href="../../resources/">Resources</a></li>
+            <li><a href="../../meeting-notes/">Meeting Notes</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="content-wrapper">
+
+<p>This document compares how well each calendar helps members accomplish common tasks.</p>
+
+<div class="core-problem">
+    <h2>The Core Problem</h2>
+    <p>SBNC has <strong>150+ events per month</strong> across 30+ committees. Members need to quickly find events that:</p>
+    <ul>
+        <li>They can actually attend (not sold out)</li>
+        <li>Fit their budget</li>
+        <li>Match their interests</li>
+        <li>Work with their schedule</li>
+    </ul>
+</div>
+
+<h2>Task-Based Comparison</h2>
+
+<div class="task">
+    <h3>Task 1: "Find an event I can sign up for this weekend"</h3>
+    <div class="wa-steps">
+        <strong>With WA Calendar:</strong>
+        <ol>
+            <li>Look at Saturday and Sunday on the calendar</li>
+            <li>Click on first event &rarr; check if sold out &rarr; click back</li>
+            <li>Click on second event &rarr; check if sold out &rarr; click back</li>
+            <li>Repeat until you find one with availability</li>
+            <li>Hope you remember which ones were full</li>
+        </ol>
+    </div>
+    <div class="cc-steps">
+        <strong>With ClubCalendar:</strong>
+        <ol>
+            <li>Click "Weekend" button</li>
+            <li>Click "Has Openings" button</li>
+            <li>Browse only events you can actually join</li>
+        </ol>
+    </div>
+    <div class="advantage">Time saved: 5-10 clicks per event avoided</div>
+</div>
+
+<div class="task">
+    <h3>Task 2: "What free or low-cost events are coming up?"</h3>
+    <div class="wa-steps">
+        <strong>With WA Calendar:</strong>
+        <ol>
+            <li>Click on first event &rarr; scroll to see price &rarr; click back</li>
+            <li>Click on second event &rarr; scroll to see price &rarr; click back</li>
+            <li>Mentally track which were affordable</li>
+            <li>Repeat for every event of interest</li>
+        </ol>
+    </div>
+    <div class="cc-steps">
+        <strong>With ClubCalendar:</strong>
+        <ol>
+            <li>Select "Free" or "Under $25" from Price dropdown</li>
+            <li>See only matching events, each showing $ indicator</li>
+        </ol>
+    </div>
+    <div class="advantage">Time saved: Eliminates click-and-remember cycle entirely</div>
+</div>
+
+<div class="task">
+    <h3>Task 3: "I want to find hiking or outdoor activities"</h3>
+    <div class="wa-steps">
+        <strong>With WA Calendar:</strong>
+        <ol>
+            <li>Know that "happy hikers" is the tag name (not "hiking")</li>
+            <li>Find and check the correct tag checkbox</li>
+            <li>Hope other outdoor events are tagged consistently</li>
+        </ol>
+    </div>
+    <div class="cc-steps">
+        <strong>With ClubCalendar:</strong>
+        <ol>
+            <li>Select "Physical/Fitness" from Activity dropdown, OR</li>
+            <li>Select "Outdoor" from Venue dropdown, OR</li>
+            <li>Type "hike" in search box</li>
+        </ol>
+    </div>
+    <div class="advantage">Advantage: Multiple ways to find what you want; doesn't require knowing tag names</div>
+</div>
+
+<div class="task">
+    <h3>Task 4: "What evening events are available for working members?"</h3>
+    <div class="wa-steps">
+        <strong>With WA Calendar:</strong>
+        <ol>
+            <li>Visually scan each day for events starting after 5pm</li>
+            <li>No way to filter&mdash;must look at every event time</li>
+        </ol>
+    </div>
+    <div class="cc-steps">
+        <strong>With ClubCalendar:</strong>
+        <ol>
+            <li>Click "After Hours" button</li>
+            <li>See only evening events (5pm+), color-coded purple</li>
+        </ol>
+    </div>
+    <div class="advantage">Time saved: Instant filtering vs. visual scanning of entire calendar</div>
+</div>
+
+<div class="task">
+    <h3>Task 5: "What events am I signed up for?"</h3>
+    <div class="wa-steps">
+        <strong>With WA Calendar:</strong>
+        <ol>
+            <li>Navigate away from calendar to profile page</li>
+            <li>Find "My Event Registrations" section</li>
+            <li>View list with limited information</li>
+            <li>Navigate back to calendar to continue browsing</li>
+        </ol>
+    </div>
+    <div class="cc-steps">
+        <strong>With ClubCalendar:</strong>
+        <ol>
+            <li>Click "My Events" tab (stays on same page)</li>
+            <li>See registered events, waitlist status, past events</li>
+            <li>Click "Events" tab to continue browsing</li>
+        </ol>
+    </div>
+    <div class="advantage">Advantage: No context-switching; everything in one place</div>
+</div>
+
+<div class="task">
+    <h3>Task 6: "Is that wine tasting event still available?"</h3>
+    <div class="wa-steps">
+        <strong>With WA Calendar:</strong>
+        <ol>
+            <li>Scroll through calendar looking for the event</li>
+            <li>Click on it to see details</li>
+            <li>Look for availability information</li>
+        </ol>
+    </div>
+    <div class="cc-steps">
+        <strong>With ClubCalendar:</strong>
+        <ol>
+            <li>Type "wine" or "tasting" in search box</li>
+            <li>See matching events with availability badges visible</li>
+            <li>"Sold Out" or "5 spots left" shown without clicking</li>
+        </ol>
+    </div>
+    <div class="advantage">Time saved: Search + at-a-glance availability</div>
+</div>
+
+<div class="task">
+    <h3>Task 7: "I want to explore new committees"</h3>
+    <div class="wa-steps">
+        <strong>With WA Calendar:</strong>
+        <ol>
+            <li>Browse events and try to identify committee from titles</li>
+            <li>Check/uncheck tags one at a time to explore</li>
+            <li>Tag names may not match committee names</li>
+        </ol>
+    </div>
+    <div class="cc-steps">
+        <strong>With ClubCalendar:</strong>
+        <ol>
+            <li>Open Committee dropdown</li>
+            <li>See all active committees listed</li>
+            <li>Select one to see only their events</li>
+            <li>Committee name shown clearly on each event card</li>
+        </ol>
+    </div>
+    <div class="advantage">Advantage: Designed for committee-based organization</div>
+</div>
+
+<h2>Summary: What Can Members Do?</h2>
+
+<table>
+    <tr>
+        <th>Member Task</th>
+        <th>WA Calendar</th>
+        <th>ClubCalendar</th>
+    </tr>
+    <tr><td>See which events have spots available</td><td>Click each one</td><td>See badges at a glance</td></tr>
+    <tr><td>See event prices</td><td>Click each one</td><td>See $ indicators at a glance</td></tr>
+    <tr><td>Find weekend events</td><td>Visually scan</td><td>One-click filter</td></tr>
+    <tr><td>Find evening events</td><td>Visually scan</td><td>One-click filter</td></tr>
+    <tr><td>Find events with availability</td><td>Click each one</td><td>One-click filter</td></tr>
+    <tr><td>Find free events</td><td>Click each one</td><td>One-click filter</td></tr>
+    <tr><td>Search by keyword</td><td>Not possible</td><td>Type and search</td></tr>
+    <tr><td>Filter by activity type</td><td>Not possible</td><td>Dropdown filter</td></tr>
+    <tr><td>Filter by event type</td><td>Not possible</td><td>Dropdown filter</td></tr>
+    <tr><td>Filter by price range</td><td>Not possible</td><td>Dropdown filter</td></tr>
+    <tr><td>Filter by date range</td><td>Not possible</td><td>Date inputs</td></tr>
+    <tr><td>See my registered events</td><td>Separate page</td><td>Same-page tab</td></tr>
+    <tr><td>Remember my filter preferences</td><td>Not possible</td><td>Saved automatically</td></tr>
+    <tr><td>See waitlist counts</td><td>Not possible</td><td>Optional badge</td></tr>
+    <tr><td>See when registration opens</td><td>Click to check</td><td>Badge visible</td></tr>
+</table>
+
+<div class="bottom-line">
+    <h2>The Bottom Line</h2>
+    <p><strong>WA Calendar</strong> works like a basic bulletin board&mdash;it shows you what exists, but finding what you want requires clicking through events one by one.</p>
+    <p><strong>ClubCalendar</strong> works like a smart assistant&mdash;it helps you filter, search, and see key information (availability, price, timing) without hunting for it.</p>
+    <p>For a club with 150+ monthly events, the difference between "click each event to learn about it" and "filter to exactly what you want" is significant member experience improvement.</p>
+</div>
+
+<hr>
+
+<p><strong>Developer:</strong> Ed Forman<br>
+<strong>Co-Developer:</strong> Claude (Anthropic)<br>
+<strong>Repository:</strong> <a href="https://github.com/sbnctech/clubcalendar">github.com/sbnctech/clubcalendar</a><br>
+<strong>Based on:</strong> SBNC's calendar solution evaluation rubric<br>
+<strong>Last Updated:</strong> December 2024</p>
+
+<p><a href="index.html">&larr; Back to Package Index</a></p>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Santa Barbara Newcomers Club</p>
+        <p>Questions? Contact <a href="mailto:technology@sbnewcomers.org">technology@sbnewcomers.org</a></p>
+    </footer>
+</body>
+</html>

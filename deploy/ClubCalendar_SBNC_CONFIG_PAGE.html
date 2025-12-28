@@ -1,0 +1,804 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SBNC ClubCalendar Configuration Page                                        ║
+║  Wild Apricot Custom HTML Gadget                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  INSTALLATION:                                                                ║
+║  1. Create a new WA page at /clubcalendar-config                             ║
+║  2. Add a Custom HTML gadget                                                  ║
+║  3. Paste this ENTIRE file                                                    ║
+║  4. Save the page                                                             ║
+║                                                                               ║
+║  The calendar widget reads config from this page.                             ║
+║  Edit the JSON below to customize calendar behavior.                          ║
+║                                                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CONFIGURATION JSON
+     Edit the values below to customize your calendar.
+     The widget reads this configuration on page load.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<script id="clubcalendar-config" type="application/json">
+{
+    "_comment": "SBNC ClubCalendar Configuration - Last updated: December 2024",
+    "_version": "1.0.0",
+
+    "organization": {
+        "waAccountId": "176353",
+        "name": "Santa Barbara Newcomers Club",
+        "timezone": "America/Los_Angeles",
+        "websiteUrl": "https://sbnewcomers.org"
+    },
+
+    "display": {
+        "headerTitle": "SBNC Events",
+        "showHeader": true,
+        "defaultView": "dayGridMonth",
+        "stylePreset": "default"
+    },
+
+    "audience": {
+        "mode": "member",
+        "publicPageUrl": "/events-public",
+        "memberPageUrl": "/events",
+        "showPublicEventsToGuests": true
+    },
+
+    "theme": {
+        "primaryColor": "#2c5aa0",
+        "accentColor": "#d4a800",
+        "fontFamily": "inherit"
+    },
+
+    "calendar": {
+        "showEventDots": true,
+        "showMyEvents": true,
+        "pastEventsVisible": false,
+        "pastEventsDays": 14,
+        "showWaitlistCount": false
+    },
+
+    "quickFilters": {
+        "enabled": true,
+        "buttons": {
+            "weekend": { "enabled": true, "label": "Weekend" },
+            "openings": { "enabled": true, "label": "Has Openings" },
+            "afterhours": { "enabled": true, "label": "After Hours" },
+            "public": { "enabled": true, "label": "Public Events" },
+            "free": { "enabled": false, "label": "Free" }
+        }
+    },
+
+    "dropdownFilters": {
+        "enabled": true,
+        "dropdowns": {
+            "committee": {
+                "enabled": true,
+                "label": "Committee",
+                "placeholder": "All Committees"
+            },
+            "activity": {
+                "enabled": true,
+                "label": "Activity",
+                "placeholder": "All Activities"
+            },
+            "price": {
+                "enabled": true,
+                "label": "Price",
+                "placeholder": "Any Price",
+                "options": ["Free only", "Paid only", "Under $25", "Under $50"]
+            },
+            "eventType": {
+                "enabled": true,
+                "label": "Event Type",
+                "placeholder": "All Types"
+            },
+            "recurring": {
+                "enabled": true,
+                "label": "Recurring",
+                "placeholder": "All Events",
+                "options": ["One-time only", "Recurring only"]
+            },
+            "venue": {
+                "enabled": true,
+                "label": "Venue",
+                "placeholder": "All Venues"
+            },
+            "tags": {
+                "enabled": true,
+                "label": "Tags",
+                "placeholder": "All Tags"
+            }
+        }
+    },
+
+    "tags": {
+        "showEventTags": true,
+        "hiddenTags": [],
+        "allowedTags": null,
+        "tagCategories": {
+            "committee": { "label": "Committee", "color": "#2c5aa0" },
+            "activity": { "label": "Activity", "color": "#28a745" },
+            "audience": { "label": "Audience", "color": "#6c757d" }
+        }
+    },
+
+    "committeePresets": [
+        { "prefix": "Happy Hikers:", "tag": "committee:happy-hikers", "displayName": "Happy Hikers" },
+        { "prefix": "Games!:", "tag": "committee:games", "displayName": "Games!" },
+        { "prefix": "Wine Appreciation:", "tag": "committee:wine", "displayName": "Wine Appreciation" },
+        { "prefix": "Epicurious:", "tag": "committee:epicurious", "displayName": "Epicurious" },
+        { "prefix": "TGIF:", "tag": "committee:tgif", "displayName": "TGIF" },
+        { "prefix": "Cycling:", "tag": "committee:cycling", "displayName": "Cycling" },
+        { "prefix": "Golf:", "tag": "committee:golf", "displayName": "Golf" },
+        { "prefix": "Performing Arts:", "tag": "committee:performing-arts", "displayName": "Performing Arts" },
+        { "prefix": "Local Heritage:", "tag": "committee:local-heritage", "displayName": "Local Heritage" },
+        { "prefix": "Wellness:", "tag": "committee:wellness", "displayName": "Wellness" },
+        { "prefix": "Garden:", "tag": "committee:garden", "displayName": "Garden" },
+        { "prefix": "Arts:", "tag": "committee:arts", "displayName": "Arts" },
+        { "prefix": "Current Events:", "tag": "committee:current-events", "displayName": "Current Events" },
+        { "prefix": "Pop-Up:", "tag": "committee:popup", "displayName": "Pop-Up" },
+        { "prefix": "Beer Lovers:", "tag": "committee:beer", "displayName": "Beer Lovers" },
+        { "prefix": "Out to Lunch:", "tag": "committee:out-to-lunch", "displayName": "Out to Lunch" },
+        { "prefix": "Afternoon Book:", "tag": "committee:book-clubs", "displayName": "Afternoon Book Club" },
+        { "prefix": "Evening Book:", "tag": "committee:book-clubs", "displayName": "Evening Book Club" }
+    ],
+
+    "labels": {
+        "noEvents": "No events found matching your filters.",
+        "loading": "Loading events...",
+        "error": "Unable to load events. Please try again.",
+        "myEvents": "My Events",
+        "allEvents": "All Events",
+        "register": "Register",
+        "registered": "Registered",
+        "waitlist": "Join Waitlist",
+        "onWaitlist": "On Waitlist",
+        "soldOut": "Sold Out"
+    },
+
+    "visibility": {
+        "showFilters": true,
+        "showSearch": true,
+        "showViewToggle": true,
+        "showPrintButton": false,
+        "showExportButton": false,
+        "showShareButton": false
+    },
+
+    "advanced": {
+        "debugMode": false,
+        "cacheMinutes": 5,
+        "maxEventsPerPage": 50,
+        "enableAnalytics": false
+    }
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     VALIDATION STATUS BOX
+     Shows config validation results on page load.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div id="config-status" style="
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 900px;
+    margin: 20px auto;
+"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CONFIGURATION REFERENCE
+     Human-readable documentation of all fields.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div id="config-docs" style="
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+">
+    <h2 style="margin-top: 0; color: #2c5aa0;">ClubCalendar Configuration Reference</h2>
+    <p style="color: #666;">
+        This page contains the configuration for the SBNC ClubCalendar widget.
+        Edit the JSON above to customize calendar behavior.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #dee2e6; margin: 20px 0;">
+
+    <h3 style="color: #333;">Organization Settings</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <thead>
+            <tr style="background: #e9ecef;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Field</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Description</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Example</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>waAccountId</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Your Wild Apricot Account ID (found in WA Admin → Settings)</td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>"176353"</code></td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>timezone</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">IANA timezone for event times</td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>"America/Los_Angeles"</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="color: #333;">Audience Mode</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <thead>
+            <tr style="background: #e9ecef;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Field</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Description</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Options</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>audience.mode</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Who can see events on this calendar</td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                    <code>"member"</code> - All events (login required)<br>
+                    <code>"public"</code> - Only public events (no login)
+                </td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>audience.showPublicEventsToGuests</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Show public events even when not logged in</td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>true</code> or <code>false</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="color: #333;">Display Settings</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <thead>
+            <tr style="background: #e9ecef;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Field</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Description</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Options</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>display.defaultView</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Initial calendar view</td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                    <code>"dayGridMonth"</code> - Monthly grid<br>
+                    <code>"timeGridWeek"</code> - Weekly agenda<br>
+                    <code>"listMonth"</code> - Event list
+                </td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>display.stylePreset</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Visual style</td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">
+                    <code>"default"</code> - Standard<br>
+                    <code>"compact"</code> - Smaller<br>
+                    <code>"minimal"</code> - Clean
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="color: #333;">Quick Filters (Toggle Buttons)</h3>
+    <p style="color: #666;">Set <code>enabled: false</code> to hide a filter button.</p>
+    <ul style="color: #333;">
+        <li><strong>weekend</strong> - Show only weekend events</li>
+        <li><strong>openings</strong> - Show events with available spots</li>
+        <li><strong>afterhours</strong> - Show events after 5 PM</li>
+        <li><strong>public</strong> - Show public events only</li>
+        <li><strong>free</strong> - Show free events only</li>
+    </ul>
+
+    <h3 style="color: #333;">Dropdown Filters</h3>
+    <p style="color: #666;">Set <code>enabled: false</code> to hide a dropdown filter.</p>
+    <ul style="color: #333;">
+        <li><strong>committee</strong> - Filter by activity committee</li>
+        <li><strong>activity</strong> - Filter by activity type</li>
+        <li><strong>price</strong> - Filter by event cost</li>
+        <li><strong>eventType</strong> - Filter by event category</li>
+        <li><strong>recurring</strong> - Filter recurring vs one-time</li>
+        <li><strong>venue</strong> - Filter by location</li>
+        <li><strong>tags</strong> - Filter by custom tags</li>
+    </ul>
+
+    <h3 style="color: #333;">Committee Presets</h3>
+    <p style="color: #666;">
+        Defines how event titles are parsed to extract committee names.
+        Each preset maps a title prefix to a tag and display name.
+    </p>
+    <p style="color: #666;">
+        <strong>Example:</strong> An event titled "Happy Hikers: Morning Trail Walk"
+        will be tagged with <code>committee:happy-hikers</code> and show "Happy Hikers" as the committee.
+    </p>
+
+    <h3 style="color: #333;">Show/Hide Toggles</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <thead>
+            <tr style="background: #e9ecef;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Field</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>visibility.showFilters</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Show/hide the entire filter panel</td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>visibility.showSearch</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Show/hide the search box</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>visibility.showViewToggle</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Show/hide month/week/list view buttons</td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>calendar.showMyEvents</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Show/hide "My Events" tab</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>calendar.showEventDots</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Show dots on calendar dates with events</td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+                <td style="padding: 10px; border: 1px solid #dee2e6;"><code>tags.showEventTags</code></td>
+                <td style="padding: 10px; border: 1px solid #dee2e6;">Show tag badges on events</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="color: #333;">Theme Colors</h3>
+    <p style="color: #666;">
+        Use hex color codes (e.g., <code>#2c5aa0</code>).
+    </p>
+    <ul style="color: #333;">
+        <li><strong>primaryColor</strong> - Main accent color (buttons, links)</li>
+        <li><strong>accentColor</strong> - Secondary accent (highlights, badges)</li>
+    </ul>
+
+    <hr style="border: none; border-top: 1px solid #dee2e6; margin: 20px 0;">
+
+    <p style="color: #999; font-size: 13px;">
+        <strong>Need help?</strong> Contact SBNC Tech or see the full documentation in the ClubCalendar repository.
+    </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     VALIDATION SCRIPT
+     Runs on page load to validate the configuration.
+     Shows errors/warnings but does not block.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<script>
+(function() {
+    'use strict';
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // VALIDATION HELPERS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    function isHexColor(value) {
+        if (typeof value !== 'string') return false;
+        return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value);
+    }
+
+    function isValidTimezone(tz) {
+        try {
+            Intl.DateTimeFormat(undefined, { timeZone: tz });
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function isOneOf(value, options) {
+        return options.includes(value);
+    }
+
+    function isBoolean(value) {
+        return typeof value === 'boolean';
+    }
+
+    function isString(value) {
+        return typeof value === 'string';
+    }
+
+    function isObject(value) {
+        return typeof value === 'object' && value !== null && !Array.isArray(value);
+    }
+
+    function isArray(value) {
+        return Array.isArray(value);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MAIN VALIDATION FUNCTION
+    // ─────────────────────────────────────────────────────────────────────────
+
+    function validateConfig(config) {
+        const errors = [];
+        const warnings = [];
+        const info = [];
+
+        // Parse JSON if string
+        if (typeof config === 'string') {
+            try {
+                config = JSON.parse(config);
+            } catch (e) {
+                errors.push('Invalid JSON: ' + e.message);
+                return { valid: false, errors, warnings, info };
+            }
+        }
+
+        if (!config || typeof config !== 'object') {
+            errors.push('Configuration must be a JSON object.');
+            return { valid: false, errors, warnings, info };
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // ORGANIZATION
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (!config.organization) {
+            errors.push('organization section is required.');
+        } else {
+            if (!config.organization.waAccountId) {
+                errors.push('organization.waAccountId is required.');
+            } else if (!/^\d+$/.test(config.organization.waAccountId)) {
+                errors.push('organization.waAccountId must contain only numbers.');
+            }
+
+            if (config.organization.timezone) {
+                if (!isValidTimezone(config.organization.timezone)) {
+                    errors.push('organization.timezone is not a valid IANA timezone. Example: "America/Los_Angeles"');
+                } else {
+                    info.push('Timezone: ' + config.organization.timezone);
+                }
+            } else {
+                warnings.push('organization.timezone is not set. Defaulting to browser timezone.');
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // DISPLAY
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (config.display) {
+            const validViews = ['dayGridMonth', 'timeGridWeek', 'listMonth'];
+            if (config.display.defaultView && !isOneOf(config.display.defaultView, validViews)) {
+                errors.push('display.defaultView must be one of: ' + validViews.join(', '));
+            }
+
+            const validPresets = ['default', 'compact', 'minimal'];
+            if (config.display.stylePreset && !isOneOf(config.display.stylePreset, validPresets)) {
+                errors.push('display.stylePreset must be one of: ' + validPresets.join(', '));
+            }
+
+            if (config.display.headerTitle) {
+                info.push('Header title: "' + config.display.headerTitle + '"');
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // AUDIENCE
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (config.audience) {
+            const validModes = ['public', 'member'];
+            if (config.audience.mode && !isOneOf(config.audience.mode, validModes)) {
+                errors.push('audience.mode must be one of: ' + validModes.join(', '));
+            } else if (config.audience.mode) {
+                info.push('Audience mode: ' + config.audience.mode);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // THEME
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (config.theme) {
+            if (config.theme.primaryColor && !isHexColor(config.theme.primaryColor)) {
+                errors.push('theme.primaryColor must be a hex color like "#2c5aa0"');
+            }
+            if (config.theme.accentColor && !isHexColor(config.theme.accentColor)) {
+                errors.push('theme.accentColor must be a hex color like "#d4a800"');
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // QUICK FILTERS
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (config.quickFilters && config.quickFilters.buttons) {
+            const validButtons = ['weekend', 'openings', 'afterhours', 'public', 'free'];
+            let enabledCount = 0;
+            for (const key of Object.keys(config.quickFilters.buttons)) {
+                if (!validButtons.includes(key)) {
+                    warnings.push('quickFilters.buttons.' + key + ' is not a recognized filter.');
+                }
+                const btn = config.quickFilters.buttons[key];
+                if (btn && btn.enabled === true) enabledCount++;
+            }
+            info.push('Quick filters enabled: ' + enabledCount + ' of ' + validButtons.length);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // DROPDOWN FILTERS
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (config.dropdownFilters && config.dropdownFilters.dropdowns) {
+            const validDropdowns = ['committee', 'activity', 'price', 'eventType', 'recurring', 'venue', 'tags'];
+            let enabledCount = 0;
+            for (const key of Object.keys(config.dropdownFilters.dropdowns)) {
+                if (!validDropdowns.includes(key)) {
+                    warnings.push('dropdownFilters.dropdowns.' + key + ' is not a recognized filter.');
+                }
+                const dd = config.dropdownFilters.dropdowns[key];
+                if (dd && dd.enabled === true) enabledCount++;
+            }
+            info.push('Dropdown filters enabled: ' + enabledCount + ' of ' + validDropdowns.length);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // COMMITTEE PRESETS
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (config.committeePresets) {
+            if (!isArray(config.committeePresets)) {
+                errors.push('committeePresets must be an array.');
+            } else {
+                for (let i = 0; i < config.committeePresets.length; i++) {
+                    const preset = config.committeePresets[i];
+                    if (!preset.prefix) {
+                        errors.push('committeePresets[' + i + '].prefix is required.');
+                    }
+                    if (!preset.tag) {
+                        errors.push('committeePresets[' + i + '].tag is required.');
+                    } else if (!/^[a-zA-Z0-9-]+:[a-zA-Z0-9-]+$/.test(preset.tag)) {
+                        errors.push('committeePresets[' + i + '].tag must be format "category:value"');
+                    }
+                }
+                info.push('Committee presets defined: ' + config.committeePresets.length);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // TAGS
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (config.tags) {
+            if (config.tags.hiddenTags && !isArray(config.tags.hiddenTags)) {
+                errors.push('tags.hiddenTags must be an array.');
+            }
+            if (config.tags.allowedTags !== null && config.tags.allowedTags !== undefined) {
+                if (!isArray(config.tags.allowedTags)) {
+                    errors.push('tags.allowedTags must be an array or null.');
+                } else {
+                    info.push('Tag filter: Only showing ' + config.tags.allowedTags.length + ' allowed tags');
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // VISIBILITY
+        // ─────────────────────────────────────────────────────────────────────
+
+        if (config.visibility) {
+            const toggles = ['showFilters', 'showSearch', 'showViewToggle', 'showPrintButton', 'showExportButton', 'showShareButton'];
+            for (const toggle of toggles) {
+                if (config.visibility[toggle] !== undefined && !isBoolean(config.visibility[toggle])) {
+                    errors.push('visibility.' + toggle + ' must be true or false.');
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // SECURITY CHECK
+        // ─────────────────────────────────────────────────────────────────────
+
+        const forbiddenKeys = ['apikey', 'apisecret', 'token', 'password', 'secret', 'credential', 'clientsecret'];
+        function checkForSecrets(obj, path) {
+            if (!isObject(obj)) return;
+            for (const key of Object.keys(obj)) {
+                const lowerKey = key.toLowerCase();
+                for (const forbidden of forbiddenKeys) {
+                    if (lowerKey.includes(forbidden)) {
+                        errors.push('Security: "' + path + '.' + key + '" looks like a credential. Remove it!');
+                    }
+                }
+                if (isObject(obj[key])) {
+                    checkForSecrets(obj[key], path + '.' + key);
+                }
+            }
+        }
+        checkForSecrets(config, 'config');
+
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings,
+            info
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DISPLAY RESULTS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    function displayStatus(result) {
+        const container = document.getElementById('config-status');
+        if (!container) return;
+
+        let html = '';
+
+        if (result.valid && result.warnings.length === 0) {
+            html = `
+                <div style="
+                    padding: 15px 20px;
+                    background: #d4edda;
+                    border: 1px solid #c3e6cb;
+                    border-radius: 8px;
+                    color: #155724;
+                ">
+                    <strong>✓ Configuration Valid</strong>
+                    <p style="margin: 10px 0 0 0; font-size: 14px;">
+                        ${result.info.map(i => '• ' + i).join('<br>')}
+                    </p>
+                </div>
+            `;
+        } else {
+            const sections = [];
+
+            if (result.errors.length > 0) {
+                sections.push(`
+                    <div style="
+                        padding: 15px 20px;
+                        background: #f8d7da;
+                        border: 1px solid #f5c6cb;
+                        border-radius: 8px;
+                        color: #721c24;
+                        margin-bottom: 10px;
+                    ">
+                        <strong>✗ Configuration Errors</strong>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                            ${result.errors.map(e => '<li>' + escapeHtml(e) + '</li>').join('')}
+                        </ul>
+                    </div>
+                `);
+            }
+
+            if (result.warnings.length > 0) {
+                sections.push(`
+                    <div style="
+                        padding: 15px 20px;
+                        background: #fff3cd;
+                        border: 1px solid #ffc107;
+                        border-radius: 8px;
+                        color: #856404;
+                        margin-bottom: 10px;
+                    ">
+                        <strong>⚠ Warnings</strong>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                            ${result.warnings.map(w => '<li>' + escapeHtml(w) + '</li>').join('')}
+                        </ul>
+                    </div>
+                `);
+            }
+
+            if (result.valid && result.info.length > 0) {
+                sections.push(`
+                    <div style="
+                        padding: 15px 20px;
+                        background: #d1ecf1;
+                        border: 1px solid #bee5eb;
+                        border-radius: 8px;
+                        color: #0c5460;
+                    ">
+                        <strong>ℹ Configuration Summary</strong>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                            ${result.info.map(i => '<li>' + escapeHtml(i) + '</li>').join('')}
+                        </ul>
+                    </div>
+                `);
+            }
+
+            html = sections.join('');
+        }
+
+        container.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // RUN ON PAGE LOAD
+    // ─────────────────────────────────────────────────────────────────────────
+
+    function init() {
+        const configScript = document.getElementById('clubcalendar-config');
+        if (!configScript) {
+            displayStatus({
+                valid: false,
+                errors: ['Configuration script tag not found. Expected: <script id="clubcalendar-config" type="application/json">'],
+                warnings: [],
+                info: []
+            });
+            return;
+        }
+
+        const configText = configScript.textContent;
+        const result = validateConfig(configText);
+        displayStatus(result);
+
+        // Store parsed config for widget access
+        if (result.valid) {
+            try {
+                window.CLUBCALENDAR_PAGE_CONFIG = JSON.parse(configText);
+            } catch (e) {
+                // Already caught in validateConfig
+            }
+        }
+    }
+
+    // Run when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // Export for testing
+    window.validateClubCalendarPageConfig = validateConfig;
+
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CONFIG PAGE STYLES
+     Additional styling for the config page.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<style>
+    #config-docs code {
+        background: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Monaco', 'Consolas', monospace;
+        font-size: 13px;
+    }
+
+    #config-docs table {
+        font-size: 14px;
+    }
+
+    #config-docs ul {
+        margin: 10px 0;
+        padding-left: 25px;
+    }
+
+    #config-docs li {
+        margin: 5px 0;
+    }
+
+    @media print {
+        #config-status {
+            display: none;
+        }
+    }
+</style>

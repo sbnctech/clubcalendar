@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .demo-header {
+            max-width: 1200px;
+            margin: 0 auto 20px;
+            padding: 15px 20px;
+            background: #2c5aa0;
+            color: white;
+            border-radius: 8px;
+        }
+        .demo-header h1 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+        }
+        .demo-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        #clubcalendar {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h1>ClubCalendar Demo</h1>
+        <p>This demo uses mock data to show the calendar features. On a real WA page, events load from the API.</p>
+    </div>
+
+    <div id="clubcalendar"></div>
+
+<script>
+// Demo configuration
+window.CLUBCALENDAR_CONFIG = {
+    waAccountId: 'DEMO',
+    headerTitle: 'Club Events',
+    showMyEvents: true,
+    showFilters: true,
+    defaultView: 'dayGridMonth',
+    primaryColor: '#2c5aa0',
+    accentColor: '#d4a800',
+    fallbackContainerId: 'wa-fallback',
+    fallbackEventsUrl: '/events'
+};
+
+// Mock data for demo
+window.DEMO_MODE = true;
+window.DEMO_EVENTS = generateMockEvents();
+window.DEMO_USER = { Id: 12345, Email: 'member@example.com', FirstName: 'Demo', LastName: 'User' };
+window.DEMO_REGISTRATIONS = [
+    { EventId: 1001, Status: 'Confirmed' },
+    { EventId: 1005, Status: 'Waitlisted' }
+];
+
+function generateMockEvents() {
+    const committees = [
+        'Happy Hikers', 'Wine Appreciation', 'Games!', 'TGIF', 'Epicurious',
+        'Cycling', 'Golf', 'Performing Arts', 'Wellness', 'Garden'
+    ];
+
+    const eventTypes = [
+        'Morning Walk', 'Tasting Event', 'Game Night', 'Happy Hour', 'Workshop',
+        'Day Trip', 'Lecture', 'Social Gathering', 'Class', 'Performance'
+    ];
+
+    const locations = [
+        'Douglas Preserve', 'Community Center', 'Local Winery', 'Beach Park',
+        'Member Home', 'Restaurant TBD', 'Golf Course', 'Theater', 'Garden Center'
+    ];
+
+    const events = [];
+    const today = new Date();
+
+    for (let i = 0; i < 50; i++) {
+        const committee = committees[Math.floor(Math.random() * committees.length)];
+        const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+        const location = locations[Math.floor(Math.random() * locations.length)];
+
+        const daysOffset = Math.floor(Math.random() * 60) - 10; // -10 to +50 days
+        const eventDate = new Date(today);
+        eventDate.setDate(eventDate.getDate() + daysOffset);
+
+        const hour = 8 + Math.floor(Math.random() * 12); // 8am to 8pm
+        eventDate.setHours(hour, 0, 0, 0);
+
+        const endDate = new Date(eventDate);
+        endDate.setHours(endDate.getHours() + 2);
+
+        const limit = Math.random() > 0.3 ? Math.floor(Math.random() * 30) + 5 : null;
+        const registered = limit ? Math.floor(Math.random() * (limit + 5)) : Math.floor(Math.random() * 20);
+        const price = Math.random() > 0.3 ? Math.floor(Math.random() * 100) : 0;
+
+        events.push({
+            Id: 1000 + i,
+            Name: `${committee}: ${eventType} at ${location}`,
+            StartDate: eventDate.toISOString(),
+            EndDate: endDate.toISOString(),
+            Location: location,
+            Description: `Join us for a wonderful ${eventType.toLowerCase()} hosted by ${committee}. This is a demo event to showcase the calendar features.`,
+            RegistrationsLimit: limit,
+            ConfirmedRegistrationsCount: Math.min(registered, limit || 999),
+            AccessLevel: Math.random() > 0.2 ? 'Members' : 'Public',
+            RegistrationTypes: [{ BasePrice: price }],
+            Tags: Math.random() > 0.7 ? ['Featured'] : [],
+            RegistrationEnabled: true,
+            StartTimeSpecified: true
+        });
+    }
+
+    return events;
+}
+</script>
+
+<script>
+/**
+ * ClubCalendar Widget - Demo Version
+ * This is a modified version that uses mock data instead of WA API
+ */
+(function() {
+    'use strict';
+
+    const DEFAULT_CONFIG = {
+        container: '#clubcalendar',
+        waAccountId: null,
+        waClientId: null,
+        defaultView: 'dayGridMonth',
+        showFilters: true,
+        showHeader: true,
+        headerTitle: 'Club Events',
+        showMyEvents: true,
+        pastEventsVisible: false,
+        pastEventsDays: 14,
+        primaryColor: '#2c5aa0',
+        accentColor: '#d4a800',
+        autoTagRules: [],
+        quickFilters: {
+            weekend: true,
+            openings: true,
+            afterhours: true,
+            free: false,
+            public: true
+        },
+        dropdownFilters: {
+            committee: true,
+            activity: true,
+            price: true,
+            eventType: true,
+            recurring: true,
+            venue: true,
+            tags: true
+        },
+        showEventTags: true,
+        hiddenTags: [],
+        showEventDots: true,
+        showWaitlistCount: false,
+        memberConfig: {},
+        publicConfig: {},
+        autoTheme: true,
+        stylePreset: 'default',
+        cssVars: {},
+        customCSS: '',
+        fallbackContainerId: 'wa-fallback',
+        fallbackEventsUrl: '/events',
+        titleParsing: {
+            enabled: true,
+            separator: ':',
+            maxSeparatorPosition: 30,
+            defaultCategory: 'General',
+            stripChars: '*-()'
+        }
+    };
+
+    let CONFIG = Object.assign({}, DEFAULT_CONFIG, window.CLUBCALENDAR_CONFIG || {});
+    let allEvents = [];
+    let filteredEvents = [];
+    let eventIndex = new Map();
+    let cachedCommittees = null;
+    let cachedTags = null;
+
+    function mergeConfig(base, overrides) {
+        if (!overrides || Object.keys(overrides).length === 0) return base;
+        const result = { ...base };
+        for (const key of Object.keys(overrides)) {
+            if (overrides[key] !== null && typeof overrides[key] === 'object' && !Array.isArray(overrides[key])) {
+                result[key] = { ...result[key], ...overrides[key] };
+            } else {
+                result[key] = overrides[key];
+            }
+        }
+        return result;
+    }
+
+    let currentUser = null;
+    let myRegistrations = [];
+    let calendarInstance = null;
+
+    const STORAGE_KEY = 'clubcalendar_preferences';
+
+    const DEFAULT_FILTERS = {
+        quickFilters: [],
+        committee: null,
+        activity: null,
+        price: null,
+        eventType: null,
+        recurring: null,
+        venue: null,
+        tag: null,
+        search: '',
+        time: 'upcoming',
+        dateFrom: null,
+        dateTo: null
+    };
+
+    let currentFilters = { ...DEFAULT_FILTERS };
+
+    function savePreferences() {
+        try {
+            const prefs = {
+                filters: currentFilters,
+                view: calendarInstance?.view?.type || CONFIG.defaultView,
+                savedAt: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+        } catch (e) {}
+    }
+
+    function loadPreferences() {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return null;
+            const prefs = JSON.parse(stored);
+            if (prefs.savedAt && Date.now() - prefs.savedAt < 30 * 24 * 60 * 60 * 1000) {
+                return prefs;
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    function clearPreferences() {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    }
+
+    const LOG_PREFIX = '[ClubCalendar]';
+
+    function log(category, message, data = null) {
+        const timestamp = new Date().toISOString().substr(11, 12);
+        const prefix = `${LOG_PREFIX} [${timestamp}] [${category}]`;
+        if (data !== null) {
+            console.log(prefix, message, data);
+        } else {
+            console.log(prefix, message);
+        }
+    }
+
+    // Activity type mappings
+    const ACTIVITY_MAPPINGS = {
+        'happy hikers': 'physical',
+        'cycling': 'physical',
+        'golf': 'physical',
+        'wellness': 'wellness',
+        'tgif': 'social',
+        'pop-up': 'social',
+        'out to lunch': 'social',
+        'epicurious': 'food-drink',
+        'wine appreciation': 'food-drink',
+        'beer lovers': 'food-drink',
+        'performing arts': 'arts',
+        'arts': 'arts',
+        'local heritage': 'arts',
+        'current events': 'educational',
+        'book': 'educational',
+        'games': 'games',
+        'garden': 'garden'
+    };
+
+    const ACTIVITY_OPTIONS = [
+        { value: 'physical', label: 'Physical/Fitness' },
+        { value: 'social', label: 'Social' },
+        { value: 'food-drink', label: 'Food & Drink' },
+        { value: 'arts', label: 'Arts & Culture' },
+        { value: 'educational', label: 'Educational' },
+        { value: 'games', label: 'Games' },
+        { value: 'wellness', label: 'Wellness' },
+        { value: 'garden', label: 'Garden' }
+    ];
+
+    const EVENT_TYPE_OPTIONS = [
+        { value: 'workshop', label: 'Workshop' },
+        { value: 'tasting', label: 'Tasting' },
+        { value: 'trip', label: 'Day Trip' },
+        { value: 'hike', label: 'Hike' },
+        { value: 'walk', label: 'Walk' },
+        { value: 'happy-hour', label: 'Happy Hour' },
+        { value: 'game-night', label: 'Game Night' },
+        { value: 'discussion', label: 'Discussion' },
+        { value: 'lecture', label: 'Lecture' },
+        { value: 'class', label: 'Class' },
+        { value: 'performance', label: 'Performance' }
+    ];
+
+    const PRICE_OPTIONS = [
+        { value: 'free', label: 'Free only' },
+        { value: 'under-25', label: 'Under $25' },
+        { value: 'under-50', label: 'Under $50' },
+        { value: 'under-100', label: 'Under $100' }
+    ];
+
+    const RECURRING_OPTIONS = [
+        { value: 'weekly', label: 'Weekly' },
+        { value: 'monthly', label: 'Monthly' },
+        { value: 'daily', label: 'Daily' }
+    ];
+
+    const VENUE_OPTIONS = [
+        { value: 'outdoor', label: 'Outdoor' }
+    ];
+
+    function showFallback(errorMessage) {
+        log('FALLBACK', 'Activating fallback due to error:', errorMessage);
+        const container = document.querySelector(CONFIG.container);
+        if (container) {
+            container.style.display = 'none';
+        }
+        const fallback = document.getElementById(CONFIG.fallbackContainerId);
+        if (fallback) {
+            fallback.style.display = 'block';
+            return;
+        }
+        if (container) {
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
+                    <h3 style="margin: 0 0 10px 0; color: #856404;">Calendar temporarily unavailable</h3>
+                    <p style="margin: 0; color: #856404;">${escapeHtml(errorMessage)}</p>
+                    <p style="margin: 10px 0 0 0; color: #856404;">
+                        <a href="${CONFIG.fallbackEventsUrl}" style="color: #856404; font-weight: 500;">View events list →</a>
+                    </p>
+                </div>
+            `;
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function parseTitle(fullTitle) {
+        if (!CONFIG.titleParsing.enabled) {
+            return { committee: CONFIG.titleParsing.defaultCategory, displayTitle: fullTitle };
+        }
+
+        const sep = CONFIG.titleParsing.separator;
+        const maxPos = CONFIG.titleParsing.maxSeparatorPosition;
+        const sepIndex = fullTitle.indexOf(sep);
+
+        if (sepIndex > 0 && sepIndex <= maxPos) {
+            let committee = fullTitle.substring(0, sepIndex).trim();
+            const stripChars = CONFIG.titleParsing.stripChars || '';
+            for (const char of stripChars) {
+                committee = committee.replace(new RegExp('\\' + char, 'g'), '').trim();
+            }
+            const displayTitle = fullTitle.substring(sepIndex + 1).trim();
+            return { committee, displayTitle };
+        }
+
+        return { committee: CONFIG.titleParsing.defaultCategory, displayTitle: fullTitle };
+    }
+
+    function deriveActivityType(committee) {
+        const lowerCommittee = committee.toLowerCase();
+        for (const [key, value] of Object.entries(ACTIVITY_MAPPINGS)) {
+            if (lowerCommittee.includes(key)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    function deriveEventType(title) {
+        const lowerTitle = title.toLowerCase();
+        const types = [];
+
+        if (lowerTitle.includes('workshop')) types.push('workshop');
+        if (lowerTitle.includes('tasting')) types.push('tasting');
+        if (lowerTitle.includes('day trip') || lowerTitle.includes('tour')) types.push('trip');
+        if (lowerTitle.includes('hike')) types.push('hike');
+        if (lowerTitle.includes('walk')) types.push('walk');
+        if (lowerTitle.includes('happy hour')) types.push('happy-hour');
+        if (lowerTitle.includes('game night')) types.push('game-night');
+        if (lowerTitle.includes('discussion')) types.push('discussion');
+        if (lowerTitle.includes('lecture')) types.push('lecture');
+        if (lowerTitle.includes('class')) types.push('class');
+        if (lowerTitle.includes('performance') || lowerTitle.includes('concert') || lowerTitle.includes('show')) types.push('performance');
+
+        return types;
+    }
+
+    function deriveRecurring(title) {
+        const lowerTitle = title.toLowerCase();
+        if (lowerTitle.includes('weekly')) return 'weekly';
+        if (lowerTitle.includes('monthly')) return 'monthly';
+        if (lowerTitle.includes('daily')) return 'daily';
+        return null;
+    }
+
+    function deriveVenueType(title, location) {
+        const combined = `${title} ${location}`.toLowerCase();
+        const outdoorKeywords = ['park', 'beach', 'trail', 'garden', 'outdoor', 'preserve', 'hike'];
+        for (const kw of outdoorKeywords) {
+            if (combined.includes(kw)) return 'outdoor';
+        }
+        return null;
+    }
+
+    function transformEvent(waEvent, logDetails = false) {
+        const fullName = waEvent.Name || 'Untitled Event';
+        const { committee, displayTitle } = parseTitle(fullName);
+
+        const startDate = new Date(waEvent.StartDate);
+        const endDate = waEvent.EndDate ? new Date(waEvent.EndDate) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+
+        const hour = startDate.getHours();
+        let timeOfDay = 'morning';
+        if (hour >= 12 && hour < 17) timeOfDay = 'afternoon';
+        else if (hour >= 17) timeOfDay = 'evening';
+
+        const dayOfWeek = startDate.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+        const limit = waEvent.RegistrationsLimit;
+        const confirmed = waEvent.ConfirmedRegistrationsCount || 0;
+        const spotsAvailable = limit ? Math.max(0, limit - confirmed) : null;
+        const isFull = spotsAvailable === 0;
+
+        let availabilityStatus = 'unlimited';
+        if (spotsAvailable === 0) availabilityStatus = 'full';
+        else if (spotsAvailable !== null && spotsAvailable <= 5) availabilityStatus = 'limited';
+        else if (spotsAvailable !== null) availabilityStatus = 'open';
+
+        const regTypes = waEvent.RegistrationTypes || [];
+        const prices = regTypes.map(rt => rt.BasePrice || 0);
+        const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+        const isFree = minPrice === 0;
+
+        let priceIndicator = 'Free';
+        if (minPrice > 0 && minPrice < 25) priceIndicator = '$';
+        else if (minPrice >= 25 && minPrice < 50) priceIndicator = '$$';
+        else if (minPrice >= 50 && minPrice < 100) priceIndicator = '$$$';
+        else if (minPrice >= 100) priceIndicator = '$$$$';
+
+        const isPublic = (waEvent.AccessLevel || '').toLowerCase().includes('public');
+        const location = waEvent.Location || '';
+        const description = waEvent.Description || '';
+
+        const tags = [];
+        tags.push(`time:${timeOfDay}`);
+        if (isWeekend) tags.push('day:weekend');
+        tags.push(`availability:${availabilityStatus}`);
+        if (isFree) tags.push('cost:free');
+        if (minPrice > 0 && minPrice < 25) tags.push('cost:under-25');
+        if (minPrice > 0 && minPrice < 50) tags.push('cost:under-50');
+        if (minPrice > 0 && minPrice < 100) tags.push('cost:under-100');
+
+        const activityType = deriveActivityType(committee);
+        if (activityType) tags.push(`activity:${activityType}`);
+
+        const committeeSlug = committee.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        tags.push(`committee:${committeeSlug}`);
+
+        const eventTypes = deriveEventType(fullName);
+        eventTypes.forEach(t => tags.push(`type:${t}`));
+
+        const recurring = deriveRecurring(fullName);
+        if (recurring) tags.push(`recurring:${recurring}`);
+
+        const venueType = deriveVenueType(fullName, location);
+        if (venueType) tags.push(`venue:${venueType}`);
+
+        if (isPublic) tags.push('public-event');
+
+        if (waEvent.Tags && Array.isArray(waEvent.Tags)) {
+            waEvent.Tags.forEach(t => {
+                if (typeof t === 'string') tags.push(t);
+                else if (t.Name) tags.push(t.Name);
+            });
+        }
+
+        let bgColor = '#4a90d9';
+        if (timeOfDay === 'morning') bgColor = '#f59e0b';
+        else if (timeOfDay === 'afternoon') bgColor = '#3b82f6';
+        else if (timeOfDay === 'evening') bgColor = '#8b5cf6';
+
+        return {
+            id: waEvent.Id,
+            title: displayTitle,
+            fullTitle: fullName,
+            committee,
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+            location,
+            description,
+            url: waEvent.Url || `https://example.wildapricot.org/event-${waEvent.Id}`,
+            spotsAvailable,
+            registrationsLimit: limit,
+            confirmedCount: confirmed,
+            isFull,
+            availabilityStatus,
+            minPrice,
+            priceIndicator,
+            isFree,
+            isPublic,
+            timeOfDay,
+            isWeekend,
+            tags,
+            backgroundColor: bgColor,
+            borderColor: bgColor,
+            _searchName: fullName.toLowerCase(),
+            _searchLocation: location.toLowerCase(),
+            _searchDescription: description.toLowerCase()
+        };
+    }
+
+    function applyFilters() {
+        const now = new Date();
+
+        filteredEvents = allEvents.filter(event => {
+            const eventDate = new Date(event.start);
+
+            if (currentFilters.time === 'upcoming' && eventDate < now) return false;
+            if (currentFilters.time === 'past' && eventDate >= now) return false;
+
+            if (currentFilters.dateFrom) {
+                const fromDate = new Date(currentFilters.dateFrom);
+                if (eventDate < fromDate) return false;
+            }
+            if (currentFilters.dateTo) {
+                const toDate = new Date(currentFilters.dateTo);
+                toDate.setHours(23, 59, 59, 999);
+                if (eventDate > toDate) return false;
+            }
+
+            for (const qf of currentFilters.quickFilters) {
+                if (qf === 'weekend' && !event.isWeekend) return false;
+                if (qf === 'openings' && event.isFull) return false;
+                if (qf === 'afterhours' && event.timeOfDay !== 'evening') return false;
+                if (qf === 'free' && !event.isFree) return false;
+                if (qf === 'public' && !event.isPublic) return false;
+            }
+
+            if (currentFilters.committee) {
+                const committeeTag = `committee:${currentFilters.committee}`;
+                if (!event.tags.includes(committeeTag)) return false;
+            }
+
+            if (currentFilters.activity) {
+                const activityTag = `activity:${currentFilters.activity}`;
+                if (!event.tags.includes(activityTag)) return false;
+            }
+
+            if (currentFilters.price) {
+                if (currentFilters.price === 'free' && !event.isFree) return false;
+                if (currentFilters.price === 'under-25' && event.minPrice >= 25) return false;
+                if (currentFilters.price === 'under-50' && event.minPrice >= 50) return false;
+                if (currentFilters.price === 'under-100' && event.minPrice >= 100) return false;
+            }
+
+            if (currentFilters.eventType) {
+                const typeTag = `type:${currentFilters.eventType}`;
+                if (!event.tags.includes(typeTag)) return false;
+            }
+
+            if (currentFilters.recurring) {
+                const recurringTag = `recurring:${currentFilters.recurring}`;
+                if (!event.tags.includes(recurringTag)) return false;
+            }
+
+            if (currentFilters.venue) {
+                const venueTag = `venue:${currentFilters.venue}`;
+                if (!event.tags.includes(venueTag)) return false;
+            }
+
+            if (currentFilters.tag) {
+                if (!event.tags.includes(currentFilters.tag)) return false;
+            }
+
+            if (currentFilters.search) {
+                const searchLower = currentFilters.search.toLowerCase();
+                const matches = event._searchName.includes(searchLower) ||
+                               event._searchLocation.includes(searchLower) ||
+                               event._searchDescription.includes(searchLower);
+                if (!matches) return false;
+            }
+
+            return true;
+        });
+
+        if (calendarInstance) {
+            calendarInstance.removeAllEvents();
+            calendarInstance.addEventSource(filteredEvents);
+        }
+
+        updateEventCount();
+        renderActiveFilterChips();
+        savePreferences();
+    }
+
+    function updateEventCount() {
+        const countEl = document.getElementById('clubcal-event-count');
+        if (countEl) {
+            countEl.textContent = `${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''}`;
+        }
+    }
+
+    function getCommittees() {
+        if (cachedCommittees) return cachedCommittees;
+        const committees = new Set();
+        allEvents.forEach(e => {
+            if (e.committee && e.committee !== CONFIG.titleParsing.defaultCategory) {
+                committees.add(e.committee);
+            }
+        });
+        cachedCommittees = Array.from(committees).sort();
+        return cachedCommittees;
+    }
+
+    function getManualTags() {
+        if (cachedTags) return cachedTags;
+        const autoPrefixes = ['time:', 'availability:', 'day:', 'cost:', 'activity:', 'committee:', 'type:', 'recurring:', 'venue:'];
+        const tags = new Set();
+        allEvents.forEach(e => {
+            e.tags.forEach(t => {
+                const isAuto = autoPrefixes.some(p => t.startsWith(p)) || t === 'public-event';
+                if (!isAuto && !CONFIG.hiddenTags.includes(t)) {
+                    tags.add(t);
+                }
+            });
+        });
+        cachedTags = Array.from(tags).sort();
+        return cachedTags;
+    }
+
+    function populateCommitteeDropdown() {
+        const select = document.getElementById('clubcal-committee-filter');
+        if (!select) return;
+
+        const committees = getCommittees();
+        select.innerHTML = '<option value="">All Committees</option>';
+        committees.forEach(c => {
+            const slug = c.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            select.innerHTML += `<option value="${slug}">${escapeHtml(c)}</option>`;
+        });
+    }
+
+    function populateTagsDropdown() {
+        const select = document.getElementById('clubcal-tag-filter');
+        if (!select) return;
+
+        const tags = getManualTags();
+        select.innerHTML = '<option value="">All Tags</option>';
+        tags.forEach(t => {
+            select.innerHTML += `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`;
+        });
+    }
+
+    function renderActiveFilterChips() {
+        const container = document.getElementById('clubcal-active-filters');
+        if (!container) return;
+
+        const chips = [];
+
+        currentFilters.quickFilters.forEach(qf => {
+            const labels = { weekend: 'Weekend', openings: 'Has Openings', afterhours: 'After Hours', free: 'Free', public: 'Public' };
+            chips.push({ type: 'quick', value: qf, label: labels[qf] || qf });
+        });
+
+        if (currentFilters.committee) {
+            const committees = getCommittees();
+            const slug = currentFilters.committee;
+            const label = committees.find(c => c.toLowerCase().replace(/[^a-z0-9]+/g, '-') === slug) || slug;
+            chips.push({ type: 'committee', value: slug, label: `Committee: ${label}` });
+        }
+
+        if (currentFilters.activity) {
+            const opt = ACTIVITY_OPTIONS.find(o => o.value === currentFilters.activity);
+            chips.push({ type: 'activity', value: currentFilters.activity, label: opt ? opt.label : currentFilters.activity });
+        }
+
+        if (currentFilters.price) {
+            const opt = PRICE_OPTIONS.find(o => o.value === currentFilters.price);
+            chips.push({ type: 'price', value: currentFilters.price, label: opt ? opt.label : currentFilters.price });
+        }
+
+        if (currentFilters.eventType) {
+            const opt = EVENT_TYPE_OPTIONS.find(o => o.value === currentFilters.eventType);
+            chips.push({ type: 'eventType', value: currentFilters.eventType, label: opt ? opt.label : currentFilters.eventType });
+        }
+
+        if (currentFilters.search) {
+            chips.push({ type: 'search', value: currentFilters.search, label: `Search: "${currentFilters.search}"` });
+        }
+
+        if (chips.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = chips.map(chip => `
+            <span class="clubcal-filter-chip" data-type="${chip.type}" data-value="${escapeHtml(chip.value)}">
+                ${escapeHtml(chip.label)}
+                <button class="clubcal-chip-remove" aria-label="Remove filter">&times;</button>
+            </span>
+        `).join('') + `<button class="clubcal-clear-all">Clear All</button>`;
+
+        container.querySelectorAll('.clubcal-chip-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const chip = e.target.closest('.clubcal-filter-chip');
+                const type = chip.dataset.type;
+                const value = chip.dataset.value;
+
+                if (type === 'quick') {
+                    currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== value);
+                    document.querySelector(`.clubcal-quick-filter[data-filter="${value}"]`)?.classList.remove('active');
+                } else if (type === 'search') {
+                    currentFilters.search = '';
+                    const searchInput = document.getElementById('clubcal-search-input');
+                    if (searchInput) searchInput.value = '';
+                } else {
+                    currentFilters[type] = null;
+                    const select = document.getElementById(`clubcal-${type}-filter`);
+                    if (select) select.value = '';
+                }
+
+                applyFilters();
+            });
+        });
+
+        container.querySelector('.clubcal-clear-all')?.addEventListener('click', () => {
+            currentFilters = { ...DEFAULT_FILTERS };
+            document.querySelectorAll('.clubcal-quick-filter').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.clubcal-dropdown-filter').forEach(s => s.value = '');
+            const searchInput = document.getElementById('clubcal-search-input');
+            if (searchInput) searchInput.value = '';
+            applyFilters();
+        });
+    }
+
+    function getMyRegistration(eventId) {
+        return myRegistrations.find(r => r.EventId === eventId);
+    }
+
+    function renderEventPopup(event) {
+        const myReg = getMyRegistration(event.id);
+        let regBadge = '';
+        if (myReg) {
+            if (myReg.Status === 'Confirmed') {
+                regBadge = '<span class="clubcal-badge clubcal-badge-registered">✓ Registered</span>';
+            } else if (myReg.Status === 'Waitlisted') {
+                regBadge = '<span class="clubcal-badge clubcal-badge-waitlist">⏳ Waitlisted</span>';
+            }
+        }
+
+        let availBadge = '';
+        if (event.isFull) {
+            availBadge = '<span class="clubcal-badge clubcal-badge-full">Sold Out</span>';
+        } else if (event.spotsAvailable !== null && event.spotsAvailable <= 5) {
+            availBadge = `<span class="clubcal-badge clubcal-badge-limited">${event.spotsAvailable} spots left</span>`;
+        } else if (event.spotsAvailable !== null) {
+            availBadge = `<span class="clubcal-badge clubcal-badge-open">${event.spotsAvailable} spots</span>`;
+        }
+
+        const priceBadge = `<span class="clubcal-badge clubcal-badge-price">${event.priceIndicator}</span>`;
+
+        const startDate = new Date(event.start);
+        const timeStr = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+        return `
+            <div class="clubcal-popup">
+                <div class="clubcal-popup-header">
+                    <span class="clubcal-popup-committee">${escapeHtml(event.committee)}</span>
+                    ${regBadge}
+                </div>
+                <h3 class="clubcal-popup-title">${escapeHtml(event.title)}</h3>
+                <div class="clubcal-popup-meta">
+                    <div class="clubcal-popup-datetime">📅 ${dateStr} at ${timeStr}</div>
+                    ${event.location ? `<div class="clubcal-popup-location">📍 ${escapeHtml(event.location)}</div>` : ''}
+                </div>
+                <div class="clubcal-popup-badges">
+                    ${availBadge}
+                    ${priceBadge}
+                    ${event.isPublic ? '<span class="clubcal-badge clubcal-badge-public">Public</span>' : ''}
+                </div>
+                <a href="${event.url}" target="_blank" class="clubcal-popup-link">View Details →</a>
+            </div>
+        `;
+    }
+
+    function buildWidgetHTML() {
+        const qf = CONFIG.quickFilters;
+        const df = CONFIG.dropdownFilters;
+
+        return `
+            <div class="clubcal-widget">
+                ${CONFIG.showHeader ? `
+                    <div class="clubcal-header">
+                        <h2 class="clubcal-title">${escapeHtml(CONFIG.headerTitle)}</h2>
+                        <span id="clubcal-event-count" class="clubcal-event-count"></span>
+                    </div>
+                ` : ''}
+
+                ${CONFIG.showFilters ? `
+                    <div class="clubcal-filters">
+                        <div class="clubcal-quick-filters">
+                            ${qf.weekend ? '<button class="clubcal-quick-filter" data-filter="weekend">Weekend</button>' : ''}
+                            ${qf.openings ? '<button class="clubcal-quick-filter" data-filter="openings">Has Openings</button>' : ''}
+                            ${qf.afterhours ? '<button class="clubcal-quick-filter" data-filter="afterhours">After Hours</button>' : ''}
+                            ${qf.free ? '<button class="clubcal-quick-filter" data-filter="free">Free</button>' : ''}
+                            ${qf.public ? '<button class="clubcal-quick-filter" data-filter="public">Public</button>' : ''}
+                        </div>
+
+                        <div class="clubcal-dropdown-filters">
+                            ${df.committee ? `
+                                <select id="clubcal-committee-filter" class="clubcal-dropdown-filter">
+                                    <option value="">All Committees</option>
+                                </select>
+                            ` : ''}
+                            ${df.activity ? `
+                                <select id="clubcal-activity-filter" class="clubcal-dropdown-filter">
+                                    <option value="">Activity Type</option>
+                                    ${ACTIVITY_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+                                </select>
+                            ` : ''}
+                            ${df.price ? `
+                                <select id="clubcal-price-filter" class="clubcal-dropdown-filter">
+                                    <option value="">Any Price</option>
+                                    ${PRICE_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+                                </select>
+                            ` : ''}
+                            ${df.eventType ? `
+                                <select id="clubcal-eventType-filter" class="clubcal-dropdown-filter">
+                                    <option value="">Event Type</option>
+                                    ${EVENT_TYPE_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+                                </select>
+                            ` : ''}
+                            ${df.tags ? `
+                                <select id="clubcal-tag-filter" class="clubcal-dropdown-filter">
+                                    <option value="">All Tags</option>
+                                </select>
+                            ` : ''}
+                        </div>
+
+                        <div class="clubcal-search-container">
+                            <input type="text" id="clubcal-search-input" class="clubcal-search-input" placeholder="Search events...">
+                        </div>
+
+                        <div id="clubcal-active-filters" class="clubcal-active-filters"></div>
+                    </div>
+                ` : ''}
+
+                ${CONFIG.showMyEvents ? `
+                    <div class="clubcal-tabs">
+                        <button class="clubcal-tab active" data-tab="events">Events</button>
+                        <button class="clubcal-tab" data-tab="myevents">My Events</button>
+                    </div>
+                ` : ''}
+
+                <div id="clubcal-tab-events" class="clubcal-tab-content active">
+                    <div class="clubcal-legend">
+                        <span class="clubcal-legend-item"><span class="clubcal-dot" style="background:#f59e0b"></span> Morning</span>
+                        <span class="clubcal-legend-item"><span class="clubcal-dot" style="background:#3b82f6"></span> Afternoon</span>
+                        <span class="clubcal-legend-item"><span class="clubcal-dot" style="background:#8b5cf6"></span> Evening</span>
+                    </div>
+                    <div id="clubcal-calendar"></div>
+                </div>
+
+                ${CONFIG.showMyEvents ? `
+                    <div id="clubcal-tab-myevents" class="clubcal-tab-content">
+                        <div id="clubcal-my-events-list"></div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    function setupEventListeners() {
+        document.querySelectorAll('.clubcal-quick-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = btn.dataset.filter;
+                btn.classList.toggle('active');
+
+                if (btn.classList.contains('active')) {
+                    if (!currentFilters.quickFilters.includes(filter)) {
+                        currentFilters.quickFilters.push(filter);
+                    }
+                } else {
+                    currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filter);
+                }
+
+                applyFilters();
+            });
+        });
+
+        document.querySelectorAll('.clubcal-dropdown-filter').forEach(select => {
+            select.addEventListener('change', () => {
+                const id = select.id;
+                const value = select.value;
+
+                if (id === 'clubcal-committee-filter') currentFilters.committee = value || null;
+                else if (id === 'clubcal-activity-filter') currentFilters.activity = value || null;
+                else if (id === 'clubcal-price-filter') currentFilters.price = value || null;
+                else if (id === 'clubcal-eventType-filter') currentFilters.eventType = value || null;
+                else if (id === 'clubcal-recurring-filter') currentFilters.recurring = value || null;
+                else if (id === 'clubcal-venue-filter') currentFilters.venue = value || null;
+                else if (id === 'clubcal-tag-filter') currentFilters.tag = value || null;
+
+                applyFilters();
+            });
+        });
+
+        const searchInput = document.getElementById('clubcal-search-input');
+        if (searchInput) {
+            let debounceTimer;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    currentFilters.search = searchInput.value.trim();
+                    applyFilters();
+                }, 300);
+            });
+        }
+
+        document.querySelectorAll('.clubcal-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.clubcal-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.clubcal-tab-content').forEach(c => c.classList.remove('active'));
+
+                tab.classList.add('active');
+                const tabId = `clubcal-tab-${tab.dataset.tab}`;
+                document.getElementById(tabId)?.classList.add('active');
+
+                if (tab.dataset.tab === 'myevents') {
+                    renderMyEvents();
+                }
+            });
+        });
+    }
+
+    function renderMyEvents() {
+        const container = document.getElementById('clubcal-my-events-list');
+        if (!container) return;
+
+        const now = new Date();
+        const myEvents = allEvents.filter(e => getMyRegistration(e.id));
+
+        const upcoming = myEvents.filter(e => new Date(e.start) >= now).sort((a, b) => new Date(a.start) - new Date(b.start));
+        const past = myEvents.filter(e => new Date(e.start) < now).sort((a, b) => new Date(b.start) - new Date(a.start));
+
+        if (myEvents.length === 0) {
+            container.innerHTML = '<div class="clubcal-empty">You haven\'t registered for any events yet.</div>';
+            return;
+        }
+
+        let html = '';
+
+        if (upcoming.length > 0) {
+            html += '<h3 class="clubcal-section-title">Upcoming</h3>';
+            html += '<div class="clubcal-my-events-grid">';
+            upcoming.forEach(e => {
+                const reg = getMyRegistration(e.id);
+                const startDate = new Date(e.start);
+                const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const timeStr = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+                html += `
+                    <div class="clubcal-my-event-card">
+                        <div class="clubcal-my-event-date">${dateStr}</div>
+                        <div class="clubcal-my-event-time">${timeStr}</div>
+                        <div class="clubcal-my-event-title">${escapeHtml(e.title)}</div>
+                        <div class="clubcal-my-event-committee">${escapeHtml(e.committee)}</div>
+                        <span class="clubcal-badge ${reg.Status === 'Waitlisted' ? 'clubcal-badge-waitlist' : 'clubcal-badge-registered'}">
+                            ${reg.Status === 'Waitlisted' ? '⏳ Waitlisted' : '✓ Registered'}
+                        </span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        if (past.length > 0) {
+            html += '<h3 class="clubcal-section-title">Past Events</h3>';
+            html += '<div class="clubcal-my-events-grid">';
+            past.slice(0, 5).forEach(e => {
+                const startDate = new Date(e.start);
+                const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                html += `
+                    <div class="clubcal-my-event-card clubcal-past">
+                        <div class="clubcal-my-event-date">${dateStr}</div>
+                        <div class="clubcal-my-event-title">${escapeHtml(e.title)}</div>
+                        <div class="clubcal-my-event-committee">${escapeHtml(e.committee)}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        container.innerHTML = html;
+    }
+
+    function applyFilterStateToUI() {
+        currentFilters.quickFilters.forEach(qf => {
+            const btn = document.querySelector(`.clubcal-quick-filter[data-filter="${qf}"]`);
+            if (btn) btn.classList.add('active');
+        });
+
+        if (currentFilters.committee) {
+            const select = document.getElementById('clubcal-committee-filter');
+            if (select) select.value = currentFilters.committee;
+        }
+        if (currentFilters.activity) {
+            const select = document.getElementById('clubcal-activity-filter');
+            if (select) select.value = currentFilters.activity;
+        }
+        if (currentFilters.price) {
+            const select = document.getElementById('clubcal-price-filter');
+            if (select) select.value = currentFilters.price;
+        }
+        if (currentFilters.eventType) {
+            const select = document.getElementById('clubcal-eventType-filter');
+            if (select) select.value = currentFilters.eventType;
+        }
+        if (currentFilters.search) {
+            const searchInput = document.getElementById('clubcal-search-input');
+            if (searchInput) searchInput.value = currentFilters.search;
+        }
+    }
+
+    function initCalendar(initialView) {
+        const calendarEl = document.getElementById('clubcal-calendar');
+        if (!calendarEl || !window.FullCalendar) return;
+
+        calendarInstance = new FullCalendar.Calendar(calendarEl, {
+            initialView: initialView || CONFIG.defaultView,
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,listMonth'
+            },
+            events: filteredEvents,
+            eventClick: function(info) {
+                info.jsEvent.preventDefault();
+                window.open(info.event.extendedProps.url || info.event.url, '_blank');
+            },
+            eventDidMount: function(info) {
+                const event = info.event.extendedProps;
+                const tipContent = renderEventPopup({
+                    id: info.event.id,
+                    title: info.event.title,
+                    fullTitle: event.fullTitle,
+                    committee: event.committee,
+                    start: info.event.start,
+                    location: event.location,
+                    spotsAvailable: event.spotsAvailable,
+                    isFull: event.isFull,
+                    priceIndicator: event.priceIndicator,
+                    isPublic: event.isPublic,
+                    url: event.url || info.event.url
+                });
+
+                info.el.setAttribute('title', '');
+                info.el.style.cursor = 'pointer';
+
+                // Simple tooltip on hover
+                info.el.addEventListener('mouseenter', (e) => {
+                    const existing = document.querySelector('.clubcal-tooltip');
+                    if (existing) existing.remove();
+
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'clubcal-tooltip';
+                    tooltip.innerHTML = tipContent;
+                    document.body.appendChild(tooltip);
+
+                    const rect = info.el.getBoundingClientRect();
+                    tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                    tooltip.style.left = `${rect.left + window.scrollX}px`;
+                });
+
+                info.el.addEventListener('mouseleave', () => {
+                    const tooltip = document.querySelector('.clubcal-tooltip');
+                    if (tooltip) tooltip.remove();
+                });
+            },
+            datesSet: function() {
+                savePreferences();
+            }
+        });
+
+        calendarInstance.render();
+    }
+
+    function loadFullCalendar() {
+        return new Promise((resolve, reject) => {
+            if (window.FullCalendar) { resolve(); return; }
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    function injectStyles() {
+        if (document.getElementById('clubcal-styles')) return;
+
+        const style = document.createElement('style');
+        style.id = 'clubcal-styles';
+        style.textContent = `
+            .clubcal-widget {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                padding: 20px;
+            }
+            .clubcal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #eee;
+            }
+            .clubcal-title {
+                margin: 0;
+                font-size: 24px;
+                color: #333;
+            }
+            .clubcal-event-count {
+                color: #666;
+                font-size: 14px;
+            }
+            .clubcal-filters {
+                margin-bottom: 20px;
+            }
+            .clubcal-quick-filters {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            .clubcal-quick-filter {
+                padding: 6px 14px;
+                border: 1px solid #ddd;
+                border-radius: 20px;
+                background: white;
+                cursor: pointer;
+                font-size: 13px;
+                transition: all 0.2s;
+            }
+            .clubcal-quick-filter:hover {
+                border-color: ${CONFIG.primaryColor};
+                color: ${CONFIG.primaryColor};
+            }
+            .clubcal-quick-filter.active {
+                background: ${CONFIG.primaryColor};
+                color: white;
+                border-color: ${CONFIG.primaryColor};
+            }
+            .clubcal-dropdown-filters {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+            .clubcal-dropdown-filter {
+                padding: 8px 12px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-size: 13px;
+                min-width: 140px;
+            }
+            .clubcal-search-container {
+                margin-bottom: 12px;
+            }
+            .clubcal-search-input {
+                width: 100%;
+                max-width: 300px;
+                padding: 8px 12px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-size: 14px;
+            }
+            .clubcal-active-filters {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+            }
+            .clubcal-filter-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 10px;
+                background: #e3f2fd;
+                border-radius: 16px;
+                font-size: 12px;
+                color: #1976d2;
+            }
+            .clubcal-chip-remove {
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-size: 16px;
+                line-height: 1;
+                color: #1976d2;
+                padding: 0;
+            }
+            .clubcal-clear-all {
+                background: none;
+                border: none;
+                color: #666;
+                cursor: pointer;
+                font-size: 12px;
+                text-decoration: underline;
+            }
+            .clubcal-tabs {
+                display: flex;
+                gap: 0;
+                margin-bottom: 15px;
+                border-bottom: 2px solid #eee;
+            }
+            .clubcal-tab {
+                padding: 10px 20px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+                color: #666;
+                border-bottom: 2px solid transparent;
+                margin-bottom: -2px;
+            }
+            .clubcal-tab.active {
+                color: ${CONFIG.primaryColor};
+                border-bottom-color: ${CONFIG.primaryColor};
+            }
+            .clubcal-tab-content {
+                display: none;
+            }
+            .clubcal-tab-content.active {
+                display: block;
+            }
+            .clubcal-legend {
+                display: flex;
+                gap: 15px;
+                margin-bottom: 10px;
+                font-size: 12px;
+                color: #666;
+            }
+            .clubcal-legend-item {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .clubcal-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+            }
+            .clubcal-badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 500;
+            }
+            .clubcal-badge-registered {
+                background: #d4edda;
+                color: #155724;
+            }
+            .clubcal-badge-waitlist {
+                background: #fff3cd;
+                color: #856404;
+            }
+            .clubcal-badge-full {
+                background: #f8d7da;
+                color: #721c24;
+            }
+            .clubcal-badge-limited {
+                background: #fff3cd;
+                color: #856404;
+            }
+            .clubcal-badge-open {
+                background: #d4edda;
+                color: #155724;
+            }
+            .clubcal-badge-price {
+                background: #e2e8f0;
+                color: #475569;
+            }
+            .clubcal-badge-public {
+                background: #dbeafe;
+                color: #1e40af;
+            }
+            .clubcal-tooltip {
+                position: absolute;
+                z-index: 10000;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                padding: 15px;
+                max-width: 300px;
+            }
+            .clubcal-popup-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            .clubcal-popup-committee {
+                font-size: 12px;
+                color: #666;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .clubcal-popup-title {
+                margin: 0 0 10px 0;
+                font-size: 16px;
+                color: #333;
+            }
+            .clubcal-popup-meta {
+                font-size: 13px;
+                color: #666;
+                margin-bottom: 10px;
+            }
+            .clubcal-popup-datetime, .clubcal-popup-location {
+                margin-bottom: 4px;
+            }
+            .clubcal-popup-badges {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-bottom: 12px;
+            }
+            .clubcal-popup-link {
+                display: inline-block;
+                color: ${CONFIG.primaryColor};
+                text-decoration: none;
+                font-weight: 500;
+                font-size: 13px;
+            }
+            .clubcal-popup-link:hover {
+                text-decoration: underline;
+            }
+            .clubcal-loading {
+                text-align: center;
+                padding: 40px;
+                color: #666;
+            }
+            .clubcal-empty {
+                text-align: center;
+                padding: 40px;
+                color: #666;
+            }
+            .clubcal-section-title {
+                font-size: 16px;
+                color: #333;
+                margin: 20px 0 10px;
+            }
+            .clubcal-my-events-grid {
+                display: grid;
+                gap: 12px;
+            }
+            .clubcal-my-event-card {
+                padding: 15px;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                gap: 10px;
+                align-items: center;
+            }
+            .clubcal-my-event-card.clubcal-past {
+                opacity: 0.6;
+            }
+            .clubcal-my-event-date {
+                font-weight: 600;
+                color: ${CONFIG.primaryColor};
+            }
+            .clubcal-my-event-time {
+                font-size: 13px;
+                color: #666;
+            }
+            .clubcal-my-event-title {
+                font-weight: 500;
+            }
+            .clubcal-my-event-committee {
+                font-size: 12px;
+                color: #666;
+            }
+
+            /* FullCalendar overrides */
+            .fc .fc-button-primary {
+                background: ${CONFIG.primaryColor};
+                border-color: ${CONFIG.primaryColor};
+            }
+            .fc .fc-button-primary:hover {
+                background: ${CONFIG.primaryColor}dd;
+                border-color: ${CONFIG.primaryColor}dd;
+            }
+            .fc-event {
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async function init() {
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log(LOG_PREFIX, 'ClubCalendar Demo Mode');
+        console.log('═══════════════════════════════════════════════════════════════');
+
+        try {
+            log('INIT', 'Injecting styles...');
+            injectStyles();
+
+            const container = document.querySelector(CONFIG.container);
+            if (!container) throw new Error(`Container not found: ${CONFIG.container}`);
+
+            container.innerHTML = '<div class="clubcal-loading">Loading ClubCalendar...</div>';
+
+            log('INIT', 'Loading FullCalendar...');
+            await loadFullCalendar();
+            log('INIT', '✓ FullCalendar loaded');
+
+            // Use demo data
+            currentUser = window.DEMO_USER;
+            myRegistrations = window.DEMO_REGISTRATIONS || [];
+            const events = window.DEMO_EVENTS || [];
+
+            log('TRANSFORM', `Transforming ${events.length} events...`);
+            allEvents = events.map((e, i) => transformEvent(e, i < 3));
+            filteredEvents = [...allEvents];
+
+            eventIndex.clear();
+            allEvents.forEach(e => eventIndex.set(e.id, e));
+
+            container.innerHTML = buildWidgetHTML();
+            setupEventListeners();
+            populateCommitteeDropdown();
+            populateTagsDropdown();
+
+            const savedPrefs = loadPreferences();
+            let initialView = CONFIG.defaultView;
+            if (savedPrefs) {
+                if (savedPrefs.filters) {
+                    Object.assign(currentFilters, savedPrefs.filters);
+                    applyFilterStateToUI();
+                }
+                if (savedPrefs.view) {
+                    initialView = savedPrefs.view;
+                }
+            }
+
+            initCalendar(initialView);
+            applyFilters();
+
+            console.log('═══════════════════════════════════════════════════════════════');
+            log('INIT', '✓ ClubCalendar Demo initialized successfully', {
+                user: currentUser?.Email || 'Demo User',
+                totalEvents: allEvents.length,
+                myRegistrations: myRegistrations.length
+            });
+            console.log('═══════════════════════════════════════════════════════════════');
+
+        } catch (error) {
+            console.error(LOG_PREFIX, '❌ Initialization failed:', error);
+            showFallback(error.message);
+        }
+    }
+
+    window.ClubCalendar = {
+        init,
+        getUser: () => currentUser,
+        getEvents: () => allEvents
+    };
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+
+})();
+</script>
+</body>
+</html>

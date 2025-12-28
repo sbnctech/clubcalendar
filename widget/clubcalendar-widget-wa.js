@@ -331,7 +331,7 @@
             endDate: waEvent.EndDate || '',
             location: waEvent.Location || '',
             description: waEvent.Details?.DescriptionHtml || '',
-            url: waEvent.Url || `https://sbnewcomers.org/event-${waEvent.Id}`,
+            url: waEvent.Url || `${window.location.origin}/event-${waEvent.Id}`,
             registrationUrl: waEvent.RegistrationUrl || '',
             tags: allTags,
             tagsString: allTags.join(', '),
