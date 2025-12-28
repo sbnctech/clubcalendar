@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar SBNC Resources</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 { color: #2c5aa0; border-bottom: 3px solid #2c5aa0; padding-bottom: 0.5rem; }
+        h2 { color: #4a7cc9; margin-top: 2rem; }
+        .file-list { list-style: none; padding: 0; }
+        .file-list li {
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            background: #f8f9fa;
+            border-left: 4px solid #2c5aa0;
+            border-radius: 0 4px 4px 0;
+        }
+        .file-list li:hover { background: #e9ecef; }
+        .file-list a { color: #2c5aa0; text-decoration: none; font-weight: 500; }
+        .file-list a:hover { text-decoration: underline; }
+        .file-list .desc { color: #666; font-size: 0.9rem; margin-left: 1rem; }
+        .section { margin: 2rem 0; }
+        .updated { color: #666; font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ddd; }
+        .back-link { margin-bottom: 1rem; }
+        .back-link a { color: #666; text-decoration: none; }
+        .back-link a:hover { color: #2c5aa0; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="../">&larr; Back to Resources</a></div>
+
+    <h1>ClubCalendar SBNC Resources</h1>
+    <p>Internal resources for the inline-only ClubCalendar widget implementation.</p>
+
+    <div class="section">
+        <h2>Installation</h2>
+        <ul class="file-list">
+            <li>
+                <a href="ClubCalendar_SBNC_INSTALLATION.md">ClubCalendar_SBNC_INSTALLATION.md</a>
+                <span class="desc">Step-by-step installation guide</span>
+            </li>
+            <li>
+                <a href="ClubCalendar_SBNC_OPERATOR_CHECKLIST.md">ClubCalendar_SBNC_OPERATOR_CHECKLIST.md</a>
+                <span class="desc">Pre-publish and rollback checklists</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Inline Code Blocks</h2>
+        <ul class="file-list">
+            <li>
+                <a href="ClubCalendar_SBNC_CONFIG_PAGE.html">ClubCalendar_SBNC_CONFIG_PAGE.html</a>
+                <span class="desc">Configuration page HTML (paste into WA gadget)</span>
+            </li>
+            <li>
+                <a href="WA_CONFIG_PAGE_INLINE.md">WA_CONFIG_PAGE_INLINE.md</a>
+                <span class="desc">Config page installation instructions</span>
+            </li>
+            <li>
+                <a href="ClubCalendar_SBNC_EVENTS_PAGE.html">ClubCalendar_SBNC_EVENTS_PAGE.html</a>
+                <span class="desc">Events/Calendar page HTML (paste into WA gadget)</span>
+            </li>
+            <li>
+                <a href="WA_EVENTS_PAGE_INLINE.md">WA_EVENTS_PAGE_INLINE.md</a>
+                <span class="desc">Events page installation instructions</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Configuration Reference</h2>
+        <ul class="file-list">
+            <li>
+                <a href="CONFIG_CONTRACT.md">CONFIG_CONTRACT.md</a>
+                <span class="desc">Complete field reference with defaults and validation</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Technical Architecture</h2>
+        <ul class="file-list">
+            <li>
+                <a href="TECHNICAL_ARCHITECTURE.md">TECHNICAL_ARCHITECTURE.md</a>
+                <span class="desc">How ClubCalendar works: FullCalendar integration, WA API, testing, coding standards</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Comparisons &amp; Analysis</h2>
+        <ul class="file-list">
+            <li>
+                <a href="functional-comparison.html">functional-comparison.html</a>
+                <span class="desc">Why ClubCalendar vs standard WA widgets</span>
+            </li>
+            <li>
+                <a href="WA-vs-ClubCalendar-Comparison.md">WA-vs-ClubCalendar-Comparison.md</a>
+                <span class="desc">Feature comparison (Markdown)</span>
+            </li>
+            <li>
+                <a href="WA-vs-ClubCalendar-Tradeoffs.md">WA-vs-ClubCalendar-Tradeoffs.md</a>
+                <span class="desc">Tradeoffs and strategy analysis</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Troubleshooting &amp; Failover</h2>
+        <ul class="file-list">
+            <li>
+                <a href="troubleshooting.html">troubleshooting.html</a>
+                <span class="desc">Diagnosing issues, testing fallback, recovery procedures</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="updated">
+        <strong>Last Updated:</strong> December 26, 2024<br>
+        <strong>Unit Tests:</strong> 638 passing (including WA constraint compliance)<br>
+        <strong>E2E Tests:</strong> 14 passing (WA environment simulation)<br>
+        <strong>New in this version:</strong> publicConfig/memberConfig for auth-based rendering
+    </div>
+</body>
+</html>

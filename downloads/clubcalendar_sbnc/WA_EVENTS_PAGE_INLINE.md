@@ -1,0 +1,2460 @@
+# ClubCalendar (WA) - Events Page Inline Snippet (SBNC)
+
+## Instructions
+
+Purpose
+- This is the Custom HTML gadget content for the Events/Calendar page.
+- It renders ClubCalendar inline with no external server dependency.
+- It loads configuration by fetching the config page at /clubcalendar-config and parsing JSON from:
+  <script id="clubcalendar-config" type="application/json">...</script>
+
+Where it goes in Wild Apricot
+- Website -> Pages -> (create) "ClubCalendar Events" page
+- Add gadget: Custom HTML
+- Paste the full HTML snippet below
+- Save and Publish
+
+Public vs Members visibility
+- If the WA page is public, it will be visible to anyone.
+- If the WA page is member-only, it will only render for logged-in members.
+- Filters shown (dropdowns/toggles) are controlled by the config page JSON.
+
+Required companion page
+- You must also create the config page at /clubcalendar-config using WA_CONFIG_PAGE_INLINE.md
+
+Paste this into the Events page Custom HTML gadget
+
+    
+    <script>
+    /* SBNC_INLINE_ONLY_CONFIG_LOADER */
+    (function() {
+      "use strict";
+      var CONFIG_PAGE_URL = "/clubcalendar-config";
+    
+      function extractConfigFromHtml(html) {
+        var m = html.match(/<script[^>]+id=["']clubcalendar-config["'][^>]*>([\s\S]*?)<\/script>/i);
+        if (!m) return null;
+        try { return JSON.parse(m[1]); } catch (e) { return null; }
+      }
+    
+      function applyConfig(cfg) {
+        // Primary contract: set global config object expected by the widget.
+        // This preserves existing code paths in the inline widget.
+        window.CLUBCALENDAR_CONFIG = Object.assign(window.CLUBCALENDAR_CONFIG || {}, cfg || {});
+      }
+    
+      window.__SBNC_LOAD_CONFIG__ = function() {
+        return fetch(CONFIG_PAGE_URL, { credentials: "same-origin" })
+          .then(function(r) { return r.text(); })
+          .then(function(html) {
+            var cfg = extractConfigFromHtml(html);
+            if (!cfg) throw new Error("Config JSON not found or invalid on " + CONFIG_PAGE_URL);
+            applyConfig(cfg);
+            return cfg;
+          });
+      };
+    })();
+    </script>
+    
+    <!--
+      ClubCalendar - Wild Apricot Native (Self-Contained)
+      ════════════════════════════════════════════════════════════════════════════
+    
+      GENERIC TEMPLATE - For organizations customizing their own installation.
+    
+      SBNC USERS: Use docs/INSTALL/SBNC_INLINE_SNIPPET.html instead!
+                  That file has SBNC-specific configuration pre-set.
+    
+      ════════════════════════════════════════════════════════════════════════════
+    
+      INSTALLATION:
+      1. Customize the configuration below for your organization
+      2. Paste this ENTIRE file into a WA Custom HTML gadget
+      3. Save and view the page while logged in
+    
+      NO EXTERNAL DEPENDENCIES:
+      - No external server required
+      - No script src loading required
+      - Runs entirely within Wild Apricot
+    -->
+    
+    <div id="clubcalendar"></div>
+    
+    <script>
+    window.CLUBCALENDAR_CONFIG = {
+        // ═══════════════════════════════════════════════════════════════
+        // CREDENTIALS (Auto-detected - only set if auto-detection fails)
+        // ═══════════════════════════════════════════════════════════════
+        // waAccountId: '12345',  // Optional: Auto-detected from WA page
+        // waClientId: 'abc123',  // Optional: Only needed for external hosting
+    
+        // ═══════════════════════════════════════════════════════════════
+        // OPTIONAL - Customize as needed
+        // ═══════════════════════════════════════════════════════════════
+        headerTitle: 'Club Events',
+        showMyEvents: true,
+        showFilters: true,
+        defaultView: 'dayGridMonth',
+        primaryColor: '#2c5aa0',
+        accentColor: '#d4a800',
+    
+        // Auto-tagging rules - customize for your club
+        autoTagRules: [
+            { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
+            { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
+            { type: 'name-prefix', pattern: 'Wine Appreciation:', tag: 'committee:wine' },
+            { type: 'name-prefix', pattern: 'Epicurious:', tag: 'committee:epicurious' },
+            { type: 'name-prefix', pattern: 'TGIF:', tag: 'committee:tgif' },
+            { type: 'name-prefix', pattern: 'Cycling:', tag: 'committee:cycling' },
+            { type: 'name-prefix', pattern: 'Golf:', tag: 'committee:golf' },
+            { type: 'name-prefix', pattern: 'Performing Arts:', tag: 'committee:performing-arts' },
+            { type: 'name-prefix', pattern: 'Local Heritage:', tag: 'committee:local-heritage' },
+            { type: 'name-prefix', pattern: 'Wellness:', tag: 'committee:wellness' },
+            { type: 'name-prefix', pattern: 'Garden:', tag: 'committee:garden' },
+            { type: 'name-prefix', pattern: 'Arts:', tag: 'committee:arts' },
+            { type: 'name-prefix', pattern: 'Current Events:', tag: 'committee:current-events' },
+            { type: 'name-prefix', pattern: 'Pop-Up:', tag: 'committee:popup' },
+            { type: 'name-prefix', pattern: 'Beer Lovers:', tag: 'committee:beer' },
+            { type: 'name-prefix', pattern: 'Out to Lunch:', tag: 'committee:out-to-lunch' },
+            { type: 'name-prefix', pattern: 'Afternoon Book:', tag: 'committee:book-clubs' },
+            { type: 'name-prefix', pattern: 'Evening Book:', tag: 'committee:book-clubs' }
+        ]
+    };
+    </script>
+    
+    <script>
+    /**
+     * ClubCalendar Widget - Wild Apricot Native Edition (Inline)
+     * Runs entirely on WA page - no external server needed
+     */
+    (function() {
+        'use strict';
+    
+        const DEFAULT_CONFIG = {
+            container: '#clubcalendar',
+            waAccountId: null,
+            waClientId: null,
+            defaultView: 'dayGridMonth',
+            showFilters: true,
+            showHeader: true,
+            headerTitle: 'Club Events',
+            showMyEvents: true,
+            pastEventsVisible: false,
+            pastEventsDays: 14,
+            primaryColor: '#2c5aa0',
+            accentColor: '#d4a800',
+            autoTagRules: [],
+            // Filter visibility
+            quickFilters: {
+                weekend: true,
+                openings: true,
+                afterhours: true,
+                free: false,      // Disabled - redundant with Price dropdown "Free only"
+                public: true
+            },
+            dropdownFilters: {
+                committee: true,
+                activity: true,
+                price: true,
+                eventType: true,
+                recurring: true,
+                venue: true,
+                tags: true
+            },
+            // Tag display
+            showEventTags: true,
+            hiddenTags: [],
+            // Calendar display
+            showEventDots: true,    // Show dots on calendar dates
+            // Waitlist display (requires extra API calls - one per event)
+            showWaitlistCount: false, // Show "X on waitlist" for sold-out events
+            // Member/public config overrides
+            memberConfig: {},
+            publicConfig: {},
+            // Theme/CSS options
+            autoTheme: true,           // Auto-detect theme from WA page elements
+            stylePreset: 'default',    // 'default', 'compact', 'minimal', 'wa-compatible'
+            cssVars: {},               // Custom CSS variable overrides
+            customCSS: '',             // Raw CSS to inject (highest priority)
+            // Fallback settings
+            fallbackContainerId: 'wa-fallback',  // ID of pre-placed WA Calendar container to show on error
+            fallbackEventsUrl: '/events',        // URL to link to if no fallback container exists
+            // Title parsing - set enabled:false for orgs that don't use "Committee: Title" format
+            titleParsing: {
+                enabled: true,           // If false, use full title as-is
+                separator: ':',          // Character separating prefix from title
+                maxSeparatorPosition: 30,// How far into title to look for separator
+                defaultCategory: 'General', // Category when no prefix found
+                stripChars: '*-()'       // Characters to strip from prefix
+            }
+        };
+    
+        let CONFIG = Object.assign({}, DEFAULT_CONFIG, window.CLUBCALENDAR_CONFIG || {});
+        let allEvents = [];
+        let filteredEvents = [];
+        let eventIndex = new Map();  // O(1) event lookup by ID
+    
+        // Dropdown option caches (invalidated when events change)
+        let cachedCommittees = null;
+        let cachedTags = null;
+    
+        /**
+         * Deep merge config objects (one level deep for nested objects)
+         */
+        function mergeConfig(base, overrides) {
+            if (!overrides || Object.keys(overrides).length === 0) return base;
+            const result = { ...base };
+            for (const key of Object.keys(overrides)) {
+                if (overrides[key] !== null && typeof overrides[key] === 'object' && !Array.isArray(overrides[key])) {
+                    result[key] = { ...result[key], ...overrides[key] };
+                } else {
+                    result[key] = overrides[key];
+                }
+            }
+            return result;
+        }
+        let currentUser = null;
+        let myRegistrations = [];
+        let calendarInstance = null;
+    
+        // Storage key for user preferences
+        const STORAGE_KEY = 'clubcalendar_preferences';
+    
+        // Default filter state
+        const DEFAULT_FILTERS = {
+            quickFilters: [],
+            committee: null,
+            activity: null,
+            price: null,
+            eventType: null,
+            recurring: null,
+            venue: null,
+            tag: null,
+            search: '',
+            time: 'upcoming',
+            dateFrom: null,
+            dateTo: null
+        };
+    
+        let currentFilters = { ...DEFAULT_FILTERS };
+    
+        /**
+         * Save current preferences to localStorage
+         */
+        function savePreferences() {
+            try {
+                const prefs = {
+                    filters: currentFilters,
+                    view: calendarInstance?.view?.type || CONFIG.defaultView,
+                    savedAt: Date.now()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+                log('PREFS', 'Saved preferences', prefs);
+            } catch (e) {
+                log('PREFS', 'Failed to save preferences', e);
+            }
+        }
+    
+        /**
+         * Load preferences from localStorage
+         */
+        function loadPreferences() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (!stored) return null;
+                const prefs = JSON.parse(stored);
+                // Check if preferences are less than 30 days old
+                if (prefs.savedAt && Date.now() - prefs.savedAt < 30 * 24 * 60 * 60 * 1000) {
+                    log('PREFS', 'Loaded preferences', prefs);
+                    return prefs;
+                }
+            } catch (e) {
+                log('PREFS', 'Failed to load preferences', e);
+            }
+            return null;
+        }
+    
+        /**
+         * Clear saved preferences
+         */
+        function clearPreferences() {
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+                log('PREFS', 'Cleared preferences');
+            } catch (e) {
+                log('PREFS', 'Failed to clear preferences', e);
+            }
+        }
+    
+        // Filter display labels
+        const FILTER_LABELS = {
+            weekend: 'Weekend',
+            openings: 'Has Openings',
+            afterhours: 'After Hours',
+            free: 'Free',
+            public: 'Public'
+        };
+    
+        const PRICE_OPTIONS = [
+            { value: null, label: 'Any' },
+            { value: 'free', label: 'Free only' },
+            { value: 'under25', label: 'Up to $25' },
+            { value: 'under50', label: 'Up to $50' },
+            { value: 'under100', label: 'Up to $100' }
+        ];
+    
+        const ACTIVITY_OPTIONS = [
+            { value: null, label: 'Any' },
+            { value: 'physical', label: 'Physical/Fitness' },
+            { value: 'social', label: 'Social' },
+            { value: 'food-drink', label: 'Food & Drink' },
+            { value: 'arts', label: 'Arts & Culture' },
+            { value: 'educational', label: 'Educational' },
+            { value: 'games', label: 'Games' },
+            { value: 'wellness', label: 'Wellness' },
+            { value: 'garden', label: 'Garden' }
+        ];
+    
+        const EVENT_TYPE_OPTIONS = [
+            { value: null, label: 'Any' },
+            { value: 'workshop', label: 'Workshop' },
+            { value: 'tasting', label: 'Tasting' },
+            { value: 'trip', label: 'Trip/Tour' },
+            { value: 'hike', label: 'Hike' },
+            { value: 'walk', label: 'Walk' },
+            { value: 'happy-hour', label: 'Happy Hour' },
+            { value: 'game-night', label: 'Game Night' },
+            { value: 'discussion', label: 'Discussion' },
+            { value: 'lecture', label: 'Lecture' },
+            { value: 'class', label: 'Class' },
+            { value: 'performance', label: 'Performance' }
+        ];
+    
+        const RECURRING_OPTIONS = [
+            { value: null, label: 'Any' },
+            { value: 'weekly', label: 'Weekly' },
+            { value: 'monthly', label: 'Monthly' },
+            { value: 'daily', label: 'Daily' }
+        ];
+    
+        const VENUE_OPTIONS = [
+            { value: null, label: 'Any' },
+            { value: 'outdoor', label: 'Outdoor' }
+        ];
+    
+        // ═══════════════════════════════════════════════════════════════
+        // LOGGING
+        // ═══════════════════════════════════════════════════════════════
+    
+        const LOG_PREFIX = '[ClubCalendar]';
+    
+        function log(category, message, data = null) {
+            const timestamp = new Date().toISOString().substr(11, 12);
+            const prefix = `${LOG_PREFIX} [${timestamp}] [${category}]`;
+            if (data !== null) {
+                console.log(prefix, message, data);
+            } else {
+                console.log(prefix, message);
+            }
+        }
+    
+        function logConfig() {
+            log('CONFIG', 'Configuration loaded:', {
+                waAccountId: CONFIG.waAccountId || '(auto-detect)',
+                waClientId: CONFIG.waClientId ? `${CONFIG.waClientId.substring(0, 8)}...` : '(not needed on WA page)',
+                showMyEvents: CONFIG.showMyEvents,
+                showFilters: CONFIG.showFilters,
+                defaultView: CONFIG.defaultView,
+                autoTagRules: CONFIG.autoTagRules.length + ' rules'
+            });
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // FALLBACK SYSTEM (Simple)
+        // ═══════════════════════════════════════════════════════════════
+    
+        /**
+         * Show fallback calendar on error.
+         * If a pre-placed WA Calendar container exists, show it.
+         * Otherwise, show a simple error message with link to events.
+         */
+        function showFallback(errorMessage) {
+            log('FALLBACK', 'Activating fallback due to error:', errorMessage);
+    
+            // Hide ClubCalendar container
+            const container = document.querySelector(CONFIG.container);
+            if (container) {
+                container.style.display = 'none';
+            }
+    
+            // Try to show pre-placed WA Calendar fallback
+            const fallback = document.getElementById(CONFIG.fallbackContainerId);
+            if (fallback) {
+                fallback.style.display = 'block';
+                log('FALLBACK', `Showing pre-placed fallback: #${CONFIG.fallbackContainerId}`);
+                return;
+            }
+    
+            // No fallback container - show simple error message
+            log('FALLBACK', 'No fallback container found, showing error message');
+            if (container) {
+                container.style.display = 'block';
+                container.innerHTML = `
+                    <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                        <h3 style="margin: 0 0 10px 0; color: #856404;">Calendar temporarily unavailable</h3>
+                        <p style="margin: 0; color: #856404;">
+                            <a href="${CONFIG.fallbackEventsUrl}" style="color: #856404; font-weight: 500;">View events list &rarr;</a>
+                        </p>
+                    </div>
+                `;
+            }
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // WA API CLIENT
+        // ═══════════════════════════════════════════════════════════════
+    
+        const WaApi = {
+            /**
+             * Auto-discover the WA account ID by calling /accounts endpoint
+             * This works when running on a WA page with a logged-in session
+             */
+            async discoverAccountId() {
+                log('API', 'Auto-discovering account ID...');
+                try {
+                    const headers = { 'Accept': 'application/json' };
+                    if (CONFIG.waClientId) headers['clientId'] = CONFIG.waClientId;
+    
+                    const response = await fetch('/sys/api/v2/accounts', { headers });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+    
+                    const accounts = await response.json();
+                    if (Array.isArray(accounts) && accounts.length > 0) {
+                        const accountId = accounts[0].Id;
+                        log('API', `✓ Discovered account ID: ${accountId}`);
+                        return accountId;
+                    }
+                    throw new Error('No accounts returned');
+                } catch (e) {
+                    log('API', '⚠️ Account discovery failed:', e.message);
+                    return null;
+                }
+            },
+    
+            async call(endpoint, options = {}) {
+                const url = `/sys/api/v2/accounts/${CONFIG.waAccountId}${endpoint}`;
+                const headers = { 'Accept': 'application/json', ...options.headers };
+                if (CONFIG.waClientId) headers['clientId'] = CONFIG.waClientId;
+    
+                log('API', `Fetching: ${endpoint}`);
+                const startTime = performance.now();
+    
+                try {
+                    const response = await fetch(url, { ...options, headers });
+                    const elapsed = (performance.now() - startTime).toFixed(0);
+    
+                    if (!response.ok) {
+                        log('API', `❌ Error ${response.status} (${elapsed}ms): ${endpoint}`);
+                        throw new Error(`WA API error: ${response.status} ${response.statusText}`);
+                    }
+    
+                    const data = await response.json();
+                    log('API', `✓ Success (${elapsed}ms): ${endpoint}`, {
+                        responseType: Array.isArray(data) ? `Array[${data.length}]` : typeof data,
+                        keys: Object.keys(data).slice(0, 10)
+                    });
+                    return data;
+                } catch (e) {
+                    log('API', `❌ Fetch failed: ${endpoint}`, e.message);
+                    throw e;
+                }
+            },
+    
+            async getCurrentUser() {
+                log('AUTH', 'Checking for logged-in user...');
+                try {
+                    const user = await this.call('/contacts/me');
+                    log('AUTH', '✓ User authenticated:', {
+                        id: user.Id,
+                        email: user.Email,
+                        name: `${user.FirstName} ${user.LastName}`
+                    });
+                    return user;
+                } catch (e) {
+                    log('AUTH', '⚠️ Not logged in or API error:', e.message);
+                    return null;
+                }
+            },
+    
+            async getEvents(includePastDays = 0) {
+                const startDate = new Date();
+                if (includePastDays > 0) startDate.setDate(startDate.getDate() - includePastDays);
+                const dateFilter = startDate.toISOString().split('T')[0];
+    
+                log('EVENTS', `Fetching events from ${dateFilter}...`);
+    
+                let allEvts = [];
+                let pageNum = 1;
+                // Request includeEventDetails to get RegistrationTypes with pricing
+                let pageUrl = `/events?$filter=StartDate ge ${dateFilter}&$sort=StartDate asc&includeEventDetails=true`;
+    
+                while (pageUrl) {
+                    log('EVENTS', `Fetching page ${pageNum}...`);
+                    const data = await this.call(pageUrl);
+                    if (data.Events) {
+                        allEvts = allEvts.concat(data.Events);
+                        pageUrl = data.ResultNextPageUrl ?
+                            data.ResultNextPageUrl.replace(/^.*\/v2\.2\/accounts\/\d+/, '') : null;
+                        pageNum++;
+                    } else {
+                        allEvts = allEvts.concat(Array.isArray(data) ? data : []);
+                        pageUrl = null;
+                    }
+                }
+    
+                log('EVENTS', `✓ Fetched ${allEvts.length} events in ${pageNum - 1} page(s)`);
+    
+                // Log first event structure for debugging
+                if (allEvts.length > 0) {
+                    const sample = allEvts[0];
+                    log('EVENTS', 'Sample event structure:', {
+                        Id: sample.Id,
+                        Name: sample.Name,
+                        AccessLevel: sample.AccessLevel,
+                        RegistrationEnabled: sample.RegistrationEnabled,
+                        RegistrationTypes: sample.RegistrationTypes ? `Array[${sample.RegistrationTypes.length}]` : 'undefined',
+                        'Details.RegistrationTypes': sample.Details?.RegistrationTypes ? `Array[${sample.Details.RegistrationTypes.length}]` : 'undefined',
+                        hasDetails: !!sample.Details,
+                        allKeys: Object.keys(sample)
+                    });
+    
+                    // Log registration type structure if present
+                    const regTypes = sample.RegistrationTypes || sample.Details?.RegistrationTypes;
+                    if (regTypes && regTypes.length > 0) {
+                        log('EVENTS', 'Sample RegistrationType structure:', {
+                            keys: Object.keys(regTypes[0]),
+                            BasePrice: regTypes[0].BasePrice,
+                            Price: regTypes[0].Price,
+                            CurrentPrice: regTypes[0].CurrentPrice
+                        });
+                    }
+                }
+    
+                return allEvts;
+            },
+    
+            async getContactRegistrations(contactId) {
+                log('REGISTRATIONS', `Fetching registrations for contact ${contactId}...`);
+                try {
+                    const data = await this.call(`/eventregistrations?contactId=${contactId}&includeWaitList=true`);
+                    const regs = data.EventRegistrations || data || [];
+                    log('REGISTRATIONS', `✓ Found ${regs.length} registrations`);
+                    return regs;
+                } catch (e) {
+                    log('REGISTRATIONS', '⚠️ Failed to fetch registrations:', e.message);
+                    return [];
+                }
+            },
+    
+            async getEventRegistrations(eventId) {
+                try {
+                    const data = await this.call(`/eventregistrations?eventId=${eventId}&includeWaitList=true`);
+                    return data.EventRegistrations || data || [];
+                } catch (e) {
+                    log('WAITLIST', `⚠️ Failed to fetch registrations for event ${eventId}:`, e.message);
+                    return [];
+                }
+            }
+        };
+    
+        // Store for waitlist counts with TTL (eventId -> {count, timestamp})
+        let waitlistCache = {};
+        const WAITLIST_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    
+        /**
+         * Get cached waitlist count if still valid
+         */
+        function getCachedWaitlistCount(eventId) {
+            const cached = waitlistCache[eventId];
+            if (cached && Date.now() - cached.timestamp < WAITLIST_CACHE_TTL) {
+                return cached.count;
+            }
+            return null;
+        }
+    
+        // Legacy accessor for display functions
+        const waitlistCounts = new Proxy({}, {
+            get(target, eventId) {
+                const cached = waitlistCache[eventId];
+                return cached ? cached.count : undefined;
+            }
+        });
+    
+        /**
+         * Fetch waitlist counts for sold-out events
+         * Only fetches for events that are full to minimize API calls
+         * Uses caching to avoid refetching within TTL window
+         */
+        async function fetchWaitlistCounts() {
+            if (!CONFIG.showWaitlistCount) return;
+    
+            // Find sold-out events that need fetching (not cached or cache expired)
+            const now = Date.now();
+            const soldOutEvents = allEvents.filter(e => e.spotsAvailable === 0);
+            const eventsToFetch = soldOutEvents.filter(e => {
+                const cached = waitlistCache[e.id];
+                return !cached || (now - cached.timestamp >= WAITLIST_CACHE_TTL);
+            });
+    
+            if (soldOutEvents.length === 0) {
+                log('WAITLIST', 'No sold-out events, skipping waitlist fetch');
+                return;
+            }
+    
+            if (eventsToFetch.length === 0) {
+                log('WAITLIST', `All ${soldOutEvents.length} sold-out events have cached waitlist counts`);
+                return;
+            }
+    
+            log('WAITLIST', `Fetching waitlist counts for ${eventsToFetch.length}/${soldOutEvents.length} sold-out events (${soldOutEvents.length - eventsToFetch.length} cached)...`);
+            const startTime = performance.now();
+    
+            // Fetch in parallel with a concurrency limit
+            const CONCURRENCY = 5;
+            for (let i = 0; i < eventsToFetch.length; i += CONCURRENCY) {
+                const batch = eventsToFetch.slice(i, i + CONCURRENCY);
+                await Promise.all(batch.map(async (event) => {
+                    try {
+                        const registrations = await WaApi.getEventRegistrations(event.id);
+                        const waitlisted = registrations.filter(r =>
+                            r.OnWaitlist === true ||
+                            (r.Status && r.Status.toLowerCase().includes('waitlist'))
+                        );
+                        waitlistCache[event.id] = { count: waitlisted.length, timestamp: Date.now() };
+                    } catch (e) {
+                        waitlistCache[event.id] = { count: null, timestamp: Date.now() };
+                    }
+                }));
+            }
+    
+            const elapsed = (performance.now() - startTime).toFixed(0);
+            const totalWaitlisted = Object.values(waitlistCache).reduce((sum, c) => sum + (c.count || 0), 0);
+            log('WAITLIST', `✓ Fetched waitlist counts in ${elapsed}ms: ${totalWaitlisted} total waitlisted across ${soldOutEvents.length} events`);
+    
+            // Refresh display to show waitlist counts
+            updateDisplay();
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // EVENT TRANSFORMATION (ported from sync.py)
+        // ═══════════════════════════════════════════════════════════════
+    
+        function applyAutoTags(event, rules) {
+            const autoTags = [];
+            const eventName = (event.Name || '').toLowerCase();
+    
+            for (const rule of rules) {
+                const pattern = (rule.pattern || '').toLowerCase();
+                if (!pattern || !rule.tag) continue;
+    
+                let matched = false;
+                if (rule.type === 'name-prefix') matched = eventName.startsWith(pattern);
+                else if (rule.type === 'name-contains') matched = eventName.includes(pattern);
+                else if (rule.type === 'name-suffix') matched = eventName.endsWith(pattern);
+    
+                if (matched) autoTags.push(rule.tag);
+            }
+            return autoTags;
+        }
+    
+        function deriveTimeOfDay(startDateStr) {
+            try {
+                const hour = new Date(startDateStr).getHours();
+                if (hour < 12) return 'time:morning';
+                if (hour < 17) return 'time:afternoon';
+                return 'time:evening';
+            } catch (e) { return null; }
+        }
+    
+        function deriveAvailability(event) {
+            const limit = event.RegistrationsLimit;
+            const confirmed = event.ConfirmedRegistrationsCount || 0;
+            if (!limit) return 'availability:open';
+            const spots = limit - confirmed;
+            if (spots <= 0) return 'availability:full';
+            if (spots <= 5) return 'availability:limited';
+            return 'availability:open';
+        }
+    
+        function isWeekend(startDateStr) {
+            try {
+                const day = new Date(startDateStr).getDay();
+                return day === 0 || day === 6;
+            } catch (e) { return false; }
+        }
+    
+        /**
+         * Extract pricing info from WA event's RegistrationTypes
+         */
+        function extractPricing(waEvent) {
+            const regTypes = waEvent.RegistrationTypes || waEvent.Details?.RegistrationTypes || [];
+    
+            if (!regTypes.length) {
+                // No registration types = free event or no registration
+                return { minPrice: 0, maxPrice: 0, isFree: true };
+            }
+    
+            let minPrice = Infinity;
+            let maxPrice = 0;
+    
+            for (const rt of regTypes) {
+                // WA uses BasePrice, Price, or CurrentPrice depending on version
+                const price = rt.BasePrice ?? rt.Price ?? rt.CurrentPrice ?? 0;
+                if (price < minPrice) minPrice = price;
+                if (price > maxPrice) maxPrice = price;
+            }
+    
+            if (minPrice === Infinity) minPrice = 0;
+    
+            return {
+                minPrice: minPrice,
+                maxPrice: maxPrice,
+                isFree: minPrice === 0
+            };
+        }
+    
+        /**
+         * Derive cost category tag from price
+         */
+        function deriveCostCategory(minPrice) {
+            if (minPrice === null || minPrice === undefined) return null;
+            if (minPrice === 0) return 'cost:free';
+            if (minPrice < 25) return 'cost:under-25';
+            if (minPrice < 50) return 'cost:under-50';
+            if (minPrice < 100) return 'cost:under-100';
+            return 'cost:over-100';
+        }
+    
+        /**
+         * Derive activity type from committee/event name
+         * Maps committee prefixes to activity categories
+         */
+        const ACTIVITY_TYPE_MAP = {
+            // Physical/Fitness
+            'Happy Hikers': 'activity:physical',
+            'Cycling': 'activity:physical',
+            'Golf': 'activity:physical',
+            // Social
+            'TGIF': 'activity:social',
+            'Pop-Up': 'activity:social',
+            'Out to Lunch': 'activity:social',
+            // Food & Drink
+            'Epicurious': 'activity:food-drink',
+            'Wine Appreciation': 'activity:food-drink',
+            'Beer Lovers': 'activity:food-drink',
+            // Cultural/Arts
+            'Performing Arts': 'activity:arts',
+            'Arts': 'activity:arts',
+            'Local Heritage': 'activity:arts',
+            // Educational
+            'Current Events': 'activity:educational',
+            'Afternoon Book': 'activity:educational',
+            'Evening Book': 'activity:educational',
+            // Games/Recreation
+            'Games!': 'activity:games',
+            'Games': 'activity:games',
+            // Wellness
+            'Wellness': 'activity:wellness',
+            // Garden
+            'Garden': 'activity:garden'
+        };
+    
+        function deriveActivityType(eventName) {
+            // Extract committee from event name prefix
+            const colonIdx = eventName.indexOf(':');
+            if (colonIdx > 0 && colonIdx < 30) {
+                const prefix = eventName.substring(0, colonIdx).trim();
+                // Check direct match
+                if (ACTIVITY_TYPE_MAP[prefix]) return ACTIVITY_TYPE_MAP[prefix];
+                // Check partial match
+                for (const [committee, activityTag] of Object.entries(ACTIVITY_TYPE_MAP)) {
+                    if (prefix.includes(committee) || committee.includes(prefix)) {
+                        return activityTag;
+                    }
+                }
+            }
+            return null;
+        }
+    
+        /**
+         * Event type keywords for deriving type: tags
+         */
+        const EVENT_TYPE_KEYWORDS = {
+            'workshop': 'type:workshop',
+            'tasting': 'type:tasting',
+            'day trip': 'type:trip',
+            'tour': 'type:trip',
+            'hike': 'type:hike',
+            'walk': 'type:walk',
+            'happy hour': 'type:happy-hour',
+            'game night': 'type:game-night',
+            'discussion': 'type:discussion',
+            'lecture': 'type:lecture',
+            'class': 'type:class',
+            'performance': 'type:performance',
+            'concert': 'type:performance',
+            'show': 'type:performance'
+        };
+    
+        /**
+         * Derive event type tag from event name
+         */
+        function deriveEventType(eventName) {
+            const nameLower = eventName.toLowerCase();
+            const colonIdx = eventName.indexOf(':');
+            const titlePart = colonIdx > 0 ? eventName.substring(colonIdx + 1).toLowerCase() : nameLower;
+    
+            for (const [keyword, tag] of Object.entries(EVENT_TYPE_KEYWORDS)) {
+                if (titlePart.includes(keyword)) return tag;
+            }
+            return null;
+        }
+    
+        /**
+         * Derive recurring tag from event name
+         */
+        function deriveRecurring(eventName) {
+            const nameLower = eventName.toLowerCase();
+            if (nameLower.includes('weekly')) return 'recurring:weekly';
+            if (nameLower.includes('monthly')) return 'recurring:monthly';
+            if (nameLower.includes('daily')) return 'recurring:daily';
+            return null;
+        }
+    
+        /**
+         * Outdoor venue keywords
+         */
+        const OUTDOOR_KEYWORDS = ['park', 'beach', 'trail', 'garden', 'outdoor', 'preserve', 'hike'];
+    
+        /**
+         * Derive venue type tag from event name or location
+         */
+        function deriveVenueType(eventName, location) {
+            const combined = `${eventName} ${location || ''}`.toLowerCase();
+            for (const keyword of OUTDOOR_KEYWORDS) {
+                if (combined.includes(keyword)) return 'venue:outdoor';
+            }
+            return null;
+        }
+    
+        function transformEvent(waEvent, logSample = false) {
+            let waTags = waEvent.Tags || [];
+            if (typeof waTags === 'string') waTags = waTags.split(',').map(t => t.trim()).filter(t => t);
+    
+            const autoTags = applyAutoTags(waEvent, CONFIG.autoTagRules);
+            const startDate = waEvent.StartDate || '';
+            const eventName = waEvent.Name || '';
+    
+            // Time-based tags
+            const timeTag = deriveTimeOfDay(startDate);
+            if (timeTag) autoTags.push(timeTag);
+            autoTags.push(deriveAvailability(waEvent));
+            if (isWeekend(startDate)) autoTags.push('day:weekend');
+    
+            // Extract and derive pricing
+            const pricing = extractPricing(waEvent);
+            const costTag = deriveCostCategory(pricing.minPrice);
+            if (costTag) autoTags.push(costTag);
+    
+            // Derive activity type from committee/event name
+            const activityTag = deriveActivityType(eventName);
+            if (activityTag) autoTags.push(activityTag);
+    
+            // Derive event type (workshop, tasting, trip, etc.)
+            const eventTypeTag = deriveEventType(eventName);
+            if (eventTypeTag) autoTags.push(eventTypeTag);
+    
+            // Derive recurring tag (weekly, monthly, etc.)
+            const recurringTag = deriveRecurring(eventName);
+            if (recurringTag) autoTags.push(recurringTag);
+    
+            // Derive venue type (outdoor, etc.)
+            const venueTag = deriveVenueType(eventName, waEvent.Location);
+            if (venueTag) autoTags.push(venueTag);
+    
+            // Public event = AccessLevel is Public OR no registration/ticketing required
+            const regTypes = waEvent.RegistrationTypes || waEvent.Details?.RegistrationTypes || [];
+            const hasNoTicketing = regTypes.length === 0 || waEvent.RegistrationEnabled === false;
+            const isPublicAccess = waEvent.AccessLevel === 'Public';
+            const isPublicEvent = isPublicAccess || hasNoTicketing;
+            if (isPublicEvent) autoTags.push('public-event');
+    
+            const allTags = [...new Set([...waTags, ...autoTags])];
+            const limit = waEvent.RegistrationsLimit;
+            const confirmed = waEvent.ConfirmedRegistrationsCount || 0;
+            const spotsAvailable = (limit == null) ? null : Math.max(0, limit - confirmed);
+    
+            const location = waEvent.Location || '';
+            const description = waEvent.Details?.DescriptionHtml || '';
+    
+            const transformed = {
+                id: waEvent.Id,
+                name: eventName,
+                startDate: startDate,
+                endDate: waEvent.EndDate || '',
+                location: location,
+                description: description,
+                url: waEvent.Url || `https://sbnewcomers.org/event-${waEvent.Id}`,
+                registrationUrl: waEvent.RegistrationUrl || '',
+                tags: allTags,
+                spotsAvailable: spotsAvailable,
+                limit: limit,
+                confirmed: confirmed,
+                isFull: spotsAvailable === 0,
+                registrationEnabled: waEvent.RegistrationEnabled !== false,
+                registrationOpenDate: waEvent.RegistrationStartDate || null,
+                accessLevel: waEvent.AccessLevel || 'Public',
+                minPrice: pricing.minPrice,
+                maxPrice: pricing.maxPrice,
+                isFree: pricing.isFree,
+                isPublic: isPublicEvent,
+                activityType: activityTag ? activityTag.replace('activity:', '') : null,
+                // Pre-computed search fields for O(1) filtering
+                _searchName: eventName.toLowerCase(),
+                _searchLocation: location.toLowerCase(),
+                _searchDescription: description.toLowerCase()
+            };
+    
+            // Log sample transformation for debugging
+            if (logSample) {
+                log('TRANSFORM', `Event: "${eventName}"`, {
+                    waTags: waTags,
+                    autoTags: autoTags,
+                    pricing: pricing,
+                    isPublic: isPublicEvent,
+                    isPublicAccess: isPublicAccess,
+                    hasNoTicketing: hasNoTicketing,
+                    regTypesCount: regTypes.length,
+                    accessLevel: waEvent.AccessLevel
+                });
+            }
+    
+            return transformed;
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // FILTERING
+        // ═══════════════════════════════════════════════════════════════
+    
+        const FILTER_RULES = {
+            weekend: { criteria: (e) => { const d = new Date(e.startDate).getDay(); return d === 0 || d === 6; } },
+            openings: { criteria: (e) => e.spotsAvailable === null || e.spotsAvailable > 0 },
+            free: { criteria: (e) => e.isFree === true || e.minPrice === 0 || e.tags.includes('cost:free') },
+            afterhours: { criteria: (e) => {
+                const d = new Date(e.startDate);
+                const day = d.getDay(), hour = d.getHours();
+                return day === 0 || day === 6 || (day >= 1 && day <= 5 && hour >= 17);
+            }},
+            under25: { criteria: (e) => e.minPrice !== null && e.minPrice < 25 },
+            under50: { criteria: (e) => e.minPrice !== null && e.minPrice < 50 },
+            public: { criteria: (e) => e.isPublic === true || e.tags.includes('public-event') }
+        };
+    
+        function applyFilters() {
+            const beforeCount = allEvents.length;
+            filteredEvents = allEvents.filter(event => {
+                const eventDate = new Date(event.startDate);
+                if (currentFilters.time === 'upcoming' && eventDate < new Date()) return false;
+    
+                // Quick filters (OR logic)
+                if (currentFilters.quickFilters.length > 0) {
+                    const matches = currentFilters.quickFilters.some(f => FILTER_RULES[f]?.criteria(event));
+                    if (!matches) return false;
+                }
+    
+                // Committee filter (AND with quick filters)
+                if (currentFilters.committee) {
+                    const eventCommittee = extractCommittee(event.name).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    if (eventCommittee !== currentFilters.committee) return false;
+                }
+    
+                // Activity filter (AND with other filters)
+                if (currentFilters.activity) {
+                    if (event.activityType !== currentFilters.activity) return false;
+                }
+    
+                // Price filter (max price - AND with other filters)
+                if (currentFilters.price) {
+                    if (currentFilters.price === 'free') {
+                        if (!event.isFree && event.minPrice !== 0) return false;
+                    } else if (currentFilters.price === 'under25') {
+                        if (event.minPrice === null || event.minPrice >= 25) return false;
+                    } else if (currentFilters.price === 'under50') {
+                        if (event.minPrice === null || event.minPrice >= 50) return false;
+                    } else if (currentFilters.price === 'under100') {
+                        if (event.minPrice === null || event.minPrice >= 100) return false;
+                    }
+                }
+    
+                // Event type filter (AND with other filters)
+                if (currentFilters.eventType) {
+                    if (!event.tags.includes(`type:${currentFilters.eventType}`)) return false;
+                }
+    
+                // Recurring filter (AND with other filters)
+                if (currentFilters.recurring) {
+                    if (!event.tags.includes(`recurring:${currentFilters.recurring}`)) return false;
+                }
+    
+                // Venue filter (AND with other filters)
+                if (currentFilters.venue) {
+                    if (!event.tags.includes(`venue:${currentFilters.venue}`)) return false;
+                }
+    
+                // Tag filter (AND with other filters)
+                if (currentFilters.tag) {
+                    if (!event.tags.includes(currentFilters.tag)) return false;
+                }
+    
+                // Text search filter (uses pre-computed lowercase fields for performance)
+                if (currentFilters.search && currentFilters.search.trim()) {
+                    const searchTerm = currentFilters.search.toLowerCase().trim();
+                    const nameMatch = event._searchName.includes(searchTerm);
+                    const descMatch = event._searchDescription.includes(searchTerm);
+                    const locationMatch = event._searchLocation.includes(searchTerm);
+                    if (!nameMatch && !descMatch && !locationMatch) return false;
+                }
+    
+                // Date range filter
+                if (currentFilters.dateFrom || currentFilters.dateTo) {
+                    const eventDate = new Date(event.startDate);
+                    if (currentFilters.dateFrom) {
+                        const fromDate = new Date(currentFilters.dateFrom);
+                        fromDate.setHours(0, 0, 0, 0);
+                        if (eventDate < fromDate) return false;
+                    }
+                    if (currentFilters.dateTo) {
+                        const toDate = new Date(currentFilters.dateTo);
+                        toDate.setHours(23, 59, 59, 999);
+                        if (eventDate > toDate) return false;
+                    }
+                }
+    
+                return true;
+            });
+            log('FILTER', `Applied filters: ${filteredEvents.length}/${beforeCount} events`, {
+                quickFilters: currentFilters.quickFilters,
+                committee: currentFilters.committee,
+                activity: currentFilters.activity,
+                eventType: currentFilters.eventType,
+                recurring: currentFilters.recurring,
+                venue: currentFilters.venue,
+                price: currentFilters.price,
+                tag: currentFilters.tag,
+                search: currentFilters.search,
+                timeFilter: currentFilters.time
+            });
+            renderActiveFilterChips();
+            updateDisplay();
+            savePreferences();
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // UI HELPERS
+        // ═══════════════════════════════════════════════════════════════
+    
+        function extractCommittee(name) {
+            const tp = CONFIG.titleParsing || {};
+            if (tp.enabled === false) return tp.defaultCategory || '';
+    
+            const sep = tp.separator || ':';
+            const maxPos = tp.maxSeparatorPosition || 30;
+            const defaultCat = tp.defaultCategory || 'General';
+            const stripChars = tp.stripChars || '*-()';
+    
+            const idx = name.indexOf(sep);
+            if (idx > 0 && idx < maxPos) {
+                const stripRegex = stripChars
+                    ? new RegExp(`[${stripChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`, 'g')
+                    : null;
+                const prefix = name.substring(0, idx);
+                return stripRegex ? prefix.replace(stripRegex, '').trim() : prefix.trim();
+            }
+            return defaultCat;
+        }
+    
+        function getCleanTitle(name) {
+            const tp = CONFIG.titleParsing || {};
+            if (tp.enabled === false) return name;
+    
+            const sep = tp.separator || ':';
+            const maxPos = tp.maxSeparatorPosition || 30;
+    
+            const idx = name.indexOf(sep);
+            return (idx > 0 && idx < maxPos) ? name.substring(idx + sep.length).trim() : name;
+        }
+    
+        function getTimeOfDayClass(startDate) {
+            if (!startDate) return 'allday';
+            const hour = new Date(startDate).getHours();
+            if (hour < 12) return 'morning';
+            if (hour < 17) return 'afternoon';
+            return 'evening';
+        }
+    
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    
+        /**
+         * Get available committees from events for dropdown (cached)
+         */
+        function getAvailableCommittees() {
+            if (cachedCommittees !== null) return cachedCommittees;
+    
+            const committees = new Map();
+            for (const event of allEvents) {
+                const committee = extractCommittee(event.name);
+                if (committee && committee !== 'General') {
+                    const key = committee.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    if (!committees.has(key)) {
+                        committees.set(key, committee);
+                    }
+                }
+            }
+            cachedCommittees = Array.from(committees.entries())
+                .sort((a, b) => a[1].localeCompare(b[1]))
+                .map(([value, label]) => ({ value, label }));
+            return cachedCommittees;
+        }
+    
+        /**
+         * Check if a tag is auto-generated (vs manual WA tag)
+         */
+        const AUTO_TAG_PREFIXES = ['time:', 'availability:', 'day:', 'cost:', 'activity:', 'committee:', 'type:', 'recurring:', 'venue:'];
+    
+        function isAutoTag(tag) {
+            return AUTO_TAG_PREFIXES.some(p => tag.startsWith(p)) || tag === 'public-event';
+        }
+    
+        /**
+         * Get available manual tags from events for dropdown (cached)
+         */
+        function getAvailableTags() {
+            if (cachedTags !== null) return cachedTags;
+    
+            const tags = new Set();
+            for (const event of allEvents) {
+                for (const tag of event.tags) {
+                    if (!isAutoTag(tag) && !CONFIG.hiddenTags.includes(tag)) {
+                        tags.add(tag);
+                    }
+                }
+            }
+            cachedTags = Array.from(tags).sort().map(tag => ({ value: tag, label: tag }));
+            return cachedTags;
+        }
+    
+        /**
+         * Get display tags for an event (manual tags only, excluding hidden)
+         */
+        function getDisplayTags(event) {
+            if (!CONFIG.showEventTags) return [];
+            return event.tags.filter(tag =>
+                !isAutoTag(tag) && !CONFIG.hiddenTags.includes(tag)
+            );
+        }
+    
+        /**
+         * Get availability HTML for an event showing spots remaining or coming soon
+         * Returns empty string if unlimited spots and no registration open date
+         */
+        function getAvailabilityHtml(event) {
+            // Check if registration opens in the future
+            if (event.registrationOpenDate) {
+                const openDate = new Date(event.registrationOpenDate);
+                const now = new Date();
+                if (openDate > now) {
+                    const daysUntil = Math.ceil((openDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    let label;
+                    if (daysUntil === 0) label = 'Opens today';
+                    else if (daysUntil === 1) label = 'Opens tomorrow';
+                    else if (daysUntil <= 7) label = `Opens in ${daysUntil} days`;
+                    else label = 'Coming soon';
+                    return `<div class="clubcal-availability coming-soon">${label}</div>`;
+                }
+            }
+    
+            const spots = event.spotsAvailable;
+    
+            // Don't show for unlimited registration
+            if (spots === null || spots === undefined) return '';
+    
+            // Sold out - include waitlist count if available
+            if (spots === 0) {
+                const waitlistCount = waitlistCounts[event.id];
+                if (CONFIG.showWaitlistCount && waitlistCount > 0) {
+                    return `<div class="clubcal-availability sold-out">Sold Out</div><div class="clubcal-availability waitlist">${waitlistCount} on waitlist</div>`;
+                }
+                return '<div class="clubcal-availability sold-out">Sold Out</div>';
+            }
+    
+            // Limited spots (5 or fewer)
+            if (spots <= 5) {
+                return `<div class="clubcal-availability limited">${spots} spot${spots === 1 ? '' : 's'} left</div>`;
+            }
+    
+            // Available spots
+            return `<div class="clubcal-availability open">${spots} spots</div>`;
+        }
+    
+        /**
+         * Get price indicator HTML (Yelp-style $-$$$$)
+         */
+        function getPriceIndicatorHtml(minPrice) {
+            if (minPrice === null || minPrice === undefined) return '';
+    
+            let symbol, level;
+            if (minPrice === 0) {
+                symbol = 'Free';
+                level = 0;
+            } else if (minPrice < 25) {
+                symbol = '$';
+                level = 1;
+            } else if (minPrice < 50) {
+                symbol = '$$';
+                level = 2;
+            } else if (minPrice < 100) {
+                symbol = '$$$';
+                level = 3;
+            } else {
+                symbol = '$$$$';
+                level = 4;
+            }
+    
+            return `<span class="clubcal-price-indicator level-${level}" title="${minPrice === 0 ? 'Free' : '$' + minPrice}">${symbol}</span>`;
+        }
+    
+        /**
+         * Build options HTML for a dropdown
+         */
+        function buildDropdownOptions(options, selectedValue) {
+            return options.map(opt => {
+                const selected = opt.value === selectedValue ? ' selected' : '';
+                const value = opt.value === null ? '' : opt.value;
+                return `<option value="${value}"${selected}>${escapeHtml(opt.label)}</option>`;
+            }).join('');
+        }
+    
+        /**
+         * Render active filter chips based on current selections
+         */
+        function renderActiveFilterChips() {
+            const container = document.getElementById('clubcal-active-filters');
+            if (!container) return;
+    
+            const chips = [];
+    
+            // Quick filter chips
+            for (const filter of currentFilters.quickFilters) {
+                const label = FILTER_LABELS[filter] || filter;
+                chips.push(`<span class="clubcal-filter-chip" data-type="quick" data-value="${filter}">${escapeHtml(label)}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Committee chip
+            if (currentFilters.committee) {
+                const committees = getAvailableCommittees();
+                const match = committees.find(c => c.value === currentFilters.committee);
+                const label = match ? match.label : currentFilters.committee;
+                chips.push(`<span class="clubcal-filter-chip" data-type="committee" data-value="${currentFilters.committee}">${escapeHtml(label)}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Activity chip
+            if (currentFilters.activity) {
+                const match = ACTIVITY_OPTIONS.find(a => a.value === currentFilters.activity);
+                const label = match ? match.label : currentFilters.activity;
+                chips.push(`<span class="clubcal-filter-chip" data-type="activity" data-value="${currentFilters.activity}">${escapeHtml(label)}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Price chip
+            if (currentFilters.price) {
+                const match = PRICE_OPTIONS.find(p => p.value === currentFilters.price);
+                const label = match ? match.label : currentFilters.price;
+                chips.push(`<span class="clubcal-filter-chip" data-type="price" data-value="${currentFilters.price}">${escapeHtml(label)}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Event Type chip
+            if (currentFilters.eventType) {
+                const match = EVENT_TYPE_OPTIONS.find(e => e.value === currentFilters.eventType);
+                const label = match ? match.label : currentFilters.eventType;
+                chips.push(`<span class="clubcal-filter-chip" data-type="eventType" data-value="${currentFilters.eventType}">${escapeHtml(label)}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Recurring chip
+            if (currentFilters.recurring) {
+                const match = RECURRING_OPTIONS.find(r => r.value === currentFilters.recurring);
+                const label = match ? match.label : currentFilters.recurring;
+                chips.push(`<span class="clubcal-filter-chip" data-type="recurring" data-value="${currentFilters.recurring}">${escapeHtml(label)}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Venue chip
+            if (currentFilters.venue) {
+                const match = VENUE_OPTIONS.find(v => v.value === currentFilters.venue);
+                const label = match ? match.label : currentFilters.venue;
+                chips.push(`<span class="clubcal-filter-chip" data-type="venue" data-value="${currentFilters.venue}">${escapeHtml(label)}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Tag chip
+            if (currentFilters.tag) {
+                chips.push(`<span class="clubcal-filter-chip" data-type="tag" data-value="${currentFilters.tag}">${escapeHtml(currentFilters.tag)}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Search chip
+            if (currentFilters.search && currentFilters.search.trim()) {
+                chips.push(`<span class="clubcal-filter-chip clubcal-filter-chip-search" data-type="search" data-value="${escapeHtml(currentFilters.search)}">Search: "${escapeHtml(currentFilters.search)}"<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Date range chip
+            if (currentFilters.dateFrom || currentFilters.dateTo) {
+                let dateLabel = '';
+                if (currentFilters.dateFrom && currentFilters.dateTo) {
+                    dateLabel = `${currentFilters.dateFrom} to ${currentFilters.dateTo}`;
+                } else if (currentFilters.dateFrom) {
+                    dateLabel = `From ${currentFilters.dateFrom}`;
+                } else {
+                    dateLabel = `Until ${currentFilters.dateTo}`;
+                }
+                chips.push(`<span class="clubcal-filter-chip" data-type="dateRange">Dates: ${dateLabel}<button type="button" aria-label="Remove">&times;</button></span>`);
+            }
+    
+            // Add clear all button if there are active filters
+            if (chips.length > 0) {
+                chips.push(`<button class="clubcal-clear-all" type="button">Clear all</button>`);
+            }
+    
+            container.innerHTML = chips.join('');
+    
+            // Attach chip removal handlers
+            container.querySelectorAll('.clubcal-filter-chip button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const chip = btn.closest('.clubcal-filter-chip');
+                    const type = chip.dataset.type;
+                    const value = chip.dataset.value;
+                    removeFilter(type, value);
+                });
+            });
+    
+            // Clear all handler
+            const clearBtn = container.querySelector('.clubcal-clear-all');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', clearAllFilters);
+            }
+        }
+    
+        /**
+         * Remove a specific filter
+         */
+        function removeFilter(type, value) {
+            if (type === 'quick') {
+                currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== value);
+                const btn = document.querySelector(`.clubcal-quick-filter[data-filter="${value}"]`);
+                if (btn) btn.classList.remove('active');
+            } else if (type === 'committee') {
+                currentFilters.committee = null;
+                const dropdown = document.getElementById('clubcal-committee-filter');
+                if (dropdown) dropdown.value = '';
+            } else if (type === 'activity') {
+                currentFilters.activity = null;
+                const dropdown = document.getElementById('clubcal-activity-filter');
+                if (dropdown) dropdown.value = '';
+            } else if (type === 'price') {
+                currentFilters.price = null;
+                const dropdown = document.getElementById('clubcal-price-filter');
+                if (dropdown) dropdown.value = '';
+            } else if (type === 'eventType') {
+                currentFilters.eventType = null;
+                const dropdown = document.getElementById('clubcal-eventtype-filter');
+                if (dropdown) dropdown.value = '';
+            } else if (type === 'recurring') {
+                currentFilters.recurring = null;
+                const dropdown = document.getElementById('clubcal-recurring-filter');
+                if (dropdown) dropdown.value = '';
+            } else if (type === 'venue') {
+                currentFilters.venue = null;
+                const dropdown = document.getElementById('clubcal-venue-filter');
+                if (dropdown) dropdown.value = '';
+            } else if (type === 'tag') {
+                currentFilters.tag = null;
+                const dropdown = document.getElementById('clubcal-tag-filter');
+                if (dropdown) dropdown.value = '';
+            } else if (type === 'search') {
+                currentFilters.search = '';
+                const searchInput = document.getElementById('clubcal-search-input');
+                const searchClear = document.getElementById('clubcal-search-clear');
+                if (searchInput) searchInput.value = '';
+                if (searchClear) searchClear.style.display = 'none';
+            } else if (type === 'dateRange') {
+                currentFilters.dateFrom = null;
+                currentFilters.dateTo = null;
+                const dateFrom = document.getElementById('clubcal-date-from');
+                const dateTo = document.getElementById('clubcal-date-to');
+                if (dateFrom) dateFrom.value = '';
+                if (dateTo) dateTo.value = '';
+            }
+            applyFilters();
+        }
+    
+        /**
+         * Clear all filters
+         */
+        function clearAllFilters() {
+            currentFilters.quickFilters = [];
+            currentFilters.committee = null;
+            currentFilters.activity = null;
+            currentFilters.price = null;
+            currentFilters.eventType = null;
+            currentFilters.recurring = null;
+            currentFilters.venue = null;
+            currentFilters.tag = null;
+            currentFilters.search = '';
+            currentFilters.dateFrom = null;
+            currentFilters.dateTo = null;
+    
+            // Reset UI
+            document.querySelectorAll('.clubcal-quick-filter').forEach(btn => btn.classList.remove('active'));
+            const committeeDropdown = document.getElementById('clubcal-committee-filter');
+            const activityDropdown = document.getElementById('clubcal-activity-filter');
+            const priceDropdown = document.getElementById('clubcal-price-filter');
+            const eventTypeDropdown = document.getElementById('clubcal-eventtype-filter');
+            const recurringDropdown = document.getElementById('clubcal-recurring-filter');
+            const venueDropdown = document.getElementById('clubcal-venue-filter');
+            const tagDropdown = document.getElementById('clubcal-tag-filter');
+            const searchInput = document.getElementById('clubcal-search-input');
+            const searchClear = document.getElementById('clubcal-search-clear');
+            const dateFrom = document.getElementById('clubcal-date-from');
+            const dateTo = document.getElementById('clubcal-date-to');
+            if (committeeDropdown) committeeDropdown.value = '';
+            if (activityDropdown) activityDropdown.value = '';
+            if (priceDropdown) priceDropdown.value = '';
+            if (eventTypeDropdown) eventTypeDropdown.value = '';
+            if (recurringDropdown) recurringDropdown.value = '';
+            if (venueDropdown) venueDropdown.value = '';
+            if (tagDropdown) tagDropdown.value = '';
+            if (searchInput) searchInput.value = '';
+            if (searchClear) searchClear.style.display = 'none';
+            if (dateFrom) dateFrom.value = '';
+            if (dateTo) dateTo.value = '';
+    
+            applyFilters();
+        }
+    
+        function transformEventsForCalendar(events) {
+            return events.map(event => ({
+                id: event.id,
+                title: getCleanTitle(event.name),
+                start: event.startDate,
+                end: event.endDate,
+                classNames: [`clubcal-event-${getTimeOfDayClass(event.startDate)}`],
+                extendedProps: { originalEvent: event, category: extractCommittee(event.name) }
+            }));
+        }
+    
+        function updateDisplay() {
+            if (calendarInstance) {
+                calendarInstance.removeAllEvents();
+                calendarInstance.addEventSource(transformEventsForCalendar(filteredEvents));
+            }
+            const countEl = document.getElementById('clubcal-results-count');
+            if (countEl) countEl.textContent = `Showing ${filteredEvents.length} of ${allEvents.length} events`;
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // THEME DETECTION
+        // ═══════════════════════════════════════════════════════════════
+    
+        const THEME_SAMPLE_SELECTORS = {
+            heading: ['h1', 'h2', '.wa-heading', '.contentHeader', '.pageTitle'],
+            button: ['.wa-button', 'button[type="submit"]', '.btn-primary', 'input[type="submit"]'],
+            card: ['.wa-card', '.contentPanel', '.panel', '.gadgetContent', '.box'],
+            link: ['a:not([class*="clubcal"])', '.wa-link', 'nav a'],
+            body: ['body']
+        };
+    
+        const STYLE_PRESETS = {
+            'default': {},
+            'compact': {
+                extraCSS: `
+                    .clubcal-event-card { padding: 8px; }
+                    .clubcal-event-card-date { min-width: 50px; padding: 8px; }
+                    .clubcal-event-card-date .day { font-size: 18px; }
+                    .clubcal-filter-bar { padding: 10px; gap: 8px; }
+                    .clubcal-quick-filter { padding: 4px 10px; font-size: 12px; }
+                `
+            },
+            'minimal': {
+                extraCSS: `
+                    .clubcalendar-header { border-bottom: 1px solid #eee; }
+                    .clubcal-filter-bar { background: transparent; border: 1px solid #eee; }
+                    .clubcal-event-card { box-shadow: none; border: 1px solid #eee; }
+                `
+            },
+            'wa-compatible': {
+                extraCSS: `
+                    .clubcalendar-widget { font-family: inherit !important; }
+                    .clubcalendar-widget * { box-sizing: border-box; }
+                    .clubcalendar-header h2 { font-family: inherit !important; }
+                    .clubcal-event-card { margin: 0 !important; }
+                    .clubcal-quick-filter { font-family: inherit !important; }
+                    .clubcal-dropdown { font-family: inherit !important; }
+                `
+            }
+        };
+    
+        function findFirstElement(selectors) {
+            for (const selector of selectors) {
+                try {
+                    const el = document.querySelector(selector);
+                    if (el) return el;
+                } catch (e) { /* skip invalid selector */ }
+            }
+            return null;
+        }
+    
+        function getComputedStyleSafe(element, property) {
+            if (!element) return null;
+            try {
+                const computed = window.getComputedStyle(element);
+                return computed.getPropertyValue(property) || computed[property] || null;
+            } catch (e) { return null; }
+        }
+    
+        function detectThemeStyles() {
+            const detected = {};
+    
+            // Detect heading styles
+            const heading = findFirstElement(THEME_SAMPLE_SELECTORS.heading);
+            if (heading) {
+                detected.headingFont = getComputedStyleSafe(heading, 'font-family');
+                detected.headingColor = getComputedStyleSafe(heading, 'color');
+            }
+    
+            // Detect body styles
+            const body = findFirstElement(THEME_SAMPLE_SELECTORS.body);
+            if (body) {
+                detected.bodyFont = getComputedStyleSafe(body, 'font-family');
+                detected.bodyColor = getComputedStyleSafe(body, 'color');
+                detected.bodyBg = getComputedStyleSafe(body, 'background-color');
+            }
+    
+            // Detect button styles
+            const button = findFirstElement(THEME_SAMPLE_SELECTORS.button);
+            if (button) {
+                detected.buttonRadius = getComputedStyleSafe(button, 'border-radius');
+                detected.buttonBg = getComputedStyleSafe(button, 'background-color');
+            }
+    
+            // Detect card/panel styles
+            const card = findFirstElement(THEME_SAMPLE_SELECTORS.card);
+            if (card) {
+                detected.cardRadius = getComputedStyleSafe(card, 'border-radius');
+                detected.cardShadow = getComputedStyleSafe(card, 'box-shadow');
+            }
+    
+            // Detect link styles
+            const link = findFirstElement(THEME_SAMPLE_SELECTORS.link);
+            if (link) {
+                detected.linkColor = getComputedStyleSafe(link, 'color');
+            }
+    
+            log('THEME', 'Detected theme styles:', detected);
+            return detected;
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // STYLES
+        // ═══════════════════════════════════════════════════════════════
+    
+        function injectStyles() {
+            if (document.getElementById('clubcal-wa-styles')) return;
+    
+            // Detect theme from page if enabled
+            let detectedTheme = {};
+            if (CONFIG.autoTheme) {
+                detectedTheme = detectThemeStyles();
+            }
+    
+            // Build CSS variable values
+            const primaryColor = CONFIG.primaryColor || '#2c5aa0';
+            const accentColor = CONFIG.accentColor || '#d4a800';
+            const headingFont = detectedTheme.headingFont || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+            const bodyFont = detectedTheme.bodyFont || 'inherit';
+            const bodyColor = detectedTheme.bodyColor || '#333';
+            const cardRadius = detectedTheme.cardRadius || '8px';
+            const buttonRadius = detectedTheme.buttonRadius || '20px';
+    
+            // Apply cssVars overrides from config
+            const cssVars = CONFIG.cssVars || {};
+    
+            // Generate CSS variable declarations
+            const cssVarDeclarations = `
+    :root {
+      --clubcal-primary: ${cssVars['--clubcal-primary'] || primaryColor};
+      --clubcal-accent: ${cssVars['--clubcal-accent'] || accentColor};
+      --clubcal-heading-font: ${cssVars['--clubcal-heading-font'] || headingFont};
+      --clubcal-body-font: ${cssVars['--clubcal-body-font'] || bodyFont};
+      --clubcal-body-color: ${cssVars['--clubcal-body-color'] || bodyColor};
+      --clubcal-card-radius: ${cssVars['--clubcal-card-radius'] || cardRadius};
+      --clubcal-button-radius: ${cssVars['--clubcal-button-radius'] || buttonRadius};
+      --clubcal-card-shadow: ${cssVars['--clubcal-card-shadow'] || '0 1px 3px rgba(0,0,0,0.1)'};
+      --clubcal-card-border: ${cssVars['--clubcal-card-border'] || '1px solid #e0e0e0'};
+    }`;
+    
+            // Base CSS using CSS variables
+            const baseCSS = `
+    .clubcalendar-widget { font-family: var(--clubcal-body-font); color: var(--clubcal-body-color); line-height: 1.5; }
+    .clubcalendar-header { padding: 15px 0; margin-bottom: 15px; border-bottom: 2px solid var(--clubcal-primary); }
+    .clubcalendar-header h2 { margin: 0; color: var(--clubcal-primary); font-size: 24px; font-weight: 600; font-family: var(--clubcal-heading-font); }
+    .clubcal-user-info { background: #e3f2fd; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+    .clubcal-user-info .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--clubcal-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+    .clubcal-tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+    .clubcal-tab-btn { padding: 12px 24px; border: none; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #666; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: var(--clubcal-body-font); }
+    .clubcal-tab-btn:hover { color: var(--clubcal-primary); }
+    .clubcal-tab-btn.active { color: var(--clubcal-primary); border-bottom-color: var(--clubcal-primary); }
+    .clubcal-tab-content { display: none; }
+    .clubcal-tab-content.active { display: block; }
+    .clubcal-filter-bar { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: var(--clubcal-card-radius); }
+    .clubcal-search-container { position: relative; width: 100%; max-width: 400px; }
+    .clubcal-search-input { width: 100%; padding: 10px 36px 10px 14px; border: 1px solid #ddd; border-radius: var(--clubcal-button-radius); font-size: 14px; font-family: var(--clubcal-body-font); background: white; transition: border-color 0.15s, box-shadow 0.15s; }
+    .clubcal-search-input:focus { outline: none; border-color: var(--clubcal-primary); box-shadow: 0 0 0 2px rgba(44,90,160,0.1); }
+    .clubcal-search-input::placeholder { color: #999; }
+    .clubcal-search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; color: #999; cursor: pointer; padding: 4px; line-height: 1; }
+    .clubcal-search-clear:hover { color: #666; }
+    .clubcal-filter-chip-search { background: #43a047; }
+    .clubcal-quick-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    .clubcal-quick-filter { padding: 6px 14px; background: #fff; border: 1px solid #ddd; border-radius: var(--clubcal-button-radius); font-size: 13px; cursor: pointer; transition: all 0.15s; font-family: var(--clubcal-body-font); }
+    .clubcal-quick-filter:hover, .clubcal-quick-filter.active { background: var(--clubcal-primary); color: white; border-color: var(--clubcal-primary); }
+    .clubcal-dropdown-filters { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0; }
+    .clubcal-dropdown-group { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+    .clubcal-dropdown-group label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .clubcal-dropdown { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 13px; cursor: pointer; min-width: 120px; font-family: var(--clubcal-body-font); }
+    .clubcal-dropdown:focus { outline: none; border-color: var(--clubcal-primary); box-shadow: 0 0 0 2px rgba(44,90,160,0.1); }
+    .clubcal-date-range { min-width: 200px; }
+    .clubcal-date-inputs { display: flex; align-items: center; gap: 6px; }
+    .clubcal-date-input { padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; width: 120px; font-family: var(--clubcal-body-font); }
+    .clubcal-date-input:focus { outline: none; border-color: var(--clubcal-primary); box-shadow: 0 0 0 2px rgba(44,90,160,0.1); }
+    .clubcal-date-separator { color: #666; font-size: 12px; }
+    .clubcal-active-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid #e0e0e0; }
+    .clubcal-active-filters:empty { display: none; padding: 0; border: none; }
+    .clubcal-filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--clubcal-primary); color: white; border-radius: 16px; font-size: 12px; }
+    .clubcal-filter-chip button { background: none; border: none; color: white; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; opacity: 0.8; }
+    .clubcal-filter-chip button:hover { opacity: 1; }
+    .clubcal-clear-all { padding: 4px 12px; background: transparent; border: 1px solid #999; border-radius: 16px; font-size: 12px; color: #666; cursor: pointer; }
+    .clubcal-clear-all:hover { background: #eee; border-color: #666; }
+    .clubcal-results-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; font-size: 14px; color: #666; }
+    .clubcal-legend { display: flex; gap: 12px; font-size: 12px; }
+    .clubcal-legend-item { display: flex; align-items: center; gap: 4px; }
+    .clubcal-legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+    .clubcal-legend-dot.morning { background: #ff9800; }
+    .clubcal-legend-dot.afternoon { background: #42a5f5; }
+    .clubcal-legend-dot.evening { background: #5c6bc0; }
+    .clubcalendar-content { min-height: 400px; }
+    .clubcal-event-morning { background-color: #ff9800 !important; border-color: #f57c00 !important; }
+    .clubcal-event-afternoon { background-color: #42a5f5 !important; border-color: #1e88e5 !important; }
+    .clubcal-event-evening { background-color: #5c6bc0 !important; border-color: #3949ab !important; }
+    .clubcal-event-allday { background-color: #66bb6a !important; border-color: #43a047 !important; }
+    .clubcal-event-list { display: flex; flex-direction: column; gap: 12px; }
+    .clubcal-event-card { display: flex; background: white; border: var(--clubcal-card-border); border-radius: var(--clubcal-card-radius); overflow: hidden; cursor: pointer; box-shadow: var(--clubcal-card-shadow); }
+    .clubcal-event-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: var(--clubcal-primary); }
+    .clubcal-event-card-date { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; background: var(--clubcal-primary); color: white; min-width: 70px; }
+    .clubcal-event-card-date .month { font-size: 11px; font-weight: 600; letter-spacing: 1px; }
+    .clubcal-event-card-date .day { font-size: 24px; font-weight: 700; line-height: 1; }
+    .clubcal-event-card-date .weekday { font-size: 11px; margin-top: 2px; }
+    .clubcal-event-card-content { flex: 1; padding: 12px 15px; }
+    .clubcal-event-card-category { font-size: 11px; color: var(--clubcal-primary); font-weight: 600; text-transform: uppercase; }
+    .clubcal-event-card-title { font-size: 15px; font-weight: 600; color: var(--clubcal-body-color); margin: 4px 0; }
+    .clubcal-event-card-meta { font-size: 13px; color: #666; }
+    .clubcal-event-card-meta span { margin-right: 15px; }
+    .clubcal-event-card-status { display: flex; align-items: center; padding: 0 15px; }
+    .clubcal-status-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .clubcal-status-badge.confirmed { background: #e8f5e9; color: #2e7d32; }
+    .clubcal-status-badge.waitlist { background: #fff3e0; color: #e65100; }
+    .clubcal-status-badge.past { background: #f3e5f5; color: #7b1fa2; }
+    .clubcal-loading { text-align: center; padding: 40px; color: #666; }
+    .clubcal-error { text-align: center; padding: 40px; color: #c62828; background: #ffebee; border-radius: var(--clubcal-card-radius); }
+    .clubcal-login-required { text-align: center; padding: 40px; background: #fff3e0; border-radius: var(--clubcal-card-radius); color: #e65100; }
+    .clubcal-event-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .clubcal-tag { padding: 2px 8px; background: #e0e0e0; border-radius: 12px; font-size: 11px; color: #555; }
+    
+    /* Availability indicator */
+    .clubcal-availability { font-size: 12px; font-weight: 500; margin-top: 4px; }
+    .clubcal-availability.sold-out { color: #c62828; }
+    .clubcal-availability.limited { color: #ef6c00; }
+    .clubcal-availability.open { color: #2e7d32; }
+    .clubcal-availability.coming-soon { color: #1565c0; font-style: italic; }
+    .clubcal-availability.waitlist { color: #7b1fa2; font-size: 11px; }
+    
+    /* Price indicator */
+    .clubcal-event-card-header { display: flex; justify-content: space-between; align-items: center; }
+    .clubcal-price-indicator { font-size: 12px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+    .clubcal-price-indicator.level-0 { color: #2e7d32; background: #e8f5e9; }
+    .clubcal-price-indicator.level-1 { color: #558b2f; background: #f1f8e9; }
+    .clubcal-price-indicator.level-2 { color: #f9a825; background: #fffde7; }
+    .clubcal-price-indicator.level-3 { color: #ef6c00; background: #fff3e0; }
+    .clubcal-price-indicator.level-4 { color: #c62828; background: #ffebee; }
+    
+    /* List view enhancements */
+    .clubcal-list-event { display: flex; flex-direction: column; gap: 2px; }
+    .clubcal-list-event-main { display: flex; align-items: center; gap: 8px; }
+    .clubcal-list-event-title { font-weight: 500; }
+    .clubcal-list-event-details { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #666; }
+    .clubcal-list-location { color: #666; }
+    .clubcal-list-event .clubcal-availability { margin-top: 0; }
+    `;
+    
+            // Get preset extra CSS
+            const preset = CONFIG.stylePreset || 'default';
+            const presetCSS = STYLE_PRESETS[preset]?.extraCSS || '';
+    
+            // Custom CSS from config
+            const customCSS = CONFIG.customCSS || '';
+    
+            // Combine all CSS
+            const fullCSS = [cssVarDeclarations, baseCSS, presetCSS, customCSS].filter(Boolean).join('\n');
+    
+            const style = document.createElement('style');
+            style.id = 'clubcal-wa-styles';
+            style.textContent = fullCSS;
+            document.head.appendChild(style);
+    
+            log('STYLES', `Injected styles with preset: ${preset}, autoTheme: ${CONFIG.autoTheme}`);
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // BUILD HTML
+        // ═══════════════════════════════════════════════════════════════
+    
+        function buildWidgetHTML() {
+            const userDisplay = currentUser ? `
+                <div class="clubcal-user-info">
+                    <div class="avatar">${(currentUser.FirstName || 'U')[0]}</div>
+                    <span>Welcome, ${escapeHtml(currentUser.FirstName || 'Member')}!</span>
+                </div>` : '';
+    
+            // Build quick filters based on config
+            const qf = CONFIG.quickFilters || {};
+            const quickFiltersHtml = [
+                qf.weekend !== false ? '<button class="clubcal-quick-filter" data-filter="weekend">Weekend</button>' : '',
+                qf.openings !== false ? '<button class="clubcal-quick-filter" data-filter="openings">Has Openings</button>' : '',
+                qf.afterhours !== false ? '<button class="clubcal-quick-filter" data-filter="afterhours">After Hours</button>' : '',
+                qf.free !== false ? '<button class="clubcal-quick-filter" data-filter="free">Free</button>' : '',
+                qf.public !== false ? '<button class="clubcal-quick-filter" data-filter="public">Public</button>' : ''
+            ].filter(h => h).join('\n                                ');
+    
+            // Build dropdown filters based on config
+            const df = CONFIG.dropdownFilters || {};
+            const dropdownFiltersHtml = [
+                df.committee !== false ? `
+                                    <div class="clubcal-dropdown-group">
+                                        <label for="clubcal-committee-filter">Committee</label>
+                                        <select id="clubcal-committee-filter" class="clubcal-dropdown">
+                                            <option value="">Any</option>
+                                        </select>
+                                    </div>` : '',
+                df.activity !== false ? `
+                                    <div class="clubcal-dropdown-group">
+                                        <label for="clubcal-activity-filter">Activity</label>
+                                        <select id="clubcal-activity-filter" class="clubcal-dropdown">
+                                            ${buildDropdownOptions(ACTIVITY_OPTIONS, null)}
+                                        </select>
+                                    </div>` : '',
+                df.price !== false ? `
+                                    <div class="clubcal-dropdown-group">
+                                        <label for="clubcal-price-filter">Max Price</label>
+                                        <select id="clubcal-price-filter" class="clubcal-dropdown">
+                                            ${buildDropdownOptions(PRICE_OPTIONS, null)}
+                                        </select>
+                                    </div>` : '',
+                df.eventType !== false ? `
+                                    <div class="clubcal-dropdown-group">
+                                        <label for="clubcal-eventtype-filter">Event Type</label>
+                                        <select id="clubcal-eventtype-filter" class="clubcal-dropdown">
+                                            ${buildDropdownOptions(EVENT_TYPE_OPTIONS, null)}
+                                        </select>
+                                    </div>` : '',
+                df.recurring !== false ? `
+                                    <div class="clubcal-dropdown-group">
+                                        <label for="clubcal-recurring-filter">Recurring</label>
+                                        <select id="clubcal-recurring-filter" class="clubcal-dropdown">
+                                            ${buildDropdownOptions(RECURRING_OPTIONS, null)}
+                                        </select>
+                                    </div>` : '',
+                df.venue !== false ? `
+                                    <div class="clubcal-dropdown-group">
+                                        <label for="clubcal-venue-filter">Venue</label>
+                                        <select id="clubcal-venue-filter" class="clubcal-dropdown">
+                                            ${buildDropdownOptions(VENUE_OPTIONS, null)}
+                                        </select>
+                                    </div>` : '',
+                df.tags !== false ? `
+                                    <div class="clubcal-dropdown-group">
+                                        <label for="clubcal-tag-filter">Tags</label>
+                                        <select id="clubcal-tag-filter" class="clubcal-dropdown">
+                                            <option value="">Any</option>
+                                        </select>
+                                    </div>` : '',
+                df.dateRange !== false ? `
+                                    <div class="clubcal-dropdown-group clubcal-date-range">
+                                        <label>Date Range</label>
+                                        <div class="clubcal-date-inputs">
+                                            <input type="date" id="clubcal-date-from" class="clubcal-date-input" placeholder="From">
+                                            <span class="clubcal-date-separator">to</span>
+                                            <input type="date" id="clubcal-date-to" class="clubcal-date-input" placeholder="To">
+                                        </div>
+                                    </div>` : ''
+            ].filter(h => h).join('');
+    
+            const hasQuickFilters = quickFiltersHtml.length > 0;
+            const hasDropdownFilters = dropdownFiltersHtml.length > 0;
+    
+            return `
+                <div class="clubcalendar-widget">
+                    ${CONFIG.showHeader ? `<div class="clubcalendar-header"><h2>${escapeHtml(CONFIG.headerTitle)}</h2></div>` : ''}
+                    ${userDisplay}
+                    ${CONFIG.showMyEvents ? `
+                        <div class="clubcal-tabs">
+                            <button class="clubcal-tab-btn active" data-tab="find-events">Find Events</button>
+                            <button class="clubcal-tab-btn" data-tab="my-events">My Events</button>
+                        </div>` : ''}
+                    <div id="clubcal-tab-find-events" class="clubcal-tab-content active">
+                        ${CONFIG.showFilters && (hasQuickFilters || hasDropdownFilters) ? `
+                            <div class="clubcal-filter-bar">
+                                <div class="clubcal-search-container">
+                                    <input type="text" id="clubcal-search-input" class="clubcal-search-input" placeholder="Search events..." aria-label="Search events">
+                                    <button type="button" id="clubcal-search-clear" class="clubcal-search-clear" aria-label="Clear search" style="display:none;">&times;</button>
+                                </div>
+                                ${hasQuickFilters ? `<div class="clubcal-quick-filters">
+                                    ${quickFiltersHtml}
+                                </div>` : ''}
+                                ${hasDropdownFilters ? `<div class="clubcal-dropdown-filters">
+                                    ${dropdownFiltersHtml}
+                                </div>` : ''}
+                                <div id="clubcal-active-filters" class="clubcal-active-filters"></div>
+                            </div>` : ''}
+                        <div class="clubcal-results-bar">
+                            <span id="clubcal-results-count">Loading events...</span>
+                            <div class="clubcal-legend">
+                                <span class="clubcal-legend-item"><span class="clubcal-legend-dot morning"></span>Morning</span>
+                                <span class="clubcal-legend-item"><span class="clubcal-legend-dot afternoon"></span>Afternoon</span>
+                                <span class="clubcal-legend-item"><span class="clubcal-legend-dot evening"></span>Evening</span>
+                            </div>
+                        </div>
+                        <div id="clubcalendar-content" class="clubcalendar-content"></div>
+                    </div>
+                    ${CONFIG.showMyEvents ? `
+                        <div id="clubcal-tab-my-events" class="clubcal-tab-content">
+                            <div id="clubcal-my-events-results"><div class="clubcal-loading">Loading your events...</div></div>
+                        </div>` : ''}
+                </div>`;
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // MY EVENTS
+        // ═══════════════════════════════════════════════════════════════
+    
+        function renderMyEvents() {
+            const container = document.getElementById('clubcal-my-events-results');
+            if (!container) return;
+    
+            if (!currentUser) {
+                container.innerHTML = `<div class="clubcal-login-required"><h3>Login Required</h3><p>Please log in to see your registered events.</p></div>`;
+                return;
+            }
+    
+            if (myRegistrations.length === 0) {
+                container.innerHTML = `<div style="text-align:center;padding:40px;color:#666;"><h3>No events found</h3><p>You're not registered for any upcoming events.</p></div>`;
+                return;
+            }
+    
+            const now = new Date();
+            const myEvents = myRegistrations.map(reg => {
+                // Use eventIndex for O(1) lookup instead of O(n) find()
+                const event = eventIndex.get(reg.Event?.Id);
+                if (!event) return null;
+                const eventDate = new Date(event.startDate);
+                return { ...event, registrationStatus: reg.Status, isWaitlist: reg.Status?.toLowerCase().includes('waitlist'), isPast: eventDate < now };
+            }).filter(e => e).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+    
+            const registered = myEvents.filter(e => !e.isWaitlist && !e.isPast);
+            const waitlist = myEvents.filter(e => e.isWaitlist && !e.isPast);
+            const past = myEvents.filter(e => e.isPast);
+    
+            let html = `<div style="margin-bottom:20px;padding:15px;background:#e3f2fd;border-radius:8px;">
+                <strong>Found ${myEvents.length} event${myEvents.length !== 1 ? 's' : ''}</strong>
+                ${registered.length ? ` - ${registered.length} registered` : ''}
+                ${waitlist.length ? ` - ${waitlist.length} on waitlist` : ''}
+                ${past.length ? ` - ${past.length} past` : ''}
+            </div>`;
+    
+            if (registered.length) {
+                html += '<h4 style="color:#1565c0;margin:20px 0 12px;">Registered</h4><div class="clubcal-event-list">';
+                registered.forEach(e => { html += renderEventCard(e, 'registered'); });
+                html += '</div>';
+            }
+            if (waitlist.length) {
+                html += '<h4 style="color:#e65100;margin:20px 0 12px;">On Waitlist</h4><div class="clubcal-event-list">';
+                waitlist.forEach(e => { html += renderEventCard(e, 'waitlist'); });
+                html += '</div>';
+            }
+            if (past.length) {
+                html += '<h4 style="color:#7b1fa2;margin:20px 0 12px;">Recent Events</h4><div class="clubcal-event-list">';
+                past.forEach(e => { html += renderEventCard(e, 'past'); });
+                html += '</div>';
+            }
+    
+            container.innerHTML = html;
+        }
+    
+        function renderEventCard(event, status) {
+            const date = new Date(event.startDate);
+            const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+            const day = date.getDate();
+            const weekday = date.toLocaleString('en-US', { weekday: 'short' });
+            const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const category = extractCommittee(event.name);
+            const title = getCleanTitle(event.name);
+    
+            let badge = '';
+            if (status === 'registered') badge = '<span class="clubcal-status-badge confirmed">Registered</span>';
+            else if (status === 'waitlist') badge = '<span class="clubcal-status-badge waitlist">Waitlist</span>';
+            else if (status === 'past') badge = '<span class="clubcal-status-badge past">Attended</span>';
+    
+            // Get display tags (manual tags only, excluding hidden)
+            const displayTags = getDisplayTags(event);
+            const tagsHtml = displayTags.length > 0 ? `
+                        <div class="clubcal-event-tags">
+                            ${displayTags.map(t => `<span class="clubcal-tag">${escapeHtml(t)}</span>`).join('')}
+                        </div>` : '';
+    
+            // Build availability indicator
+            const availHtml = getAvailabilityHtml(event);
+    
+            // Build price indicator
+            const priceHtml = getPriceIndicatorHtml(event.minPrice);
+    
+            return `
+                <div class="clubcal-event-card" onclick="window.open('${event.url}', '_blank')">
+                    <div class="clubcal-event-card-date">
+                        <span class="month">${month}</span>
+                        <span class="day">${day}</span>
+                        <span class="weekday">${weekday}</span>
+                    </div>
+                    <div class="clubcal-event-card-content">
+                        <div class="clubcal-event-card-header">
+                            <span class="clubcal-event-card-category">${escapeHtml(category)}</span>
+                            ${priceHtml}
+                        </div>
+                        <div class="clubcal-event-card-title">${escapeHtml(title)}</div>
+                        <div class="clubcal-event-card-meta">
+                            <span>${time}</span>
+                            ${event.location ? `<span>${escapeHtml(event.location)}</span>` : ''}
+                        </div>${tagsHtml}${availHtml}
+                    </div>
+                    <div class="clubcal-event-card-status">${badge}</div>
+                </div>`;
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // EVENT LISTENERS
+        // ═══════════════════════════════════════════════════════════════
+    
+        function setupEventListeners() {
+            document.querySelectorAll('.clubcal-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    document.querySelectorAll('.clubcal-tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.querySelectorAll('.clubcal-tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(`clubcal-tab-${tab}`).classList.add('active');
+                    if (tab === 'my-events') renderMyEvents();
+                });
+            });
+    
+            // Quick filter toggle buttons
+            document.querySelectorAll('.clubcal-quick-filter').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.dataset.filter;
+                    btn.classList.toggle('active');
+                    if (btn.classList.contains('active')) {
+                        if (!currentFilters.quickFilters.includes(filter)) currentFilters.quickFilters.push(filter);
+                    } else {
+                        currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filter);
+                    }
+                    applyFilters();
+                });
+            });
+    
+            // Committee dropdown
+            const committeeDropdown = document.getElementById('clubcal-committee-filter');
+            if (committeeDropdown) {
+                committeeDropdown.addEventListener('change', () => {
+                    currentFilters.committee = committeeDropdown.value || null;
+                    applyFilters();
+                });
+            }
+    
+            // Activity dropdown
+            const activityDropdown = document.getElementById('clubcal-activity-filter');
+            if (activityDropdown) {
+                activityDropdown.addEventListener('change', () => {
+                    currentFilters.activity = activityDropdown.value || null;
+                    applyFilters();
+                });
+            }
+    
+            // Price dropdown
+            const priceDropdown = document.getElementById('clubcal-price-filter');
+            if (priceDropdown) {
+                priceDropdown.addEventListener('change', () => {
+                    currentFilters.price = priceDropdown.value || null;
+                    applyFilters();
+                });
+            }
+    
+            // Event Type dropdown
+            const eventTypeDropdown = document.getElementById('clubcal-eventtype-filter');
+            if (eventTypeDropdown) {
+                eventTypeDropdown.addEventListener('change', () => {
+                    currentFilters.eventType = eventTypeDropdown.value || null;
+                    applyFilters();
+                });
+            }
+    
+            // Recurring dropdown
+            const recurringDropdown = document.getElementById('clubcal-recurring-filter');
+            if (recurringDropdown) {
+                recurringDropdown.addEventListener('change', () => {
+                    currentFilters.recurring = recurringDropdown.value || null;
+                    applyFilters();
+                });
+            }
+    
+            // Venue dropdown
+            const venueDropdown = document.getElementById('clubcal-venue-filter');
+            if (venueDropdown) {
+                venueDropdown.addEventListener('change', () => {
+                    currentFilters.venue = venueDropdown.value || null;
+                    applyFilters();
+                });
+            }
+    
+            // Tags dropdown
+            const tagDropdown = document.getElementById('clubcal-tag-filter');
+            if (tagDropdown) {
+                tagDropdown.addEventListener('change', () => {
+                    currentFilters.tag = tagDropdown.value || null;
+                    applyFilters();
+                });
+            }
+    
+            // Date range inputs
+            const dateFrom = document.getElementById('clubcal-date-from');
+            const dateTo = document.getElementById('clubcal-date-to');
+            if (dateFrom) {
+                dateFrom.addEventListener('change', () => {
+                    currentFilters.dateFrom = dateFrom.value || null;
+                    applyFilters();
+                });
+            }
+            if (dateTo) {
+                dateTo.addEventListener('change', () => {
+                    currentFilters.dateTo = dateTo.value || null;
+                    applyFilters();
+                });
+            }
+    
+            // Search input
+            const searchInput = document.getElementById('clubcal-search-input');
+            const searchClear = document.getElementById('clubcal-search-clear');
+            let searchTimeout = null;
+    
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    // Debounce search - wait 300ms after user stops typing
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        currentFilters.search = searchInput.value.trim();
+                        // Show/hide clear button
+                        if (searchClear) {
+                            searchClear.style.display = currentFilters.search ? 'block' : 'none';
+                        }
+                        applyFilters();
+                    }, 300);
+                });
+    
+                // Allow Enter key to search immediately
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        clearTimeout(searchTimeout);
+                        currentFilters.search = searchInput.value.trim();
+                        if (searchClear) {
+                            searchClear.style.display = currentFilters.search ? 'block' : 'none';
+                        }
+                        applyFilters();
+                    }
+                });
+            }
+    
+            if (searchClear) {
+                searchClear.addEventListener('click', () => {
+                    if (searchInput) searchInput.value = '';
+                    currentFilters.search = '';
+                    searchClear.style.display = 'none';
+                    applyFilters();
+                });
+            }
+        }
+    
+        /**
+         * Populate committee dropdown with available committees from loaded events
+         */
+        function populateCommitteeDropdown() {
+            const dropdown = document.getElementById('clubcal-committee-filter');
+            if (!dropdown) return;
+    
+            const committees = getAvailableCommittees();
+            const options = [{ value: null, label: 'Any' }, ...committees];
+            dropdown.innerHTML = buildDropdownOptions(options, currentFilters.committee);
+            log('UI', `Populated committee dropdown with ${committees.length} options`);
+        }
+    
+        /**
+         * Populate tags dropdown with available manual tags from loaded events
+         */
+        function populateTagsDropdown() {
+            const dropdown = document.getElementById('clubcal-tag-filter');
+            if (!dropdown) return;
+    
+            const tags = getAvailableTags();
+            const options = [{ value: null, label: 'Any' }, ...tags];
+            dropdown.innerHTML = buildDropdownOptions(options, currentFilters.tag);
+            log('UI', `Populated tags dropdown with ${tags.length} options`);
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // CALENDAR
+        // ═══════════════════════════════════════════════════════════════
+    
+        /**
+         * Apply current filter state to UI elements
+         */
+        function applyFilterStateToUI() {
+            // Quick filters
+            document.querySelectorAll('.clubcal-quick-filter').forEach(btn => {
+                const filter = btn.dataset.filter;
+                if (currentFilters.quickFilters.includes(filter)) {
+                    btn.classList.add('active');
+                }
+            });
+    
+            // Dropdown filters
+            const committeeSelect = document.getElementById('clubcal-filter-committee');
+            if (committeeSelect && currentFilters.committee) committeeSelect.value = currentFilters.committee;
+    
+            const activitySelect = document.getElementById('clubcal-filter-activity');
+            if (activitySelect && currentFilters.activity) activitySelect.value = currentFilters.activity;
+    
+            const priceSelect = document.getElementById('clubcal-filter-price');
+            if (priceSelect && currentFilters.price) priceSelect.value = currentFilters.price;
+    
+            const tagSelect = document.getElementById('clubcal-filter-tag');
+            if (tagSelect && currentFilters.tag) tagSelect.value = currentFilters.tag;
+    
+            // Search input
+            const searchInput = document.getElementById('clubcal-search-input');
+            if (searchInput && currentFilters.search) {
+                searchInput.value = currentFilters.search;
+                const clearBtn = document.getElementById('clubcal-search-clear');
+                if (clearBtn) clearBtn.style.display = currentFilters.search ? 'block' : 'none';
+            }
+    
+            // Date range inputs
+            const dateFrom = document.getElementById('clubcal-date-from');
+            const dateTo = document.getElementById('clubcal-date-to');
+            if (dateFrom && currentFilters.dateFrom) dateFrom.value = currentFilters.dateFrom;
+            if (dateTo && currentFilters.dateTo) dateTo.value = currentFilters.dateTo;
+        }
+    
+        function initCalendar(initialView) {
+            const el = document.getElementById('clubcalendar-content');
+            if (!el) return;
+    
+            calendarInstance = new FullCalendar.Calendar(el, {
+                initialView: initialView || CONFIG.defaultView,
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listMonth' },
+                events: transformEventsForCalendar(filteredEvents),
+                eventDisplay: CONFIG.showEventDots !== false ? 'auto' : 'none',
+                eventClick: (info) => {
+                    const event = info.event.extendedProps.originalEvent;
+                    if (event?.url) window.open(event.url, '_blank');
+                },
+                eventContent: (arg) => {
+                    // Enhanced content for list view
+                    if (arg.view.type.startsWith('list')) {
+                        const event = arg.event.extendedProps.originalEvent;
+                        if (!event) return { html: arg.event.title };
+    
+                        const priceHtml = getPriceIndicatorHtml(event.minPrice);
+                        const availHtml = getAvailabilityHtml(event);
+                        const location = event.location ? `<span class="clubcal-list-location">${escapeHtml(event.location)}</span>` : '';
+    
+                        return {
+                            html: `
+                                <div class="clubcal-list-event">
+                                    <div class="clubcal-list-event-main">
+                                        <span class="clubcal-list-event-title">${escapeHtml(arg.event.title)}</span>
+                                        ${priceHtml}
+                                    </div>
+                                    <div class="clubcal-list-event-details">
+                                        ${location}${availHtml}
+                                    </div>
+                                </div>
+                            `
+                        };
+                    }
+                    // Default for other views
+                    return { html: arg.event.title };
+                },
+                eventDidMount: (info) => {
+                    const event = info.event.extendedProps.originalEvent;
+                    if (event) {
+                        let tooltip = event.name;
+                        if (event.location) tooltip += `\n${event.location}`;
+                        // Check if registration opens in the future
+                        if (event.registrationOpenDate) {
+                            const openDate = new Date(event.registrationOpenDate);
+                            const now = new Date();
+                            if (openDate > now) {
+                                const daysUntil = Math.ceil((openDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                                if (daysUntil === 0) tooltip += '\n🕐 Registration opens today';
+                                else if (daysUntil === 1) tooltip += '\n🕐 Registration opens tomorrow';
+                                else if (daysUntil <= 7) tooltip += `\n🕐 Registration opens in ${daysUntil} days`;
+                                else tooltip += '\n🕐 Registration coming soon';
+                            }
+                        }
+                        // Add availability to tooltip (only if registration is open)
+                        if (!event.registrationOpenDate || new Date(event.registrationOpenDate) <= new Date()) {
+                            if (event.spotsAvailable === 0) {
+                                tooltip += '\n⛔ Sold Out';
+                            } else if (event.spotsAvailable !== null && event.spotsAvailable <= 5) {
+                                tooltip += `\n⚠️ ${event.spotsAvailable} spot${event.spotsAvailable === 1 ? '' : 's'} left`;
+                            } else if (event.spotsAvailable !== null) {
+                                tooltip += `\n✓ ${event.spotsAvailable} spots available`;
+                            }
+                        }
+                        info.el.title = tooltip;
+                    }
+                },
+                datesSet: (info) => {
+                    // Save preferences when view changes
+                    savePreferences();
+                }
+            });
+            calendarInstance.render();
+        }
+    
+        function loadFullCalendar() {
+            return new Promise((resolve, reject) => {
+                if (window.FullCalendar) { resolve(); return; }
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════
+    
+        async function init() {
+            console.log('═══════════════════════════════════════════════════════════════');
+            console.log(LOG_PREFIX, 'ClubCalendar Widget - Wild Apricot Native Edition');
+            console.log('═══════════════════════════════════════════════════════════════');
+    
+            try {
+                log('INIT', 'Injecting styles...');
+                injectStyles();
+    
+                const container = document.querySelector(CONFIG.container);
+                if (!container) throw new Error(`Container not found: ${CONFIG.container}`);
+    
+                container.innerHTML = '<div class="clubcal-loading">Loading ClubCalendar...</div>';
+    
+                // Auto-discover account ID if not configured
+                if (!CONFIG.waAccountId || CONFIG.waAccountId === 'YOUR_ACCOUNT_ID') {
+                    log('INIT', 'No account ID configured, attempting auto-discovery...');
+                    const discoveredId = await WaApi.discoverAccountId();
+                    if (discoveredId) {
+                        CONFIG.waAccountId = discoveredId;
+                    } else {
+                        throw new Error('Could not auto-discover account ID. Please ensure you are on a Wild Apricot page or configure waAccountId manually.');
+                    }
+                }
+    
+                logConfig();
+    
+                // Load FullCalendar library AND fetch API data in parallel for faster init
+                log('INIT', 'Loading FullCalendar + fetching API data in parallel...');
+    
+                const [, userResult, events] = await Promise.all([
+                    loadFullCalendar().then(() => {
+                        log('INIT', '✓ FullCalendar loaded');
+                    }).catch(e => {
+                        throw new Error('Failed to load FullCalendar library from CDN. Check network connectivity.');
+                    }),
+                    (async () => {
+                        const user = await WaApi.getCurrentUser();
+                        const regs = user?.Id ? await WaApi.getContactRegistrations(user.Id) : [];
+                        return { user, registrations: regs };
+                    })(),
+                    WaApi.getEvents(CONFIG.pastEventsVisible ? CONFIG.pastEventsDays : 0)
+                ]);
+    
+                currentUser = userResult.user;
+                myRegistrations = userResult.registrations;
+    
+                // Apply member or public config overrides based on login state
+                if (currentUser) {
+                    CONFIG = mergeConfig(CONFIG, CONFIG.memberConfig);
+                    log('CONFIG', 'Applied member config overrides');
+                } else {
+                    CONFIG = mergeConfig(CONFIG, CONFIG.publicConfig);
+                    log('CONFIG', 'Applied public config overrides');
+                }
+    
+                // Transform events
+                log('TRANSFORM', `Transforming ${events.length} events...`);
+                const validEvents = events.filter(e => !(e.Name || '').toUpperCase().includes('CANCELLED'));
+                log('TRANSFORM', `Filtered out ${events.length - validEvents.length} cancelled events`);
+    
+                allEvents = validEvents.map((e, i) => transformEvent(e, i < 3));
+                filteredEvents = [...allEvents];
+    
+                // Build event index for O(1) lookups and invalidate dropdown caches
+                eventIndex.clear();
+                allEvents.forEach(e => eventIndex.set(e.id, e));
+                cachedCommittees = null;
+                cachedTags = null;
+    
+                // Log tag summary
+                const tagCounts = {};
+                allEvents.forEach(e => e.tags.forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+                log('TRANSFORM', 'Tag summary:', tagCounts);
+    
+                // Log pricing summary
+                const pricingSummary = {
+                    free: allEvents.filter(e => e.isFree).length,
+                    paid: allEvents.filter(e => !e.isFree).length,
+                    public: allEvents.filter(e => e.isPublic).length,
+                    membersOnly: allEvents.filter(e => !e.isPublic).length
+                };
+                log('TRANSFORM', 'Pricing/access summary:', pricingSummary);
+    
+                // Render the calendar UI
+                container.innerHTML = buildWidgetHTML();
+                setupEventListeners();
+                populateCommitteeDropdown();
+                populateTagsDropdown();
+    
+                // Load saved preferences
+                const savedPrefs = loadPreferences();
+                let initialView = CONFIG.defaultView;
+                if (savedPrefs) {
+                    // Restore saved filters
+                    if (savedPrefs.filters) {
+                        Object.assign(currentFilters, savedPrefs.filters);
+                        // Restore UI state for filters
+                        applyFilterStateToUI();
+                    }
+                    // Use saved view
+                    if (savedPrefs.view) {
+                        initialView = savedPrefs.view;
+                    }
+                    log('INIT', 'Restored saved preferences', savedPrefs);
+                }
+    
+                initCalendar(initialView);
+                applyFilters();
+    
+                // Fetch waitlist counts in background (doesn't block init)
+                if (CONFIG.showWaitlistCount) {
+                    fetchWaitlistCounts().catch(e => log('WAITLIST', '⚠️ Failed to fetch waitlist counts:', e.message));
+                }
+    
+                console.log('═══════════════════════════════════════════════════════════════');
+                log('INIT', '✓ ClubCalendar initialized successfully', {
+                    user: currentUser?.Email || 'Not logged in',
+                    totalEvents: allEvents.length,
+                    myRegistrations: myRegistrations.length
+                });
+                console.log('═══════════════════════════════════════════════════════════════');
+    
+            } catch (error) {
+                console.error(LOG_PREFIX, '❌ Initialization failed:', error);
+                showFallback(error.message);
+            }
+        }
+    
+        // ═══════════════════════════════════════════════════════════════
+        // PUBLIC API
+        // ═══════════════════════════════════════════════════════════════
+    
+        window.ClubCalendar = {
+            init,
+            refresh: async () => {
+                allEvents = (await WaApi.getEvents(CONFIG.pastEventsVisible ? CONFIG.pastEventsDays : 0))
+                    .filter(e => !(e.Name || '').toUpperCase().includes('CANCELLED')).map(transformEvent);
+                filteredEvents = [...allEvents];
+                // Build event index and invalidate caches
+                eventIndex.clear();
+                allEvents.forEach(e => eventIndex.set(e.id, e));
+                cachedCommittees = null;
+                cachedTags = null;
+                waitlistCache = {}; // Clear cached waitlist counts
+                applyFilters();
+                if (CONFIG.showWaitlistCount) {
+                    fetchWaitlistCounts().catch(e => log('WAITLIST', '⚠️ Failed to fetch waitlist counts:', e.message));
+                }
+            },
+            getUser: () => currentUser,
+            getEvents: () => allEvents,
+            clearFilters: () => {
+                currentFilters = { ...DEFAULT_FILTERS };
+                document.querySelectorAll('.clubcal-quick-filter').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.clubcal-dropdown-filter').forEach(s => s.value = '');
+                const searchInput = document.getElementById('clubcal-search-input');
+                if (searchInput) searchInput.value = '';
+                applyFilters();
+            },
+            clearPreferences: clearPreferences,
+            savePreferences: savePreferences
+        };
+    
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+        else init();
+    
+    })();
+    </script>
+    
+
+Operator notes
+- If the widget shows an error box, confirm /clubcalendar-config exists and is published.
+- Confirm the config page contains a <script id="clubcalendar-config"> JSON block.
+- Confirm the WA page URL paths match exactly.

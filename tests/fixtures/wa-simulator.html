@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wild Apricot Gadget Simulator</title>
+    <!--
+        This page simulates Wild Apricot's Custom HTML Gadget environment.
+        It applies the same restrictions WA has on embedded code.
+    -->
+    <style>
+        /* Simulate WA page styles that might conflict */
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .wa-page-wrapper { max-width: 1200px; margin: 0 auto; }
+        .wa-gadget-container { border: 1px dashed #ccc; padding: 10px; margin: 20px 0; }
+        .wa-simulator-header { background: #f5f5f5; padding: 10px; margin-bottom: 20px; }
+        .wa-simulator-controls { margin: 10px 0; }
+        .wa-simulator-controls button { margin-right: 10px; padding: 5px 10px; }
+        .wa-simulator-log { background: #1e1e1e; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; display: none; }
+        .wa-simulator-log.visible { display: block; }
+
+        /* WA's typical global styles that might cause conflicts */
+        a { color: #337ab7; }
+        button { cursor: pointer; }
+        h1, h2, h3 { margin: 0 0 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="wa-page-wrapper">
+        <div class="wa-simulator-header">
+            <h2>Wild Apricot Gadget Simulator</h2>
+            <p>This page simulates WA's Custom HTML Gadget restrictions:</p>
+            <ul>
+                <li>Inline event handlers (onclick, onload, etc.) are stripped</li>
+                <li>Only whitelisted CDN domains allowed</li>
+                <li>Code runs in WA page context (not isolated)</li>
+            </ul>
+            <div class="wa-simulator-controls">
+                <button id="toggle-auth">Toggle Auth (Guest)</button>
+                <button id="show-log">Show Console Log</button>
+                <button id="reload-widget">Reload Widget</button>
+            </div>
+            <div id="wa-log" class="wa-simulator-log"></div>
+        </div>
+
+        <!-- This is where the widget code gets injected (like WA's gadget) -->
+        <div class="wa-gadget-container" id="gadget-container">
+            <!-- Widget will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // ======================================================================
+        // WA API SIMULATOR
+        // Mocks the Wild Apricot API behavior for testing
+        // ======================================================================
+
+        (function() {
+            'use strict';
+
+            // Simulated auth state
+            let isAuthenticated = false;
+            let currentUserId = null;
+
+            // Store original fetch for non-WA calls
+            const originalFetch = window.fetch.bind(window);
+
+            // Override global fetch to intercept WA API calls
+            window.fetch = async function(url, options) {
+                const urlStr = typeof url === 'string' ? url : url.toString();
+
+                // Intercept WA API calls
+                if (urlStr.includes('api.wildapricot.org')) {
+                    console.log('[WA Simulator] Intercepted API call:', urlStr);
+                    return window.WA_SIMULATOR.mockFetch(urlStr, options);
+                }
+
+                // Pass through non-WA calls
+                return originalFetch(url, options);
+            };
+
+            // Console capture for debugging
+            const logMessages = [];
+            const originalConsole = {
+                log: console.log,
+                warn: console.warn,
+                error: console.error
+            };
+
+            function captureLog(type, ...args) {
+                const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+                logMessages.push({ type, msg, time: new Date().toISOString() });
+                updateLogDisplay();
+                originalConsole[type](...args);
+            }
+
+            console.log = (...args) => captureLog('log', ...args);
+            console.warn = (...args) => captureLog('warn', ...args);
+            console.error = (...args) => captureLog('error', ...args);
+
+            function updateLogDisplay() {
+                const logEl = document.getElementById('wa-log');
+                if (logEl) {
+                    logEl.innerHTML = logMessages.slice(-50).map(m =>
+                        `<div style="color: ${m.type === 'error' ? '#f66' : m.type === 'warn' ? '#ff0' : '#0f0'}">[${m.type}] ${escapeHtml(m.msg)}</div>`
+                    ).join('');
+                    logEl.scrollTop = logEl.scrollHeight;
+                }
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // Mock WA API endpoint
+            window.WA_SIMULATOR = {
+                setAuthenticated(auth) {
+                    isAuthenticated = auth;
+                    currentUserId = auth ? 12345 : null;
+                    document.getElementById('toggle-auth').textContent =
+                        `Toggle Auth (${auth ? 'Member' : 'Guest'})`;
+                },
+
+                isAuthenticated() {
+                    return isAuthenticated;
+                },
+
+                async mockFetch(url, options) {
+                    // Simulate /contacts/me endpoint
+                    if (url.includes('/contacts/me')) {
+                        if (isAuthenticated) {
+                            return {
+                                ok: true,
+                                status: 200,
+                                json: async () => ({
+                                    Id: currentUserId,
+                                    FirstName: 'Test',
+                                    LastName: 'Member',
+                                    Email: 'test@example.com',
+                                    MembershipLevel: { Id: 1, Name: 'Full Member' }
+                                })
+                            };
+                        } else {
+                            return {
+                                ok: false,
+                                status: 401,
+                                json: async () => ({ error: 'Not authenticated' })
+                            };
+                        }
+                    }
+
+                    // Simulate /events endpoint
+                    if (url.includes('/events')) {
+                        return {
+                            ok: true,
+                            status: 200,
+                            json: async () => ({
+                                Events: generateMockEvents(),
+                                Count: 10
+                            })
+                        };
+                    }
+
+                    // Simulate /eventregistrations endpoint
+                    if (url.includes('/eventregistrations')) {
+                        if (isAuthenticated) {
+                            return {
+                                ok: true,
+                                status: 200,
+                                json: async () => []
+                            };
+                        } else {
+                            return {
+                                ok: false,
+                                status: 401,
+                                json: async () => ({ error: 'Not authenticated' })
+                            };
+                        }
+                    }
+
+                    // Default: pass through
+                    return fetch(url, options);
+                }
+            };
+
+            function generateMockEvents() {
+                const now = new Date();
+                const events = [];
+
+                for (let i = 0; i < 10; i++) {
+                    const startDate = new Date(now);
+                    startDate.setDate(startDate.getDate() + i);
+                    startDate.setHours(10, 0, 0, 0);
+
+                    const endDate = new Date(startDate);
+                    endDate.setHours(12, 0, 0, 0);
+
+                    events.push({
+                        Id: 1000 + i,
+                        Name: `Test Event ${i + 1}`,
+                        StartDate: startDate.toISOString(),
+                        EndDate: endDate.toISOString(),
+                        Location: i % 2 === 0 ? 'Community Center' : 'Online',
+                        RegistrationsLimit: 20,
+                        ConfirmedRegistrationsCount: 5 + i,
+                        AccessLevel: i % 3 === 0 ? 'Public' : 'Restricted',
+                        Tags: i % 2 === 0 ? ['Social', 'Outdoor'] : ['Educational'],
+                        Url: `https://example.wildapricot.org/event-${1000 + i}`
+                    });
+                }
+
+                return events;
+            }
+
+            // ======================================================================
+            // WA RESTRICTION SIMULATOR
+            // Applies the same restrictions WA has on Custom HTML Gadgets
+            // ======================================================================
+
+            function stripInlineHandlers(html) {
+                // WA strips inline event handlers from HTML
+                const handlers = [
+                    'onclick', 'onload', 'onerror', 'onmouseover', 'onmouseout',
+                    'onmousedown', 'onmouseup', 'onkeydown', 'onkeyup', 'onkeypress',
+                    'onfocus', 'onblur', 'onchange', 'onsubmit', 'onreset'
+                ];
+
+                let result = html;
+                for (const handler of handlers) {
+                    // Match handler="..." or handler='...'
+                    const regex = new RegExp(`\\s${handler}\\s*=\\s*["'][^"']*["']`, 'gi');
+                    const matches = result.match(regex);
+                    if (matches) {
+                        console.warn(`[WA Simulator] Stripped inline ${handler} handler(s):`, matches);
+                    }
+                    result = result.replace(regex, '');
+                }
+
+                return result;
+            }
+
+            function validateScriptSources(html) {
+                // WA only allows scripts from certain CDNs
+                const allowedCDNs = [
+                    'cdn.jsdelivr.net',
+                    'cdnjs.cloudflare.com',
+                    'unpkg.com',
+                    'fonts.googleapis.com'
+                ];
+
+                const srcRegex = /src\s*=\s*["']([^"']+)["']/gi;
+                let match;
+
+                while ((match = srcRegex.exec(html)) !== null) {
+                    const url = match[1];
+                    if (url.startsWith('http')) {
+                        try {
+                            const hostname = new URL(url).hostname;
+                            const isAllowed = allowedCDNs.some(cdn => hostname.endsWith(cdn));
+                            if (!isAllowed) {
+                                console.error(`[WA Simulator] BLOCKED: Script from non-whitelisted domain: ${hostname}`);
+                            }
+                        } catch (e) {
+                            // Invalid URL
+                        }
+                    }
+                }
+            }
+
+            // ======================================================================
+            // WIDGET LOADER
+            // ======================================================================
+
+            async function loadWidget() {
+                try {
+                    // Fetch the widget HTML (use original fetch to avoid interception)
+                    const response = await originalFetch('/widget/clubcalendar-wa-inline.html');
+                    if (!response.ok) {
+                        throw new Error(`Failed to load widget: ${response.status}`);
+                    }
+
+                    let html = await response.text();
+
+                    // Inject test waAccountId into the widget's user config block
+                    // The config block starts with "window.CLUBCALENDAR_CONFIG = {"
+                    // We need to add waAccountId right after the opening brace
+                    html = html.replace(
+                        /window\.CLUBCALENDAR_CONFIG\s*=\s*\{/,
+                        `window.CLUBCALENDAR_CONFIG = {\n    waAccountId: '${window.CLUBCALENDAR_CONFIG.waAccountId}',`
+                    );
+
+                    // Apply WA restrictions
+                    html = stripInlineHandlers(html);
+                    validateScriptSources(html);
+
+                    // Clear existing widget
+                    const container = document.getElementById('gadget-container');
+                    container.innerHTML = '';
+
+                    // Parse the HTML to extract non-script content and scripts separately
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Add non-script content first
+                    Array.from(doc.body.childNodes).forEach(node => {
+                        if (node.nodeName !== 'SCRIPT') {
+                            container.appendChild(document.importNode(node, true));
+                        }
+                    });
+
+                    // Copy styles from head
+                    doc.head.querySelectorAll('style').forEach(style => {
+                        container.appendChild(document.importNode(style, true));
+                    });
+
+                    // Execute scripts in order (like WA does - inline scripts run in page context)
+                    const scripts = doc.querySelectorAll('script');
+                    for (const script of scripts) {
+                        await new Promise((resolve, reject) => {
+                            const newScript = document.createElement('script');
+                            if (script.src) {
+                                newScript.src = script.src;
+                                newScript.onload = resolve;
+                                newScript.onerror = () => {
+                                    console.error('[WA Simulator] Failed to load external script:', script.src);
+                                    resolve(); // Continue anyway
+                                };
+                            } else {
+                                // Execute inline script - fetch override is already global
+                                newScript.textContent = script.textContent;
+                                setTimeout(resolve, 0);
+                            }
+                            container.appendChild(newScript);
+                        });
+                    }
+
+                    console.log('[WA Simulator] Widget loaded successfully');
+
+                } catch (error) {
+                    console.error('[WA Simulator] Failed to load widget:', error);
+                    document.getElementById('gadget-container').innerHTML =
+                        `<div style="color: red; padding: 20px;">Error loading widget: ${escapeHtml(error.message)}</div>`;
+                }
+            }
+
+            // ======================================================================
+            // UI CONTROLS
+            // ======================================================================
+
+            document.getElementById('toggle-auth').addEventListener('click', () => {
+                window.WA_SIMULATOR.setAuthenticated(!window.WA_SIMULATOR.isAuthenticated());
+                console.log('[WA Simulator] Auth state changed to:', window.WA_SIMULATOR.isAuthenticated() ? 'Member' : 'Guest');
+            });
+
+            document.getElementById('show-log').addEventListener('click', () => {
+                const logEl = document.getElementById('wa-log');
+                logEl.classList.toggle('visible');
+                document.getElementById('show-log').textContent =
+                    logEl.classList.contains('visible') ? 'Hide Console Log' : 'Show Console Log';
+            });
+
+            document.getElementById('reload-widget').addEventListener('click', () => {
+                loadWidget();
+            });
+
+            // Set test config BEFORE loading widget
+            window.CLUBCALENDAR_CONFIG = {
+                waAccountId: '176353',  // Test account ID
+                headerTitle: 'Test Events',
+                showHeader: true,
+                showFilters: true,
+                showMyEvents: true,
+                publicConfig: {
+                    showMyEvents: false
+                },
+                memberConfig: {
+                    showMyEvents: true
+                }
+            };
+
+            // Load widget on page load
+            loadWidget();
+
+        })();
+    </script>
+</body>
+</html>

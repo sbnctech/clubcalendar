@@ -1,12 +1,23 @@
 <!--
-  ClubCalendar - Wild Apricot Native (Self-Contained)
-  ════════════════════════════════════════════════════
-
-  Paste this ENTIRE file into a WA Custom HTML gadget.
-  NO external server required. Runs entirely on WA.
-
-  The widget auto-detects your WA account from the page context.
-  No configuration required for basic use!
+  ╔════════════════════════════════════════════════════════════════════════════╗
+  ║  SBNC ClubCalendar Widget - INLINE ONLY Edition                            ║
+  ║  Santa Barbara Newcomers Club                                               ║
+  ╠════════════════════════════════════════════════════════════════════════════╣
+  ║                                                                             ║
+  ║  INSTALLATION:                                                              ║
+  ║  1. Copy this ENTIRE file                                                   ║
+  ║  2. Paste into a Wild Apricot Custom HTML gadget                           ║
+  ║  3. Save and view the page while logged in                                 ║
+  ║                                                                             ║
+  ║  NO EXTERNAL DEPENDENCIES:                                                  ║
+  ║  - No mail.sbnewcomers.org required                                        ║
+  ║  - No external server hosting required                                      ║
+  ║  - No script src loading required                                          ║
+  ║  - Runs entirely within Wild Apricot                                       ║
+  ║                                                                             ║
+  ║  This is the CANONICAL snippet for SBNC. Use this file, not others.        ║
+  ║                                                                             ║
+  ╚════════════════════════════════════════════════════════════════════════════╝
 -->
 
 <div id="clubcalendar"></div>
@@ -14,22 +25,19 @@
 <script>
 window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
-    // CREDENTIALS (Auto-detected - only set if auto-detection fails)
+    // SBNC CONFIGURATION (Pre-configured for Santa Barbara Newcomers)
     // ═══════════════════════════════════════════════════════════════
-    // waAccountId: '12345',  // Optional: Auto-detected from WA page
-    // waClientId: 'abc123',  // Optional: Only needed for external hosting
+    waAccountId: '176353',           // SBNC Wild Apricot Account ID
 
-    // ═══════════════════════════════════════════════════════════════
-    // OPTIONAL - Customize as needed
-    // ═══════════════════════════════════════════════════════════════
-    headerTitle: 'Club Events',
+    // Display settings
+    headerTitle: 'SBNC Events',
     showMyEvents: true,
     showFilters: true,
     defaultView: 'dayGridMonth',
     primaryColor: '#2c5aa0',
     accentColor: '#d4a800',
 
-    // Auto-tagging rules - customize for your club
+    // SBNC Activity Committee auto-tagging rules
     autoTagRules: [
         { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
         { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
@@ -49,7 +57,24 @@ window.CLUBCALENDAR_CONFIG = {
         { type: 'name-prefix', pattern: 'Out to Lunch:', tag: 'committee:out-to-lunch' },
         { type: 'name-prefix', pattern: 'Afternoon Book:', tag: 'committee:book-clubs' },
         { type: 'name-prefix', pattern: 'Evening Book:', tag: 'committee:book-clubs' }
-    ]
+    ],
+
+    // ═══════════════════════════════════════════════════════════════
+    // PUBLIC CONFIG - Applied when user is NOT logged in
+    // ═══════════════════════════════════════════════════════════════
+    publicConfig: {
+        showMyEvents: false,              // Hide "My Events" tab (not logged in)
+        quickFilters: {
+            public: false                 // Hide "Public" filter (all shown are public)
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // MEMBER CONFIG - Applied when user IS logged in
+    // ═══════════════════════════════════════════════════════════════
+    memberConfig: {
+        showMyEvents: true                // Show "My Events" tab
+    }
 };
 </script>
 
@@ -107,6 +132,9 @@ window.CLUBCALENDAR_CONFIG = {
         stylePreset: 'default',    // 'default', 'compact', 'minimal', 'wa-compatible'
         cssVars: {},               // Custom CSS variable overrides
         customCSS: '',             // Raw CSS to inject (highest priority)
+        // Fallback settings
+        fallbackContainerId: 'wa-fallback',  // ID of pre-placed WA Calendar container to show on error
+        fallbackEventsUrl: '/events',        // URL to link to if no fallback container exists
         // Title parsing - set enabled:false for orgs that don't use "Committee: Title" format
         titleParsing: {
             enabled: true,           // If false, use full title as-is
@@ -295,6 +323,47 @@ window.CLUBCALENDAR_CONFIG = {
             defaultView: CONFIG.defaultView,
             autoTagRules: CONFIG.autoTagRules.length + ' rules'
         });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FALLBACK SYSTEM (Simple)
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Show fallback calendar on error.
+     * If a pre-placed WA Calendar container exists, show it.
+     * Otherwise, show a simple error message with link to events.
+     */
+    function showFallback(errorMessage) {
+        log('FALLBACK', 'Activating fallback due to error:', errorMessage);
+
+        // Hide ClubCalendar container
+        const container = document.querySelector(CONFIG.container);
+        if (container) {
+            container.style.display = 'none';
+        }
+
+        // Try to show pre-placed WA Calendar fallback
+        const fallback = document.getElementById(CONFIG.fallbackContainerId);
+        if (fallback) {
+            fallback.style.display = 'block';
+            log('FALLBACK', `Showing pre-placed fallback: #${CONFIG.fallbackContainerId}`);
+            return;
+        }
+
+        // No fallback container - show simple error message
+        log('FALLBACK', 'No fallback container found, showing error message');
+        if (container) {
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <h3 style="margin: 0 0 10px 0; color: #856404;">Calendar temporarily unavailable</h3>
+                    <p style="margin: 0; color: #856404;">
+                        <a href="${CONFIG.fallbackEventsUrl}" style="color: #856404; font-weight: 500;">View events list &rarr;</a>
+                    </p>
+                </div>
+            `;
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -793,7 +862,7 @@ window.CLUBCALENDAR_CONFIG = {
             endDate: waEvent.EndDate || '',
             location: location,
             description: description,
-            url: waEvent.Url || `${window.location.origin}/event-${waEvent.Id}`,
+            url: waEvent.Url || `https://sbnewcomers.org/event-${waEvent.Id}`,
             registrationUrl: waEvent.RegistrationUrl || '',
             tags: allTags,
             spotsAvailable: spotsAvailable,
@@ -1835,7 +1904,7 @@ window.CLUBCALENDAR_CONFIG = {
         const priceHtml = getPriceIndicatorHtml(event.minPrice);
 
         return `
-            <div class="clubcal-event-card" onclick="window.open('${event.url}', '_blank')">
+            <div class="clubcal-event-card" data-event-url="${escapeHtml(event.url)}" role="link" tabindex="0">
                 <div class="clubcal-event-card-date">
                     <span class="month">${month}</span>
                     <span class="day">${day}</span>
@@ -1861,6 +1930,25 @@ window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
 
     function setupEventListeners() {
+        // Event card click handlers (delegated for dynamic content)
+        document.querySelector(CONFIG.container).addEventListener('click', (e) => {
+            const card = e.target.closest('.clubcal-event-card[data-event-url]');
+            if (card && card.dataset.eventUrl) {
+                window.open(card.dataset.eventUrl, '_blank');
+            }
+        });
+
+        // Event card keyboard accessibility (Enter/Space to activate)
+        document.querySelector(CONFIG.container).addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const card = e.target.closest('.clubcal-event-card[data-event-url]');
+                if (card && card.dataset.eventUrl) {
+                    e.preventDefault();
+                    window.open(card.dataset.eventUrl, '_blank');
+                }
+            }
+        });
+
         document.querySelectorAll('.clubcal-tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tab = btn.dataset.tab;
@@ -2199,8 +2287,13 @@ window.CLUBCALENDAR_CONFIG = {
 
             // Load FullCalendar library AND fetch API data in parallel for faster init
             log('INIT', 'Loading FullCalendar + fetching API data in parallel...');
+
             const [, userResult, events] = await Promise.all([
-                loadFullCalendar().then(() => log('INIT', '✓ FullCalendar loaded')),
+                loadFullCalendar().then(() => {
+                    log('INIT', '✓ FullCalendar loaded');
+                }).catch(e => {
+                    throw new Error('Failed to load FullCalendar library from CDN. Check network connectivity.');
+                }),
                 (async () => {
                     const user = await WaApi.getCurrentUser();
                     const regs = user?.Id ? await WaApi.getContactRegistrations(user.Id) : [];
@@ -2221,7 +2314,7 @@ window.CLUBCALENDAR_CONFIG = {
                 log('CONFIG', 'Applied public config overrides');
             }
 
-            // Transform events, logging first 3 for debugging
+            // Transform events
             log('TRANSFORM', `Transforming ${events.length} events...`);
             const validEvents = events.filter(e => !(e.Name || '').toUpperCase().includes('CANCELLED'));
             log('TRANSFORM', `Filtered out ${events.length - validEvents.length} cancelled events`);
@@ -2249,6 +2342,7 @@ window.CLUBCALENDAR_CONFIG = {
             };
             log('TRANSFORM', 'Pricing/access summary:', pricingSummary);
 
+            // Render the calendar UI
             container.innerHTML = buildWidgetHTML();
             setupEventListeners();
             populateCommitteeDropdown();
@@ -2289,10 +2383,7 @@ window.CLUBCALENDAR_CONFIG = {
 
         } catch (error) {
             console.error(LOG_PREFIX, '❌ Initialization failed:', error);
-            const container = document.querySelector(CONFIG.container);
-            if (container) {
-                container.innerHTML = `<div class="clubcal-error"><h3>Error Loading Calendar</h3><p>${escapeHtml(error.message)}</p><p style="font-size:12px;margin-top:10px;">Check browser console for details. Make sure you're logged in and waAccountId/waClientId are configured.</p></div>`;
-            }
+            showFallback(error.message);
         }
     }
 

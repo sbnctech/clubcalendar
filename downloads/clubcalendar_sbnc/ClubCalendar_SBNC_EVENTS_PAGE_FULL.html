@@ -1,0 +1,857 @@
+<!--
+  ════════════════════════════════════════════════════════════════════════════════
+  ClubCalendar SBNC Events Page - Canonical Inline Version
+  ════════════════════════════════════════════════════════════════════════════════
+
+  VERSION: 1.0.0
+  LAST UPDATED: 2024-12-26
+  ORGANIZATION: Santa Barbara Newcomers Club (SBNC)
+
+  ════════════════════════════════════════════════════════════════════════════════
+  INSTALLATION
+  ════════════════════════════════════════════════════════════════════════════════
+
+  1. Create a CONFIG PAGE in Wild Apricot:
+     - Create a new page (e.g., "/clubcalendar-config")
+     - Add a Custom HTML gadget with this content:
+
+       <script id="clubcalendar-config" type="application/json">
+       {
+         "headerTitle": "SBNC Events",
+         "configUrl": "/clubcalendar-config",
+         "autoTagRules": [
+           { "type": "name-prefix", "pattern": "Happy Hikers:", "tag": "committee:happy-hikers" },
+           { "type": "name-prefix", "pattern": "Games!:", "tag": "committee:games" }
+         ]
+       }
+       </script>
+
+  2. Create the EVENTS PAGE in Wild Apricot:
+     - Create a new page (e.g., "/events" or "/calendar")
+     - Add a Custom HTML gadget
+     - Paste THIS ENTIRE FILE into it
+     - Update CONFIG_PAGE_URL below if your config page is not at /clubcalendar-config
+
+  ════════════════════════════════════════════════════════════════════════════════
+  CONFIGURATION OPTIONS
+  ════════════════════════════════════════════════════════════════════════════════
+
+  The config JSON supports these fields:
+
+  {
+    // Display
+    "headerTitle": "SBNC Events",       // Header text
+    "showHeader": true,                  // Show/hide header
+    "showFilters": true,                 // Show/hide filter controls
+    "emptyMessage": "No events found",   // Message when no events match
+
+    // Theming
+    "primaryColor": "#2c5aa0",           // Primary brand color
+    "accentColor": "#d4a800",            // Accent/highlight color
+
+    // Behavior
+    "maxEvents": 50,                     // Max events to display (0 = unlimited)
+    "isPublicMode": false,               // If true, filters member-only events
+
+    // Auto-tagging
+    "autoTagRules": [
+      { "type": "name-prefix", "pattern": "Happy Hikers:", "tag": "committee:hiking" }
+    ]
+  }
+
+  ════════════════════════════════════════════════════════════════════════════════
+  GUARANTEES
+  ════════════════════════════════════════════════════════════════════════════════
+
+  - NO external script loading (fully self-contained)
+  - NO external stylesheet loading
+  - NO inline event handlers (uses event delegation)
+  - NO member-only content exposed in public mode
+  - NO XSS: all user content is escaped
+  - CSP-compatible: no eval(), no inline handlers
+
+  ════════════════════════════════════════════════════════════════════════════════
+-->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SMOKE TEST INDICATOR - Shows render status
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="cc-smoke-indicator" style="display:none; position:fixed; bottom:10px; right:10px; padding:8px 16px; border-radius:4px; font-size:12px; font-family:monospace; z-index:9999;"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MAIN CONTAINER - Widget mounts here
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="clubcalendar-root">
+  <!-- Loading state shown while fetching config -->
+  <div id="cc-loading-state" style="text-align:center; padding:48px 24px; color:#666;">
+    <div style="display:inline-block; width:32px; height:32px; border:3px solid #e0e0e0; border-top-color:#2c5aa0; border-radius:50%; animation:cc-spin 0.8s linear infinite;"></div>
+    <p style="margin-top:16px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Loading calendar...</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ERROR BOX - Shown when config not found
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<template id="cc-error-template">
+  <div class="cc-error-box" style="max-width:600px; margin:24px auto; padding:24px; background:#ffebee; border:1px solid #ef9a9a; border-radius:8px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <h3 style="margin:0 0 12px 0; color:#c62828; font-size:1.1rem;">⚠️ Calendar Configuration Error</h3>
+    <p style="margin:0 0 16px 0; color:#c62828; font-size:0.9rem;" id="cc-error-message">
+      Could not load calendar configuration.
+    </p>
+    <details style="font-size:0.8rem; color:#666;">
+      <summary style="cursor:pointer; color:#c62828;">Technical Details</summary>
+      <pre id="cc-error-details" style="margin-top:8px; padding:12px; background:#fff; border-radius:4px; overflow:auto; white-space:pre-wrap; word-break:break-word;"></pre>
+    </details>
+    <p style="margin:16px 0 0 0; font-size:0.8rem; color:#666;">
+      <strong>Admin:</strong> Ensure a config page exists with <code>&lt;script id="clubcalendar-config"&gt;</code>
+    </p>
+  </div>
+</template>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     STYLES - All CSS inline, scoped to #clubcalendar-root
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<style>
+@keyframes cc-spin {
+  to { transform: rotate(360deg); }
+}
+
+#clubcalendar-root {
+  --cc-primary: var(--cc-primary-override, #2c5aa0);
+  --cc-accent: var(--cc-accent-override, #d4a800);
+  --cc-bg: #ffffff;
+  --cc-text: #333333;
+  --cc-text-muted: #666666;
+  --cc-border: #e0e0e0;
+  --cc-hover-bg: #f5f5f5;
+  --cc-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  --cc-radius: 6px;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--cc-text);
+  background: var(--cc-bg);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.cc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 2px solid var(--cc-primary);
+  margin-bottom: 16px;
+}
+
+.cc-header-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--cc-primary);
+  margin: 0;
+}
+
+.cc-header-count {
+  font-size: 0.875rem;
+  color: var(--cc-text-muted);
+  background: var(--cc-hover-bg);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.cc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cc-border);
+  margin-bottom: 16px;
+}
+
+.cc-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--cc-border);
+  border-radius: 16px;
+  background: var(--cc-bg);
+  color: var(--cc-text);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cc-filter-btn:hover {
+  background: var(--cc-hover-bg);
+  border-color: var(--cc-primary);
+}
+
+.cc-filter-btn[aria-pressed="true"] {
+  background: var(--cc-primary);
+  border-color: var(--cc-primary);
+  color: #ffffff;
+}
+
+.cc-filter-btn[aria-pressed="true"]:hover {
+  opacity: 0.9;
+}
+
+.cc-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cc-event-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  background: var(--cc-bg);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.cc-event-card:hover {
+  border-color: var(--cc-primary);
+  box-shadow: var(--cc-shadow);
+}
+
+.cc-event-card[data-clickable="true"] {
+  cursor: pointer;
+}
+
+.cc-date-col {
+  flex-shrink: 0;
+  width: 54px;
+  text-align: center;
+  padding: 8px;
+  background: var(--cc-hover-bg);
+  border-radius: var(--cc-radius);
+}
+
+.cc-date-month {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--cc-primary);
+  letter-spacing: 0.05em;
+}
+
+.cc-date-day {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cc-text);
+  line-height: 1.2;
+}
+
+.cc-date-weekday {
+  font-size: 0.6875rem;
+  color: var(--cc-text-muted);
+  text-transform: uppercase;
+}
+
+.cc-event-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cc-event-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cc-text);
+  margin: 0 0 4px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cc-event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8125rem;
+  color: var(--cc-text-muted);
+  margin-bottom: 8px;
+}
+
+.cc-event-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cc-event-meta-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.cc-event-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cc-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border-radius: 10px;
+  background: var(--cc-hover-bg);
+  color: var(--cc-text-muted);
+}
+
+.cc-tag--free {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.cc-tag--limited {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.cc-tag--full {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.cc-tag--public {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.cc-status-col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.cc-status-badge {
+  padding: 4px 10px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.cc-status-badge--open {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.cc-status-badge--limited {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.cc-status-badge--full {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.cc-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--cc-text-muted);
+}
+
+.cc-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.cc-empty-message {
+  font-size: 1rem;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .cc-event-card {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cc-date-col {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .cc-date-month,
+  .cc-date-day,
+  .cc-date-weekday {
+    font-size: inherit;
+  }
+
+  .cc-date-day {
+    font-size: 1.25rem;
+  }
+
+  .cc-status-col {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .cc-filters {
+    gap: 6px;
+  }
+
+  .cc-filter-btn {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+  }
+}
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT - Config loader + Render Engine
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONFIGURATION - Update this URL to match your config page
+  // ═══════════════════════════════════════════════════════════════════════════
+  var CONFIG_PAGE_URL = '/clubcalendar-config';
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SBNC DEFAULT CONFIG - Used as fallback
+  // ═══════════════════════════════════════════════════════════════════════════
+  var SBNC_DEFAULT_CONFIG = {
+    headerTitle: 'SBNC Events',
+    showHeader: true,
+    showFilters: true,
+    emptyMessage: 'No upcoming events found.',
+    primaryColor: '#2c5aa0',
+    accentColor: '#d4a800',
+    maxEvents: 50,
+    isPublicMode: false,
+    autoTagRules: [
+      { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
+      { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
+      { type: 'name-prefix', pattern: 'Wine Appreciation:', tag: 'committee:wine' },
+      { type: 'name-prefix', pattern: 'Epicurious:', tag: 'committee:epicurious' },
+      { type: 'name-prefix', pattern: 'TGIF:', tag: 'committee:tgif' },
+      { type: 'name-prefix', pattern: 'Cycling:', tag: 'committee:cycling' },
+      { type: 'name-prefix', pattern: 'Golf:', tag: 'committee:golf' },
+      { type: 'name-prefix', pattern: 'Performing Arts:', tag: 'committee:performing-arts' },
+      { type: 'name-prefix', pattern: 'Local Heritage:', tag: 'committee:local-heritage' },
+      { type: 'name-prefix', pattern: 'Wellness:', tag: 'committee:wellness' },
+      { type: 'name-prefix', pattern: 'Garden:', tag: 'committee:garden' },
+      { type: 'name-prefix', pattern: 'Arts:', tag: 'committee:arts' },
+      { type: 'name-prefix', pattern: 'Current Events:', tag: 'committee:current-events' },
+      { type: 'name-prefix', pattern: 'Pop-Up:', tag: 'committee:popup' },
+      { type: 'name-prefix', pattern: 'Beer Lovers:', tag: 'committee:beer' },
+      { type: 'name-prefix', pattern: 'Out to Lunch:', tag: 'committee:out-to-lunch' },
+      { type: 'name-prefix', pattern: 'Afternoon Book:', tag: 'committee:book-clubs' },
+      { type: 'name-prefix', pattern: 'Evening Book:', tag: 'committee:book-clubs' }
+    ],
+    events: []
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SMOKE INDICATOR
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function showSmokeIndicator(status, message) {
+    var indicator = document.getElementById('cc-smoke-indicator');
+    if (!indicator) return;
+
+    indicator.style.display = 'block';
+    if (status === 'success') {
+      indicator.style.background = '#e8f5e9';
+      indicator.style.color = '#2e7d32';
+      indicator.style.border = '1px solid #a5d6a7';
+      indicator.textContent = '✓ ' + message;
+    } else if (status === 'error') {
+      indicator.style.background = '#ffebee';
+      indicator.style.color = '#c62828';
+      indicator.style.border = '1px solid #ef9a9a';
+      indicator.textContent = '✗ ' + message;
+    } else {
+      indicator.style.background = '#fff3e0';
+      indicator.style.color = '#e65100';
+      indicator.style.border = '1px solid #ffcc80';
+      indicator.textContent = '⚠ ' + message;
+    }
+
+    // Auto-hide success after 5 seconds
+    if (status === 'success') {
+      setTimeout(function() {
+        indicator.style.display = 'none';
+      }, 5000);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ERROR DISPLAY
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function showError(message, details) {
+    var container = document.getElementById('clubcalendar-root');
+    var template = document.getElementById('cc-error-template');
+
+    if (container && template) {
+      var errorBox = template.content.cloneNode(true);
+      var msgEl = errorBox.querySelector('#cc-error-message');
+      var detailsEl = errorBox.querySelector('#cc-error-details');
+
+      if (msgEl) msgEl.textContent = message;
+      if (detailsEl) detailsEl.textContent = details || 'No additional details';
+
+      container.innerHTML = '';
+      container.appendChild(errorBox);
+    }
+
+    showSmokeIndicator('error', 'Config load failed');
+    console.error('[ClubCalendar] ' + message, details);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONFIG LOADER
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function loadConfig(callback) {
+    console.log('[ClubCalendar] Fetching config from: ' + CONFIG_PAGE_URL);
+
+    fetch(CONFIG_PAGE_URL, {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'text/html' }
+    })
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+      }
+      return response.text();
+    })
+    .then(function(html) {
+      // Parse the HTML to find the config script
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(html, 'text/html');
+      var configScript = doc.querySelector('script#clubcalendar-config');
+
+      if (!configScript) {
+        throw new Error('Config script not found. Expected: <script id="clubcalendar-config">');
+      }
+
+      var configText = configScript.textContent.trim();
+      if (!configText) {
+        throw new Error('Config script is empty');
+      }
+
+      var remoteConfig;
+      try {
+        remoteConfig = JSON.parse(configText);
+      } catch (e) {
+        throw new Error('Invalid JSON in config: ' + e.message);
+      }
+
+      console.log('[ClubCalendar] Config loaded successfully');
+      callback(null, remoteConfig);
+    })
+    .catch(function(error) {
+      console.warn('[ClubCalendar] Config fetch failed, using defaults: ' + error.message);
+      // Use default config instead of failing
+      callback(null, {});
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER ENGINE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  var config = {};
+  var state = {
+    events: [],
+    filteredEvents: [],
+    activeFilters: {}
+  };
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function parseDate(dateStr) {
+    if (!dateStr) return null;
+    try {
+      var d = new Date(dateStr);
+      return isNaN(d.getTime()) ? null : d;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function formatDate(date) {
+    if (!date) return { month: '', day: '', weekday: '', time: '' };
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    var timeStr = hours + ':' + (minutes < 10 ? '0' : '') + minutes + ' ' + ampm;
+    return { month: months[date.getMonth()], day: date.getDate(), weekday: days[date.getDay()], time: timeStr };
+  }
+
+  function isPastEvent(event) {
+    var start = parseDate(event.startDate);
+    return start ? start < new Date() : false;
+  }
+
+  function isWeekendEvent(event) {
+    var start = parseDate(event.startDate);
+    if (!start) return false;
+    var day = start.getDay();
+    return day === 0 || day === 6;
+  }
+
+  function applyAutoTags(event, rules) {
+    var autoTags = [];
+    var eventName = (event.name || '').toLowerCase();
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i];
+      var pattern = (rule.pattern || '').toLowerCase();
+      if (!pattern || !rule.tag) continue;
+      var matched = false;
+      if (rule.type === 'name-prefix') matched = eventName.indexOf(pattern) === 0;
+      else if (rule.type === 'name-contains') matched = eventName.indexOf(pattern) !== -1;
+      else if (rule.type === 'name-suffix') matched = eventName.indexOf(pattern) === eventName.length - pattern.length;
+      if (matched) autoTags.push(rule.tag);
+    }
+    var start = parseDate(event.startDate);
+    if (start) {
+      var hour = start.getHours();
+      if (hour < 12) autoTags.push('time:morning');
+      else if (hour < 17) autoTags.push('time:afternoon');
+      else autoTags.push('time:evening');
+      if (isWeekendEvent(event)) autoTags.push('day:weekend');
+    }
+    if (event.spotsAvailable !== null && event.spotsAvailable !== undefined) {
+      if (event.spotsAvailable <= 0) autoTags.push('availability:full');
+      else if (event.spotsAvailable <= 5) autoTags.push('availability:limited');
+      else autoTags.push('availability:open');
+    }
+    if (event.isFree) autoTags.push('cost:free');
+    if (event.accessLevel === 'Public') autoTags.push('access:public');
+    return autoTags;
+  }
+
+  function transformEvent(rawEvent) {
+    var manualTags = Array.isArray(rawEvent.tags) ? rawEvent.tags.slice() : [];
+    var autoTags = applyAutoTags(rawEvent, config.autoTagRules || []);
+    var allTags = manualTags.concat(autoTags);
+    var uniqueTags = [];
+    var seen = {};
+    for (var i = 0; i < allTags.length; i++) {
+      if (!seen[allTags[i]]) { seen[allTags[i]] = true; uniqueTags.push(allTags[i]); }
+    }
+    return {
+      id: rawEvent.id, name: rawEvent.name || 'Untitled Event', startDate: rawEvent.startDate,
+      endDate: rawEvent.endDate, location: rawEvent.location || '', description: rawEvent.description || '',
+      url: rawEvent.url || '', tags: uniqueTags, accessLevel: rawEvent.accessLevel || 'Public',
+      isFree: Boolean(rawEvent.isFree), spotsAvailable: rawEvent.spotsAvailable, isPast: isPastEvent(rawEvent)
+    };
+  }
+
+  function filterForPublicMode(events) {
+    if (!config.isPublicMode) return events;
+    return events.filter(function(event) { return event.accessLevel === 'Public'; });
+  }
+
+  var FILTER_DEFINITIONS = {
+    weekend: { label: 'Weekend', test: function(event) { return isWeekendEvent(event); } },
+    free: { label: 'Free', test: function(event) { return event.isFree; } },
+    openings: { label: 'Has Openings', test: function(event) { return event.spotsAvailable === null || event.spotsAvailable > 0; } },
+    public: { label: 'Public', test: function(event) { return event.accessLevel === 'Public'; } }
+  };
+
+  function applyFilters(events) {
+    var activeKeys = Object.keys(state.activeFilters).filter(function(key) { return state.activeFilters[key]; });
+    if (activeKeys.length === 0) return events;
+    return events.filter(function(event) {
+      for (var i = 0; i < activeKeys.length; i++) {
+        var filterDef = FILTER_DEFINITIONS[activeKeys[i]];
+        if (filterDef && !filterDef.test(event)) return false;
+      }
+      return true;
+    });
+  }
+
+  function toggleFilter(filterKey) {
+    state.activeFilters[filterKey] = !state.activeFilters[filterKey];
+    updateDisplay();
+  }
+
+  function render() {
+    var container = document.getElementById('clubcalendar-root');
+    if (!container) { console.error('[ClubCalendar] Container not found'); return; }
+    container.style.setProperty('--cc-primary-override', config.primaryColor);
+    container.style.setProperty('--cc-accent-override', config.accentColor);
+    var html = [];
+    if (config.showHeader) {
+      html.push('<div class="cc-header"><h2 class="cc-header-title">' + escapeHtml(config.headerTitle) + '</h2><span class="cc-header-count" id="cc-event-count"></span></div>');
+    }
+    if (config.showFilters) {
+      html.push('<div class="cc-filters" role="group" aria-label="Event filters">');
+      var filterKeys = Object.keys(FILTER_DEFINITIONS);
+      for (var i = 0; i < filterKeys.length; i++) {
+        var key = filterKeys[i], def = FILTER_DEFINITIONS[key];
+        var isActive = state.activeFilters[key] ? 'true' : 'false';
+        html.push('<button type="button" class="cc-filter-btn" data-filter="' + key + '" aria-pressed="' + isActive + '">' + escapeHtml(def.label) + '</button>');
+      }
+      html.push('</div>');
+    }
+    html.push('<div class="cc-event-list" id="cc-event-list"></div>');
+    container.innerHTML = html.join('');
+    updateDisplay();
+    setupEventListeners(container);
+  }
+
+  function renderEventCard(event) {
+    var date = formatDate(parseDate(event.startDate));
+    var hasUrl = event.url && event.url.length > 0;
+    var html = ['<div class="cc-event-card" data-event-id="' + escapeHtml(String(event.id)) + '" data-clickable="' + hasUrl + '" ' + (hasUrl ? 'data-url="' + escapeHtml(event.url) + '"' : '') + ' tabindex="0" role="article">'];
+    html.push('<div class="cc-date-col"><div class="cc-date-month">' + escapeHtml(date.month) + '</div><div class="cc-date-day">' + escapeHtml(String(date.day)) + '</div><div class="cc-date-weekday">' + escapeHtml(date.weekday) + '</div></div>');
+    html.push('<div class="cc-event-info"><h3 class="cc-event-name">' + escapeHtml(event.name) + '</h3><div class="cc-event-meta">');
+    html.push('<span class="cc-event-meta-item"><svg class="cc-event-meta-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>' + escapeHtml(date.time) + '</span>');
+    if (event.location) html.push('<span class="cc-event-meta-item"><svg class="cc-event-meta-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' + escapeHtml(event.location) + '</span>');
+    html.push('</div><div class="cc-event-tags">');
+    if (event.isFree) html.push('<span class="cc-tag cc-tag--free">Free</span>');
+    if (event.accessLevel === 'Public') html.push('<span class="cc-tag cc-tag--public">Public</span>');
+    html.push('</div></div><div class="cc-status-col">');
+    if (event.spotsAvailable !== null && event.spotsAvailable !== undefined) {
+      if (event.spotsAvailable <= 0) html.push('<span class="cc-status-badge cc-status-badge--full">Full</span>');
+      else if (event.spotsAvailable <= 5) html.push('<span class="cc-status-badge cc-status-badge--limited">' + escapeHtml(String(event.spotsAvailable)) + ' left</span>');
+    }
+    html.push('</div></div>');
+    return html.join('');
+  }
+
+  function renderEmpty() {
+    return '<div class="cc-empty"><div class="cc-empty-icon">📅</div><p class="cc-empty-message">' + escapeHtml(config.emptyMessage) + '</p></div>';
+  }
+
+  function updateDisplay() {
+    var listContainer = document.getElementById('cc-event-list');
+    var countContainer = document.getElementById('cc-event-count');
+    if (!listContainer) return;
+    var events = filterForPublicMode(state.events.slice());
+    events = events.filter(function(e) { return !e.isPast; });
+    events = applyFilters(events);
+    events.sort(function(a, b) {
+      var dateA = parseDate(a.startDate), dateB = parseDate(b.startDate);
+      if (!dateA) return 1; if (!dateB) return -1;
+      return dateA.getTime() - dateB.getTime();
+    });
+    if (config.maxEvents > 0 && events.length > config.maxEvents) events = events.slice(0, config.maxEvents);
+    state.filteredEvents = events;
+    if (countContainer) countContainer.textContent = events.length + ' event' + (events.length !== 1 ? 's' : '');
+    if (events.length === 0) listContainer.innerHTML = renderEmpty();
+    else {
+      var html = [];
+      for (var i = 0; i < events.length; i++) html.push(renderEventCard(events[i]));
+      listContainer.innerHTML = html.join('');
+    }
+    var buttons = document.querySelectorAll('.cc-filter-btn[data-filter]');
+    for (var i = 0; i < buttons.length; i++) {
+      var btn = buttons[i], filterKey = btn.getAttribute('data-filter');
+      btn.setAttribute('aria-pressed', state.activeFilters[filterKey] ? 'true' : 'false');
+    }
+  }
+
+  function setupEventListeners(container) {
+    container.addEventListener('click', function(e) {
+      var filterBtn = e.target.closest('.cc-filter-btn[data-filter]');
+      if (filterBtn) { toggleFilter(filterBtn.getAttribute('data-filter')); return; }
+      var eventCard = e.target.closest('.cc-event-card[data-url]');
+      if (eventCard) { var url = eventCard.getAttribute('data-url'); if (url) window.open(url, '_blank', 'noopener,noreferrer'); }
+    });
+    container.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target.classList.contains('cc-filter-btn') || e.target.classList.contains('cc-event-card')) {
+          e.preventDefault(); e.target.click();
+        }
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INITIALIZATION
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function init() {
+    loadConfig(function(error, remoteConfig) {
+      if (error) {
+        showError(error.message, error.stack);
+        return;
+      }
+
+      // Merge: defaults < remote config
+      config = {};
+      for (var key in SBNC_DEFAULT_CONFIG) config[key] = SBNC_DEFAULT_CONFIG[key];
+      for (var key in remoteConfig) {
+        if (remoteConfig[key] !== undefined) config[key] = remoteConfig[key];
+      }
+
+      // Transform events
+      var rawEvents = config.events || [];
+      state.events = [];
+      for (var i = 0; i < rawEvents.length; i++) {
+        state.events.push(transformEvent(rawEvents[i]));
+      }
+
+      state.activeFilters = {};
+
+      // Render
+      render();
+
+      // Show success indicator
+      showSmokeIndicator('success', 'Rendered ' + state.events.length + ' events');
+      console.log('[ClubCalendar] Initialized with ' + state.events.length + ' events');
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PUBLIC API
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  window.ClubCalendar = {
+    init: init,
+    refresh: function(newEvents) {
+      config.events = newEvents || [];
+      state.events = [];
+      for (var i = 0; i < config.events.length; i++) state.events.push(transformEvent(config.events[i]));
+      updateDisplay();
+      showSmokeIndicator('success', 'Refreshed ' + state.events.length + ' events');
+    },
+    getState: function() {
+      return { totalEvents: state.events.length, filteredEvents: state.filteredEvents.length, config: config };
+    },
+    setPublicMode: function(isPublic) { config.isPublicMode = isPublic; updateDisplay(); }
+  };
+
+  // Auto-initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>

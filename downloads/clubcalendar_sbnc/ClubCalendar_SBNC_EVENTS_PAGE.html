@@ -1,12 +1,55 @@
+
+<script>
+/* SBNC_INLINE_ONLY_CONFIG_LOADER */
+(function() {
+  "use strict";
+  var CONFIG_PAGE_URL = "/clubcalendar-config";
+
+  function extractConfigFromHtml(html) {
+    var m = html.match(/<script[^>]+id=["']clubcalendar-config["'][^>]*>([\s\S]*?)<\/script>/i);
+    if (!m) return null;
+    try { return JSON.parse(m[1]); } catch (e) { return null; }
+  }
+
+  function applyConfig(cfg) {
+    // Primary contract: set global config object expected by the widget.
+    // This preserves existing code paths in the inline widget.
+    window.CLUBCALENDAR_CONFIG = Object.assign(window.CLUBCALENDAR_CONFIG || {}, cfg || {});
+  }
+
+  window.__SBNC_LOAD_CONFIG__ = function() {
+    return fetch(CONFIG_PAGE_URL, { credentials: "same-origin" })
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var cfg = extractConfigFromHtml(html);
+        if (!cfg) throw new Error("Config JSON not found or invalid on " + CONFIG_PAGE_URL);
+        applyConfig(cfg);
+        return cfg;
+      });
+  };
+})();
+</script>
+
 <!--
   ClubCalendar - Wild Apricot Native (Self-Contained)
-  ════════════════════════════════════════════════════
+  ════════════════════════════════════════════════════════════════════════════
 
-  Paste this ENTIRE file into a WA Custom HTML gadget.
-  NO external server required. Runs entirely on WA.
+  GENERIC TEMPLATE - For organizations customizing their own installation.
 
-  The widget auto-detects your WA account from the page context.
-  No configuration required for basic use!
+  SBNC USERS: Use docs/INSTALL/SBNC_INLINE_SNIPPET.html instead!
+              That file has SBNC-specific configuration pre-set.
+
+  ════════════════════════════════════════════════════════════════════════════
+
+  INSTALLATION:
+  1. Customize the configuration below for your organization
+  2. Paste this ENTIRE file into a WA Custom HTML gadget
+  3. Save and view the page while logged in
+
+  NO EXTERNAL DEPENDENCIES:
+  - No external server required
+  - No script src loading required
+  - Runs entirely within Wild Apricot
 -->
 
 <div id="clubcalendar"></div>
@@ -107,6 +150,9 @@ window.CLUBCALENDAR_CONFIG = {
         stylePreset: 'default',    // 'default', 'compact', 'minimal', 'wa-compatible'
         cssVars: {},               // Custom CSS variable overrides
         customCSS: '',             // Raw CSS to inject (highest priority)
+        // Fallback settings
+        fallbackContainerId: 'wa-fallback',  // ID of pre-placed WA Calendar container to show on error
+        fallbackEventsUrl: '/events',        // URL to link to if no fallback container exists
         // Title parsing - set enabled:false for orgs that don't use "Committee: Title" format
         titleParsing: {
             enabled: true,           // If false, use full title as-is
@@ -295,6 +341,47 @@ window.CLUBCALENDAR_CONFIG = {
             defaultView: CONFIG.defaultView,
             autoTagRules: CONFIG.autoTagRules.length + ' rules'
         });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FALLBACK SYSTEM (Simple)
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Show fallback calendar on error.
+     * If a pre-placed WA Calendar container exists, show it.
+     * Otherwise, show a simple error message with link to events.
+     */
+    function showFallback(errorMessage) {
+        log('FALLBACK', 'Activating fallback due to error:', errorMessage);
+
+        // Hide ClubCalendar container
+        const container = document.querySelector(CONFIG.container);
+        if (container) {
+            container.style.display = 'none';
+        }
+
+        // Try to show pre-placed WA Calendar fallback
+        const fallback = document.getElementById(CONFIG.fallbackContainerId);
+        if (fallback) {
+            fallback.style.display = 'block';
+            log('FALLBACK', `Showing pre-placed fallback: #${CONFIG.fallbackContainerId}`);
+            return;
+        }
+
+        // No fallback container - show simple error message
+        log('FALLBACK', 'No fallback container found, showing error message');
+        if (container) {
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <h3 style="margin: 0 0 10px 0; color: #856404;">Calendar temporarily unavailable</h3>
+                    <p style="margin: 0; color: #856404;">
+                        <a href="${CONFIG.fallbackEventsUrl}" style="color: #856404; font-weight: 500;">View events list &rarr;</a>
+                    </p>
+                </div>
+            `;
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -793,7 +880,7 @@ window.CLUBCALENDAR_CONFIG = {
             endDate: waEvent.EndDate || '',
             location: location,
             description: description,
-            url: waEvent.Url || `${window.location.origin}/event-${waEvent.Id}`,
+            url: waEvent.Url || `https://sbnewcomers.org/event-${waEvent.Id}`,
             registrationUrl: waEvent.RegistrationUrl || '',
             tags: allTags,
             spotsAvailable: spotsAvailable,
@@ -2199,8 +2286,13 @@ window.CLUBCALENDAR_CONFIG = {
 
             // Load FullCalendar library AND fetch API data in parallel for faster init
             log('INIT', 'Loading FullCalendar + fetching API data in parallel...');
+
             const [, userResult, events] = await Promise.all([
-                loadFullCalendar().then(() => log('INIT', '✓ FullCalendar loaded')),
+                loadFullCalendar().then(() => {
+                    log('INIT', '✓ FullCalendar loaded');
+                }).catch(e => {
+                    throw new Error('Failed to load FullCalendar library from CDN. Check network connectivity.');
+                }),
                 (async () => {
                     const user = await WaApi.getCurrentUser();
                     const regs = user?.Id ? await WaApi.getContactRegistrations(user.Id) : [];
@@ -2221,7 +2313,7 @@ window.CLUBCALENDAR_CONFIG = {
                 log('CONFIG', 'Applied public config overrides');
             }
 
-            // Transform events, logging first 3 for debugging
+            // Transform events
             log('TRANSFORM', `Transforming ${events.length} events...`);
             const validEvents = events.filter(e => !(e.Name || '').toUpperCase().includes('CANCELLED'));
             log('TRANSFORM', `Filtered out ${events.length - validEvents.length} cancelled events`);
@@ -2249,6 +2341,7 @@ window.CLUBCALENDAR_CONFIG = {
             };
             log('TRANSFORM', 'Pricing/access summary:', pricingSummary);
 
+            // Render the calendar UI
             container.innerHTML = buildWidgetHTML();
             setupEventListeners();
             populateCommitteeDropdown();
@@ -2289,10 +2382,7 @@ window.CLUBCALENDAR_CONFIG = {
 
         } catch (error) {
             console.error(LOG_PREFIX, '❌ Initialization failed:', error);
-            const container = document.querySelector(CONFIG.container);
-            if (container) {
-                container.innerHTML = `<div class="clubcal-error"><h3>Error Loading Calendar</h3><p>${escapeHtml(error.message)}</p><p style="font-size:12px;margin-top:10px;">Check browser console for details. Make sure you're logged in and waAccountId/waClientId are configured.</p></div>`;
-            }
+            showFallback(error.message);
         }
     }
 

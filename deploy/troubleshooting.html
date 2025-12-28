@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar Troubleshooting Guide</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <style>
+        /* Base styles for standalone viewing */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4ECDC4 0%, #7B2CBF 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        header .tagline {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        header .emoji {
+            font-size: 3rem;
+        }
+
+        nav {
+            background: #333;
+            padding: 0;
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        nav li {
+            margin: 0;
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background: #4ECDC4;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: #4ECDC4;
+        }
+
+        .content-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #4ECDC4;
+            border-bottom: 2px solid #4ECDC4;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        h3 {
+            color: #7B2CBF;
+            margin-top: 1.5rem;
+        }
+
+        h4 {
+            color: #333;
+            margin-top: 1rem;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 2rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4ECDC4;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .issue {
+            background: #fff8e1;
+            border-left: 4px solid #FFB627;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .issue h3 {
+            margin-top: 0;
+            color: #e65100;
+        }
+
+        .solution {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .solution strong {
+            color: #2e7d32;
+        }
+
+        .test-section {
+            background: #f0faf9;
+            border: 1px solid #4ECDC4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+        }
+
+        .warning {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .toc ul {
+            margin: 0.5rem 0 0 0;
+            padding-left: 1.5rem;
+        }
+
+        .toc li {
+            margin: 0.5rem 0;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-section">
+            <div class="emoji">🔧</div>
+            <h1>ClubCalendar Troubleshooting Guide</h1>
+            <p class="tagline">Diagnosing and Fixing Common Issues</p>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="index.html">ClubCalendar Package</a></li>
+            <li><a href="../../resources/">Resources</a></li>
+            <li><a href="../../meeting-notes/">Meeting Notes</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="content-wrapper">
+
+<p>This guide helps diagnose and resolve issues with ClubCalendar. Most problems trigger automatic fallback to the WA Calendar, so members always see a working calendar.</p>
+
+<div class="toc">
+    <strong>Contents</strong>
+    <ul>
+        <li><a href="#common-issues">Common Issues &amp; Solutions</a></li>
+        <li><a href="#testing-fallback">Testing the Fallback</a></li>
+        <li><a href="#debugging">Debugging with Browser Console</a></li>
+        <li><a href="#failure-modes">Failure Modes &amp; Mitigations</a></li>
+        <li><a href="#monitoring">Ongoing Monitoring</a></li>
+        <li><a href="#recovery">Recovery Procedures</a></li>
+    </ul>
+</div>
+
+<h2 id="common-issues">Common Issues &amp; Solutions</h2>
+
+<div class="issue">
+    <h3>"Could not auto-discover account ID"</h3>
+    <p><strong>Symptom:</strong> Calendar shows error or falls back immediately.</p>
+    <div class="solution">
+        <strong>Cause:</strong> Viewing in WA edit mode, or page is not on the WA site.<br>
+        <strong>Fix:</strong> Save the page and view it normally (not in edit mode). The widget must run on your actual WA site to access the API.
+    </div>
+</div>
+
+<div class="issue">
+    <h3>Calendar shows "Loading..." forever</h3>
+    <p><strong>Symptom:</strong> Spinner never stops, no events appear.</p>
+    <div class="solution">
+        <strong>Possible causes:</strong>
+        <ul>
+            <li>API request failed &mdash; Check browser console for errors</li>
+            <li>Not logged into WA &mdash; Some API calls require authentication</li>
+            <li>Network issue &mdash; Check internet connection</li>
+        </ul>
+        <strong>Fix:</strong> Open browser console (F12), look for red error messages. Refresh the page. If persistent, check WA system status.
+    </div>
+</div>
+
+<div class="issue">
+    <h3>Fallback triggers unexpectedly</h3>
+    <p><strong>Symptom:</strong> WA Calendar appears instead of ClubCalendar.</p>
+    <div class="solution">
+        <strong>Possible causes:</strong>
+        <ul>
+            <li>FullCalendar CDN temporarily unavailable</li>
+            <li>JavaScript error in widget code</li>
+            <li>WA API returned unexpected response</li>
+            <li>Browser extension blocking scripts</li>
+        </ul>
+        <strong>Fix:</strong> Check browser console for the specific error. Try in incognito/private mode to rule out extensions. Refresh the page.
+    </div>
+</div>
+
+<div class="issue">
+    <h3>Styles look wrong or broken</h3>
+    <p><strong>Symptom:</strong> Calendar appears but layout is distorted.</p>
+    <div class="solution">
+        <strong>Cause:</strong> CSS conflict with WA theme or other page elements.<br>
+        <strong>Fix:</strong> Try a different WA page template. The widget uses scoped styles, but some aggressive themes may override them.
+    </div>
+</div>
+
+<div class="issue">
+    <h3>No events showing</h3>
+    <p><strong>Symptom:</strong> Calendar loads but is empty.</p>
+    <div class="solution">
+        <strong>Possible causes:</strong>
+        <ul>
+            <li>No future events exist in WA</li>
+            <li>Filters are excluding all events</li>
+            <li>Viewing wrong date range</li>
+        </ul>
+        <strong>Fix:</strong> Click "Clear Filters" button. Navigate to current month. Verify events exist in WA admin with future dates.
+    </div>
+</div>
+
+<div class="issue">
+    <h3>"My Events" tab not showing</h3>
+    <p><strong>Symptom:</strong> Only "Events" tab visible, no "My Events".</p>
+    <div class="solution">
+        <strong>Cause:</strong> User not logged in, or <code>showMyEvents: false</code> in config.<br>
+        <strong>Fix:</strong> Log into WA. Check that <code>showMyEvents: true</code> in the configuration block.
+    </div>
+</div>
+
+<div class="issue">
+    <h3>Filters not working correctly</h3>
+    <p><strong>Symptom:</strong> Wrong events shown, or filtering seems random.</p>
+    <div class="solution">
+        <strong>Cause:</strong> Event titles don't follow "Committee: Event Title" format.<br>
+        <strong>Fix:</strong> For best results, event creators should use the format: <code>Committee Name: Event Title</code>. The widget parses this to enable committee filtering.
+    </div>
+</div>
+
+<div class="issue">
+    <h3>Broken characters (â†' instead of arrows)</h3>
+    <p><strong>Symptom:</strong> Strange characters appear in text.</p>
+    <div class="solution">
+        <strong>Cause:</strong> Character encoding issue when copying widget code.<br>
+        <strong>Fix:</strong> Re-copy the widget code from the original file. Ensure your text editor uses UTF-8 encoding.
+    </div>
+</div>
+
+<h2 id="testing-fallback">Testing the Fallback</h2>
+
+<p>Before going live, verify the fallback mechanism works correctly.</p>
+
+<div class="test-section">
+    <h3>Test 1: Console Error Injection (Quickest)</h3>
+    <ol>
+        <li>View the calendar page normally (not in edit mode)</li>
+        <li>Open browser DevTools (F12 or right-click &rarr; Inspect)</li>
+        <li>Go to the Console tab</li>
+        <li>Type this command and press Enter:</li>
+    </ol>
+<pre><code>throw new Error('test fallback');</code></pre>
+    <p><strong>Expected result:</strong> ClubCalendar hides, WA Calendar appears instantly.</p>
+    <p><strong>To restore:</strong> Refresh the page.</p>
+</div>
+
+<div class="test-section">
+    <h3>Test 2: Block the CDN (Simulates CDN failure)</h3>
+    <ol>
+        <li>Open DevTools &rarr; Network tab</li>
+        <li>Right-click anywhere in the request list</li>
+        <li>Select "Block request domain" or similar</li>
+        <li>Add: <code>cdn.jsdelivr.net</code></li>
+        <li>Refresh the page</li>
+    </ol>
+    <p><strong>Expected result:</strong> FullCalendar fails to load, fallback triggers.</p>
+    <p><strong>To restore:</strong> Remove the block, refresh the page.</p>
+</div>
+
+<div class="test-section">
+    <h3>Test 3: Simulate API Failure</h3>
+    <ol>
+        <li>Open DevTools &rarr; Console tab</li>
+        <li>Before the page loads, or in the console, run:</li>
+    </ol>
+<pre><code>// Block WA API access
+window.WildApricot = null;</code></pre>
+    <p>Then refresh the page.</p>
+    <p><strong>Expected result:</strong> API discovery fails, fallback triggers.</p>
+</div>
+
+<div class="test-section">
+    <h3>Test 4: Network Offline</h3>
+    <ol>
+        <li>Open DevTools &rarr; Network tab</li>
+        <li>Find the throttling dropdown (usually says "No throttling")</li>
+        <li>Select "Offline"</li>
+        <li>Refresh the page</li>
+    </ol>
+    <p><strong>Expected result:</strong> Nothing loads (expected &mdash; no network). Re-enable network to restore.</p>
+</div>
+
+<h3>Fallback Verification Checklist</h3>
+
+<table>
+    <tr>
+        <th>Check</th>
+        <th>Expected Behavior</th>
+    </tr>
+    <tr>
+        <td>ClubCalendar container</td>
+        <td>Hidden (display: none)</td>
+    </tr>
+    <tr>
+        <td>WA Calendar container (#wa-fallback)</td>
+        <td>Visible</td>
+    </tr>
+    <tr>
+        <td>Console errors</td>
+        <td>Initial error visible, no cascade of errors</td>
+    </tr>
+    <tr>
+        <td>WA Calendar functionality</td>
+        <td>Click events, navigate months &mdash; all work</td>
+    </tr>
+    <tr>
+        <td>Visual transition</td>
+        <td>Seamless, no flash of broken content</td>
+    </tr>
+</table>
+
+<h2 id="debugging">Debugging with Browser Console</h2>
+
+<p>The browser console is your primary debugging tool.</p>
+
+<h3>Opening the Console</h3>
+<ul>
+    <li><strong>Chrome/Edge:</strong> F12, then click "Console" tab</li>
+    <li><strong>Firefox:</strong> F12, then click "Console" tab</li>
+    <li><strong>Safari:</strong> Enable Developer menu in Preferences, then Cmd+Option+C</li>
+</ul>
+
+<h3>What to Look For</h3>
+
+<table>
+    <tr>
+        <th>Console Message</th>
+        <th>Meaning</th>
+    </tr>
+    <tr>
+        <td><code style="color: red;">Red error messages</code></td>
+        <td>JavaScript errors &mdash; read the message for clues</td>
+    </tr>
+    <tr>
+        <td><code>Failed to fetch</code></td>
+        <td>Network request failed (API or CDN issue)</td>
+    </tr>
+    <tr>
+        <td><code>CORS error</code></td>
+        <td>Running outside WA site (not allowed)</td>
+    </tr>
+    <tr>
+        <td><code>404 Not Found</code></td>
+        <td>Resource URL changed or unavailable</td>
+    </tr>
+    <tr>
+        <td><code>[ClubCalendar]</code> messages</td>
+        <td>Widget's own logging (if enabled)</td>
+    </tr>
+</table>
+
+<h3>Useful Console Commands</h3>
+
+<pre><code>// Check if ClubCalendar loaded
+typeof ClubCalendar !== 'undefined'
+
+// Check current configuration
+window.CLUBCALENDAR_CONFIG
+
+// Check if fallback container exists
+document.getElementById('wa-fallback')
+
+// Manually trigger fallback (for testing)
+window.clubCalendarFallback &amp;&amp; window.clubCalendarFallback();</code></pre>
+
+<h2 id="failure-modes">Failure Modes &amp; Mitigations</h2>
+
+<table>
+    <tr>
+        <th>Failure Mode</th>
+        <th>Likelihood</th>
+        <th>What Happens</th>
+        <th>Mitigation</th>
+    </tr>
+    <tr>
+        <td>WA API changes</td>
+        <td>Low</td>
+        <td>Data fetch fails</td>
+        <td>Automatic fallback to WA Calendar</td>
+    </tr>
+    <tr>
+        <td>FullCalendar CDN down</td>
+        <td>Very Low</td>
+        <td>Calendar library won't load</td>
+        <td>Automatic fallback to WA Calendar</td>
+    </tr>
+    <tr>
+        <td>JavaScript error</td>
+        <td>Low</td>
+        <td>Widget crashes</td>
+        <td>Automatic fallback to WA Calendar</td>
+    </tr>
+    <tr>
+        <td>Browser blocks scripts</td>
+        <td>Low</td>
+        <td>Widget won't run</td>
+        <td>WA Calendar (server-rendered) still works</td>
+    </tr>
+    <tr>
+        <td>Session expires</td>
+        <td>Medium</td>
+        <td>"My Events" fails</td>
+        <td>Events tab still works; refresh to re-auth</td>
+    </tr>
+    <tr>
+        <td>Maintainer unavailable</td>
+        <td>Medium</td>
+        <td>Can't fix issues</td>
+        <td>Code is documented; can revert to WA-only</td>
+    </tr>
+</table>
+
+<h2 id="monitoring">Ongoing Monitoring</h2>
+
+<h3>Recommended Checks</h3>
+
+<table>
+    <tr>
+        <th>Frequency</th>
+        <th>Check</th>
+        <th>How</th>
+    </tr>
+    <tr>
+        <td>Weekly</td>
+        <td>Calendar loads correctly</td>
+        <td>Visit page, verify events appear</td>
+    </tr>
+    <tr>
+        <td>Weekly</td>
+        <td>No console errors</td>
+        <td>Open DevTools, check for red messages</td>
+    </tr>
+    <tr>
+        <td>Monthly</td>
+        <td>Fallback still works</td>
+        <td>Run Test 1 from above</td>
+    </tr>
+    <tr>
+        <td>Quarterly</td>
+        <td>Check for WA API changes</td>
+        <td>Review WA release notes</td>
+    </tr>
+    <tr>
+        <td>Annually</td>
+        <td>Update FullCalendar version</td>
+        <td>Check for security/compatibility updates</td>
+    </tr>
+</table>
+
+<h3>Signs of Problems</h3>
+<ul>
+    <li>Members report seeing WA Calendar instead of ClubCalendar</li>
+    <li>Filters stop working or show wrong results</li>
+    <li>"My Events" stops appearing for logged-in members</li>
+    <li>Console shows recurring errors</li>
+</ul>
+
+<h2 id="recovery">Recovery Procedures</h2>
+
+<h3>If ClubCalendar is broken and you need to disable it:</h3>
+
+<div class="warning">
+    <strong>Emergency Rollback:</strong> If ClubCalendar is causing problems and you need to immediately show only the WA Calendar:
+</div>
+
+<ol>
+    <li>Go to WA admin &rarr; Website &rarr; Site pages</li>
+    <li>Edit the calendar page</li>
+    <li>Find the HTML gadget containing ClubCalendar</li>
+    <li>Either delete the gadget, or wrap the content in HTML comments:
+<pre><code>&lt;!-- DISABLED
+[ClubCalendar code here]
+--&gt;</code></pre>
+    </li>
+    <li>Find the fallback container opening tag and remove <code>style="display:none;"</code></li>
+    <li>Save the page</li>
+</ol>
+
+<p>The WA Calendar will now show directly. You can re-enable ClubCalendar later by reversing these steps.</p>
+
+<h3>If you need to update the widget code:</h3>
+
+<ol>
+    <li>Get the updated <code>clubcalendar-wa-inline.html</code> file</li>
+    <li>Open it in a text editor and copy all contents</li>
+    <li>In WA admin, edit the calendar page</li>
+    <li>Edit the ClubCalendar HTML gadget</li>
+    <li>Switch to HTML mode</li>
+    <li>Replace everything AFTER the <code>&lt;/script&gt;</code> config block with the new widget code</li>
+    <li>Save and test</li>
+</ol>
+
+<hr>
+
+<p><strong>Developer:</strong> Ed Forman<br>
+<strong>Co-Developer:</strong> Claude (Anthropic)<br>
+<strong>Repository:</strong> <a href="https://github.com/sbnctech/clubcalendar">github.com/sbnctech/clubcalendar</a><br>
+<strong>Last Updated:</strong> December 2024</p>
+
+<p><a href="index.html">&larr; Back to Package Index</a></p>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Santa Barbara Newcomers Club</p>
+        <p>Questions? Contact <a href="mailto:technology@sbnewcomers.org">technology@sbnewcomers.org</a></p>
+    </footer>
+</body>
+</html>

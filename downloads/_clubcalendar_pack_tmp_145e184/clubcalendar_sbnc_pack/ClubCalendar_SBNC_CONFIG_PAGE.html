@@ -1,0 +1,3306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar Configuration</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6b 100%);
+            color: white;
+            padding: 30px 20px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            margin: 0 0 8px 0;
+            font-size: 28px;
+        }
+
+        header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 0;
+            background: #e0e0e0;
+            padding: 8px 8px 0 8px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.5);
+            color: #333;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #2c5aa0;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 24px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards within tabs */
+        .card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card:last-child {
+            margin-bottom: 0;
+        }
+
+        .card-header {
+            background: #f0f0f0;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .form-group .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+
+        input[type="color"] {
+            width: 40px;
+            height: 36px;
+            padding: 2px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .color-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-input-group input[type="text"] {
+            width: 100px;
+            font-family: monospace;
+        }
+
+        .color-input-group .color-label {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #2c5aa0;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        .toggle-label {
+            font-size: 14px;
+        }
+
+        .toggle-label strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .toggle-label small {
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* Help Icons & Tooltips */
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e3f2fd;
+            color: #2c5aa0;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: help;
+            position: relative;
+            margin-left: 6px;
+            flex-shrink: 0;
+        }
+
+        .help-icon:hover {
+            background: #2c5aa0;
+            color: white;
+        }
+
+        .help-icon .tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            background: #333;
+            color: white;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: normal;
+            line-height: 1.5;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-align: left;
+        }
+
+        .help-icon .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #333;
+        }
+
+        .help-icon:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .tooltip strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .tooltip code {
+            background: rgba(255,255,255,0.15);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        /* Info banner */
+        .info-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border-left: 4px solid #2c5aa0;
+        }
+
+        .info-banner-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .info-banner-text {
+            font-size: 13px;
+            color: #1565c0;
+            line-height: 1.5;
+        }
+
+        .info-banner-text strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #0d47a1;
+        }
+
+        /* List Builders */
+        .list-builder {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .list-builder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .list-builder-header h4 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .list-builder-items {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            border-bottom: 1px solid #e0e0e0;
+            background: white;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #fafafa;
+            cursor: pointer;
+        }
+
+        .list-item-header:hover {
+            background: #f0f0f0;
+        }
+
+        .list-item-expand {
+            font-size: 10px;
+            color: #666;
+            transition: transform 0.2s;
+        }
+
+        .list-item.expanded .list-item-expand {
+            transform: rotate(90deg);
+        }
+
+        .list-item-title {
+            flex: 1;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .list-item-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .list-item-toggle input {
+            width: 16px;
+            height: 16px;
+        }
+
+        .list-item-remove {
+            background: none;
+            border: none;
+            color: #c62828;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .list-item-remove:hover {
+            background: #ffebee;
+        }
+
+        .list-item-body {
+            display: none;
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .list-item.expanded .list-item-body {
+            display: block;
+        }
+
+        .add-item-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 10px;
+            background: white;
+            border: none;
+            color: #2c5aa0;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .add-item-btn:hover {
+            background: #e3f2fd;
+        }
+
+        /* Options List (nested) */
+        .options-list {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .option-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-item input {
+            flex: 1;
+            padding: 6px 8px;
+            font-size: 12px;
+        }
+
+        .option-item .remove-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+
+        .option-item .remove-btn:hover {
+            color: #c62828;
+        }
+
+        .add-option-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+            color: #666;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .add-option-btn:hover {
+            border-color: #2c5aa0;
+            color: #2c5aa0;
+            background: #f8f9fa;
+        }
+
+        /* Rule Builder */
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .rule-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .rule-item select {
+            width: auto;
+            min-width: 150px;
+        }
+
+        .rule-item input[type="text"],
+        .rule-item input[type="number"] {
+            width: 120px;
+        }
+
+        .rule-item .remove-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .rule-item .remove-btn:hover {
+            color: #c62828;
+        }
+
+        /* Color Palette Grid */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-row label {
+            flex: 1;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        /* Typography Controls */
+        .typography-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .size-input {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .size-input input {
+            width: 60px;
+            text-align: center;
+        }
+
+        .size-input span {
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #2c5aa0;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #234a80;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        /* Saved Configurations Bar */
+        .saved-configs-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .saved-configs-bar label {
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        .saved-configs-bar select {
+            flex: 1;
+            max-width: 300px;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Status Messages */
+        .status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.success {
+            display: block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .status.error {
+            display: block;
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+
+        /* Embed Code Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .embed-code {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Setup Steps */
+        .setup-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .setup-step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #2c5aa0;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            margin: 0;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .step-content a {
+            color: #2c5aa0;
+        }
+
+        /* Disabled tabs */
+        .tab-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .tab-btn.disabled:hover {
+            background: transparent;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .color-grid,
+            .typography-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab-btn {
+                flex: 1;
+                text-align: center;
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body data-test-id="admin-root">
+
+<header data-test-id="admin-header">
+    <div class="container">
+        <h1>ClubCalendar</h1>
+        <p>Configure your event calendar widget</p>
+    </div>
+</header>
+
+<div class="container">
+
+    <div id="status" class="status"></div>
+
+    <!-- Saved Configurations -->
+    <div class="saved-configs-bar">
+        <label for="savedConfigSelect">Configuration:</label>
+        <select id="savedConfigSelect" onchange="onConfigSelectChange()">
+            <option value="">— Current (unsaved) —</option>
+        </select>
+        <button class="btn btn-sm" onclick="saveConfigAs()" title="Save current settings as a new named configuration">
+            Save As...
+        </button>
+        <button class="btn btn-sm btn-danger" id="deleteConfigBtn" onclick="deleteSelectedConfig()" title="Delete selected configuration" style="display: none;">
+            Delete
+        </button>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="setup">Setup</button>
+        <button class="tab-btn" data-tab="basic">Display</button>
+        <button class="tab-btn" data-tab="advanced">Filters</button>
+        <button class="tab-btn" data-tab="css">Styling</button>
+    </div>
+
+    <!-- Tab: Setup (Data Source) -->
+    <div id="tab-setup" class="tab-content active">
+        <div class="info-banner" style="background: #fff3e0; border-left-color: #ff9800;">
+            <span class="info-banner-icon">⚠️</span>
+            <div class="info-banner-text" style="color: #e65100;">
+                <strong>Required First Step</strong>
+                Before the calendar widget can display events, you need to set up a sync job that pulls your events from Wild Apricot and creates a JSON data file. Complete this setup before configuring other options.
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="card">
+            <div class="card-header">
+                How ClubCalendar Works
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Data Flow</strong>
+                        Wild Apricot → Sync Job (every 15 min) → JSON file → Calendar Widget
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; padding: 16px 0;">
+                    <div style="text-align: center; padding: 12px 16px; background: #e3f2fd; border-radius: 8px;">
+                        <div style="font-size: 24px;">🗓️</div>
+                        <div style="font-size: 12px; font-weight: 600; margin-top: 4px;">Wild Apricot</div>
+                        <div style="font-size: 10px; color: #666;">Your events</div>
+                    </div>
+                    <div style="font-size: 20px; color: #666;">→</div>
+                    <div style="text-align: center; padding: 12px 16px; background: #fff3e0; border-radius: 8px;">
+                        <div style="font-size: 24px;">⚙️</div>
+                        <div style="font-size: 12px; font-weight: 600; margin-top: 4px;">Sync Job</div>
+                        <div style="font-size: 10px; color: #666;">Runs every 15 min</div>
+                    </div>
+                    <div style="font-size: 20px; color: #666;">→</div>
+                    <div style="text-align: center; padding: 12px 16px; background: #e8f5e9; border-radius: 8px;">
+                        <div style="font-size: 24px;">📄</div>
+                        <div style="font-size: 12px; font-weight: 600; margin-top: 4px;">events.json</div>
+                        <div style="font-size: 10px; color: #666;">Hosted file</div>
+                    </div>
+                    <div style="font-size: 20px; color: #666;">→</div>
+                    <div style="text-align: center; padding: 12px 16px; background: #f3e5f5; border-radius: 8px;">
+                        <div style="font-size: 24px;">📅</div>
+                        <div style="font-size: 12px; font-weight: 600; margin-top: 4px;">Calendar Widget</div>
+                        <div style="font-size: 10px; color: #666;">On your WA page</div>
+                    </div>
+                </div>
+                <p class="help-text" style="text-align: center; margin-top: 8px;">
+                    The sync job connects to Wild Apricot's API, fetches your events, adds smart tags (time of day, availability, etc.), and saves the data to a JSON file that the widget reads.
+                </p>
+            </div>
+        </div>
+
+        <!-- Hosting Option Selection -->
+        <div class="card">
+            <div class="card-header">
+                Choose Your Hosting Option
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Where to Host</strong>
+                        The sync job and JSON file need to be hosted somewhere. Choose based on your technical comfort level and resources.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="toggle-group" style="cursor: pointer;" onclick="selectHostingOption('google')">
+                    <input type="radio" name="hostingOption" id="hostingGoogle" value="google" checked style="width: 18px; height: 18px;">
+                    <div class="toggle-label">
+                        <strong>Google Cloud (Recommended)</strong>
+                        <small>Free tier, serverless, automatic scaling. Best for most clubs.</small>
+                    </div>
+                </div>
+                <div class="toggle-group" style="cursor: pointer;" onclick="selectHostingOption('server')">
+                    <input type="radio" name="hostingOption" id="hostingServer" value="server" style="width: 18px; height: 18px;">
+                    <div class="toggle-label">
+                        <strong>Your Own Server (Unix/Linux)</strong>
+                        <small>Self-hosted using cron job. Requires server access and command line knowledge.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Google Cloud Setup Instructions -->
+        <div class="card" id="googleSetupCard">
+            <div class="card-header" style="background: #e3f2fd;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">☁️</span>
+                    Google Cloud Setup
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="setup-steps">
+                    <div class="setup-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <strong>Create a Google Cloud Project</strong>
+                            <p>Go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> and create a new project (or use existing one).</p>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <strong>Enable Required APIs</strong>
+                            <p>Enable: Cloud Functions, Cloud Storage, Cloud Scheduler, and Firestore APIs.</p>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <strong>Create a Storage Bucket</strong>
+                            <p>In Cloud Storage, create a bucket (e.g., <code>yourclub-calendar-data</code>). Make it publicly readable.</p>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <strong>Get Your Wild Apricot API Key</strong>
+                            <p>In WA Admin → Settings → Authorized Applications → create a new API key with "Contacts" and "Events" permissions.</p>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <strong>Deploy the Cloud Function</strong>
+                            <p>Download the sync code from <a href="https://github.com/yourrepo/clubcalendar-sync" target="_blank">GitHub</a> and deploy using:</p>
+                            <code style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 11px;">
+                                gcloud functions deploy sync_events --runtime python311 --trigger-http --allow-unauthenticated
+                            </code>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <strong>Set Up Cloud Scheduler</strong>
+                            <p>Create a scheduler job to call your function every 15 minutes.</p>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">7</div>
+                        <div class="step-content">
+                            <strong>Copy Your Events URL</strong>
+                            <p>Your events.json will be at:</p>
+                            <div class="form-group" style="margin-top: 8px; margin-bottom: 0;">
+                                <input type="text" id="googleEventsUrl" placeholder="https://storage.googleapis.com/yourclub-calendar-data/events.json" style="font-family: monospace; font-size: 12px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">8</div>
+                        <div class="step-content">
+                            <strong>Deploy ICS Generator (Optional)</strong>
+                            <p>For "Add to Calendar" with proper timezone handling, deploy the ICS Cloud Function:</p>
+                            <code style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 11px;">
+                                gcloud functions deploy generate_ics --runtime nodejs20 --trigger-http --allow-unauthenticated
+                            </code>
+                            <p style="margin-top: 8px;">Your ICS endpoint will be:</p>
+                            <div class="form-group" style="margin-top: 8px; margin-bottom: 0;">
+                                <input type="text" id="googleIcsUrl" placeholder="https://us-central1-yourproject.cloudfunctions.net/generate_ics" style="font-family: monospace; font-size: 12px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-banner" style="margin-top: 16px; background: #e8f5e9; border-left-color: #4caf50;">
+                    <span class="info-banner-icon">💰</span>
+                    <div class="info-banner-text" style="color: #2e7d32;">
+                        <strong>Cost: Free for Most Clubs</strong>
+                        Google Cloud's free tier includes 2 million Cloud Function invocations/month and 5GB storage. A typical club uses ~3,000 invocations/month.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Server Setup Instructions -->
+        <div class="card" id="serverSetupCard" style="display: none;">
+            <div class="card-header" style="background: #fff3e0;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">🖥️</span>
+                    Server Setup (Unix/Linux)
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="setup-steps">
+                    <div class="setup-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <strong>Requirements</strong>
+                            <p>You need: A Linux server with Python 3.8+, web server (Apache/Nginx), and cron access.</p>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <strong>Download Sync Scripts</strong>
+                            <p>Download the sync code to your server:</p>
+                            <code style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 11px;">
+                                sudo mkdir -p /opt/clubcalendar/sync<br>
+                                cd /opt/clubcalendar/sync<br>
+                                # Download sync.py, config.py, storage.py from GitHub
+                            </code>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <strong>Install Dependencies</strong>
+                            <code style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 11px;">
+                                pip3 install requests
+                            </code>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <strong>Create Configuration File</strong>
+                            <p>Create <code>/etc/clubcalendar/config.json</code>:</p>
+                            <code style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 11px; white-space: pre;">{
+  "org_id": "yourclub",
+  "wild_apricot": {
+    "account_id": "YOUR_WA_ACCOUNT_ID",
+    "api_key": "YOUR_WA_API_KEY"
+  },
+  "data_directory": "/var/www/html/clubcalendar/data",
+  "base_url": "https://yourserver.com/clubcalendar"
+}</code>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <strong>Create Data Directory</strong>
+                            <code style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 11px;">
+                                sudo mkdir -p /var/www/html/clubcalendar/data<br>
+                                sudo chown www-data:www-data /var/www/html/clubcalendar/data
+                            </code>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <strong>Set Up Cron Job</strong>
+                            <p>Add to crontab (<code>crontab -e</code>):</p>
+                            <code style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 11px;">
+                                */15 * * * * CLUBCAL_CONFIG_FILE=/etc/clubcalendar/config.json python3 /opt/clubcalendar/sync/sync.py >> /var/log/clubcalendar.log 2>&1
+                            </code>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">7</div>
+                        <div class="step-content">
+                            <strong>Your Events URL</strong>
+                            <p>Your events.json will be at:</p>
+                            <div class="form-group" style="margin-top: 8px; margin-bottom: 0;">
+                                <input type="text" id="serverEventsUrl" placeholder="https://yourserver.com/clubcalendar/data/yourclub/events.json" style="font-family: monospace; font-size: 12px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setup-step">
+                        <div class="step-number">8</div>
+                        <div class="step-content">
+                            <strong>Install ICS Generator (Optional)</strong>
+                            <p>For "Add to Calendar" with proper timezone handling, create the ICS endpoint:</p>
+                            <code style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 11px;">
+                                sudo mkdir -p /var/www/html/ics<br>
+                                # Download event.php from GitHub to /var/www/html/ics/
+                            </code>
+                            <p style="margin-top: 8px;">The PHP script converts UTC times to local timezone (America/Los_Angeles) so calendar apps show the correct time without "GMT" confusion.</p>
+                            <p style="margin-top: 8px;">Your ICS endpoint will be:</p>
+                            <div class="form-group" style="margin-top: 8px; margin-bottom: 0;">
+                                <input type="text" id="serverIcsUrl" placeholder="https://yourserver.com/ics/event.php" style="font-family: monospace; font-size: 12px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Configuration -->
+        <div class="card">
+            <div class="card-header">
+                Your Endpoint URLs
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Service URLs</strong>
+                        Enter the URLs from the setup steps above. These are the endpoints the widget will use to load data and generate calendar files.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="eventsJsonUrl">
+                        Events JSON URL
+                        <span class="help-icon">?
+                            <span class="tooltip">
+                                <strong>Required</strong>
+                                The URL to your events.json file from step 7. This is where the widget loads event data from.
+                            </span>
+                        </span>
+                    </label>
+                    <input type="url" id="eventsJsonUrl" placeholder="https://storage.googleapis.com/your-bucket/events.json">
+                    <p class="help-text">Enter the URL from step 7 above after your sync job is configured and running.</p>
+                </div>
+                <button class="btn btn-sm" onclick="testEventsUrl()" style="margin-top: 8px;">Test URL</button>
+                <div id="urlTestResult" style="margin-top: 12px; display: none;"></div>
+
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+
+                <div class="form-group">
+                    <label for="icsBaseUrl">
+                        ICS Generator URL (Optional)
+                        <span class="help-icon">?
+                            <span class="tooltip">
+                                <strong>Calendar Download Endpoint</strong>
+                                The URL to your ICS generator from step 8. This creates calendar files with proper timezone handling when users click "Add to Calendar".<br><br>
+                                Leave blank to disable the "Add to Calendar" feature, or if you haven't set up the ICS endpoint yet.
+                            </span>
+                        </span>
+                    </label>
+                    <input type="url" id="icsBaseUrl" placeholder="https://yourserver.com/ics/event.php">
+                    <p class="help-text">From step 8. Generates ICS files with local timezone (eliminates "GMT" confusion in calendar apps).</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wild Apricot Credentials (for reference) -->
+        <div class="card">
+            <div class="card-header">
+                Wild Apricot API Credentials
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>For Sync Job Configuration</strong>
+                        These credentials are used by the sync job (not the widget). You'll enter them in the sync job's configuration, not here. This section is just for reference.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="info-banner">
+                    <span class="info-banner-icon">ℹ️</span>
+                    <div class="info-banner-text">
+                        These values go in your sync job configuration (Cloud Function environment variables or server config file), not in the widget. This section helps you find them.
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Where to Find Your WA Account ID</label>
+                    <p class="help-text">WA Admin → Settings → General → Look for "Account #" (usually a 6-digit number)</p>
+                </div>
+                <div class="form-group">
+                    <label>Where to Create an API Key</label>
+                    <p class="help-text">WA Admin → Settings → Authorized Applications → Add Application → Select "Server application" → Enable "Contacts" and "Events" scopes → Copy the API key</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Basic (now Display) -->
+    <div id="tab-basic" class="tab-content">
+        <div class="info-banner">
+            <span class="info-banner-icon">🖥️</span>
+            <div class="info-banner-text">
+                <strong>Display Settings</strong>
+                Configure how the calendar looks, behaves, and where it appears on your page.
+            </div>
+        </div>
+
+        <!-- Basic Appearance -->
+        <div class="card">
+            <div class="card-header">
+                Basic Appearance
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Widget Basics</strong>
+                        Core settings for the calendar widget title, default view, and where it renders on your page.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="widgetTitle">
+                        Widget Title
+                        <span class="help-icon">?
+                            <span class="tooltip">
+                                <strong>Header Title</strong>
+                                This appears at the top of the calendar widget. Keep it short and descriptive.
+                            </span>
+                        </span>
+                    </label>
+                    <input type="text" id="widgetTitle" value="Club Events" placeholder="Club Events">
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="defaultView">
+                            Default View
+                            <span class="help-icon">?
+                                <span class="tooltip">
+                                    <strong>Calendar Display Mode</strong>
+                                    <b>Month:</b> Traditional calendar grid<br>
+                                    <b>List:</b> Scrollable event list<br>
+                                    <b>Week:</b> Detailed weekly view<br><br>
+                                    Users can switch views using the toggle buttons.
+                                </span>
+                            </span>
+                        </label>
+                        <select id="defaultView">
+                            <option value="dayGridMonth">Month</option>
+                            <option value="listMonth">List</option>
+                            <option value="timeGridWeek">Week</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weekStartsOn">
+                            Week Starts On
+                            <span class="help-icon">?
+                                <span class="tooltip">
+                                    <strong>First Day of Week</strong>
+                                    Choose whether the calendar week starts on Sunday (US standard) or Monday (international/business standard).
+                                </span>
+                            </span>
+                        </label>
+                        <select id="weekStartsOn">
+                            <option value="0">Sunday</option>
+                            <option value="1">Monday</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="containerSelector">
+                        Container Selector
+                        <span class="help-icon">?
+                            <span class="tooltip">
+                                <strong>HTML Container</strong>
+                                CSS selector for the element where the calendar will render. Default is <code>#clubcalendar</code>.<br><br>
+                                Your page needs: <code>&lt;div id="clubcalendar"&gt;&lt;/div&gt;</code>
+                            </span>
+                        </span>
+                    </label>
+                    <input type="text" id="containerSelector" value="#clubcalendar" placeholder="#clubcalendar">
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Display Options -->
+        <div class="card">
+            <div class="card-header">
+                Calendar Display Options
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Visual Options</strong>
+                        Control what information is shown on the calendar grid and how events are displayed.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showEventDots" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Show event dots</strong>
+                        <small>Display colored dots on calendar days that have events</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Event Dots</strong>
+                            In month view, small colored dots appear under the date number to indicate events. The dot color matches the event's time-of-day color (morning=orange, afternoon=blue, evening=purple).
+                        </span>
+                    </span>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showEventCount">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Show event count badge</strong>
+                        <small>Display "3 events" badge on days with multiple events</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Event Count Badge</strong>
+                            When a day has more events than can be displayed, show a badge like "+3 more" to indicate additional events.
+                        </span>
+                    </span>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showTimeInTitle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Show time in event title</strong>
+                        <small>Display "9am - Morning Hike" instead of just "Morning Hike"</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Time in Title</strong>
+                            Prepends the start time to event titles on the calendar. Helps users quickly see when events occur without clicking.
+                        </span>
+                    </span>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showRegistrationStatus" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Show registration status</strong>
+                        <small>Display availability badges like "Full", "5 spots left"</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Registration Status</strong>
+                            Shows colored badges indicating event availability:<br>
+                            <b>Green:</b> Many spots available<br>
+                            <b>Orange:</b> Limited spots (1-5 left)<br>
+                            <b>Red:</b> Full or waitlist only
+                        </span>
+                    </span>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="hidePastEvents">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Hide past events</strong>
+                        <small>Don't show events that have already occurred</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Past Events</strong>
+                            When enabled, events with start times in the past are hidden from the calendar. Useful if you only want to show upcoming events.
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Bar Options -->
+        <div class="card">
+            <div class="card-header">
+                Filter Bar Options
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Filter Bar</strong>
+                        The filter bar appears at the top of the calendar with dropdown filters and quick filter buttons.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showFilterBar" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Show filter bar</strong>
+                        <small>Display the filter dropdowns and search</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Filter Bar Visibility</strong>
+                            The filter bar contains dropdown filters (Interest Area, Committee, etc.) and the search box. Disable if you want a simpler calendar without filtering.
+                        </span>
+                    </span>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showQuickFilters" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Show quick filter buttons</strong>
+                        <small>Display the colored filter buttons (Openings, Weekend, Free, etc.)</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Quick Filter Buttons</strong>
+                            The row of colored buttons below the filter bar for one-click filtering. Disable to show only dropdown filters.
+                        </span>
+                    </span>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showSearchBox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Show search box</strong>
+                        <small>Allow text search for event names</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Search Box</strong>
+                            Adds a text search field that filters events by name. Users can type to find specific events.
+                        </span>
+                    </span>
+                </div>
+
+                <div class="form-group" style="margin-top: 16px;">
+                    <label for="defaultFilter">
+                        Default Filter
+                        <span class="help-icon">?
+                            <span class="tooltip">
+                                <strong>Pre-selected Filter</strong>
+                                Optionally start with a quick filter already active. For example, start with "Openings for Any Member" selected so users immediately see available events.
+                            </span>
+                        </span>
+                    </label>
+                    <select id="defaultFilter">
+                        <option value="">None (show all events)</option>
+                        <option value="openings">Openings for Any Member</option>
+                        <option value="weekend">Weekend</option>
+                        <option value="afterhours">After Hours</option>
+                        <option value="free">Free</option>
+                        <option value="newbie">Openings for Newbies</option>
+                        <option value="public">Public Welcome</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Behavior Options -->
+        <div class="card">
+            <div class="card-header">
+                Behavior Options
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Interaction Behavior</strong>
+                        Control how users interact with events and where links open.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="eventClickBehavior">
+                        When user clicks an event
+                        <span class="help-icon">?
+                            <span class="tooltip">
+                                <strong>Click Behavior</strong>
+                                <b>Show popup:</b> Opens a detail popup with event info, then user can click to register<br>
+                                <b>Go to event page:</b> Immediately navigates to the Wild Apricot event page
+                            </span>
+                        </span>
+                    </label>
+                    <select id="eventClickBehavior">
+                        <option value="popup">Show event popup (recommended)</option>
+                        <option value="navigate">Go directly to WA event page</option>
+                    </select>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="openLinksNewTab" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Open links in new tab</strong>
+                        <small>Registration and event page links open in a new browser tab</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>New Tab Behavior</strong>
+                            When enabled, clicking "Register" or "View Details" opens the Wild Apricot page in a new tab, keeping the calendar open. Disable to navigate in the same tab.
+                        </span>
+                    </span>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showAddToCalendar" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Show "Add to Calendar" button</strong>
+                        <small>Allow users to download events to their personal calendar</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Add to Calendar</strong>
+                            Shows a button in event popups that downloads an ICS file. Works with Apple Calendar, Google Calendar, Outlook, etc.<br><br>
+                            Uses proper timezone handling so events display at the correct local time (no confusing "GMT" times).<br><br>
+                            <em>Note: Requires ICS Generator URL in Setup tab.</em>
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Integration -->
+        <div class="card">
+            <div class="card-header">
+                Map & Directions
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Location Features</strong>
+                        Add a "Get Directions" button to event popups that shows the event location on a map and provides driving/transit directions.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enableMapDirections" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Enable "Get Directions" button</strong>
+                        <small>Show a map/directions button in event popups</small>
+                    </div>
+                    <span class="help-icon">?
+                        <span class="tooltip">
+                            <strong>Get Directions</strong>
+                            Adds a button to event popups that opens the user's preferred map app with directions to the event location. Shows estimated travel time based on the event start time.
+                        </span>
+                    </span>
+                </div>
+
+                <div class="form-group" style="margin-top: 16px;" id="mapProviderGroup">
+                    <label for="mapProvider">
+                        Preferred Map Provider
+                        <span class="help-icon">?
+                            <span class="tooltip">
+                                <strong>Map App Choice</strong>
+                                <b>User's choice:</b> Shows buttons for both Apple Maps and Google Maps, letting the user pick<br>
+                                <b>Apple Maps:</b> Opens directions in Apple Maps (best for iPhone/Mac users)<br>
+                                <b>Google Maps:</b> Opens directions in Google Maps (works on all devices)
+                            </span>
+                        </span>
+                    </label>
+                    <select id="mapProvider">
+                        <option value="both">Let user choose (show both buttons)</option>
+                        <option value="apple">Apple Maps only</option>
+                        <option value="google">Google Maps only</option>
+                    </select>
+                </div>
+
+                <div class="info-banner" style="margin-top: 16px;">
+                    <span class="info-banner-icon">🗺️</span>
+                    <div class="info-banner-text">
+                        <strong>How It Works</strong>
+                        When a user clicks "Get Directions", it opens their map app with:<br>
+                        • The event location as the destination<br>
+                        • Their current location as the starting point (they can change this)<br>
+                        • Arrival time set to the event start time<br>
+                        • Estimated travel time displayed<br><br>
+                        <em>Note: The event must have a location set in Wild Apricot for this to work.</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Advanced -->
+    <div id="tab-advanced" class="tab-content">
+        <div class="info-banner">
+            <span class="info-banner-icon">⚙️</span>
+            <div class="info-banner-text">
+                <strong>Advanced Settings</strong>
+                Configure dropdown filters and quick filter buttons. These appear in the filter bar and help users find specific events.
+            </div>
+        </div>
+
+        <!-- Dropdown Filters -->
+        <div class="card">
+            <div class="card-header">
+                <span>Dropdown Filters</span>
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Dropdown Filters</strong>
+                        These appear as dropdown menus in the filter bar. Each dropdown filters events by matching tags that start with a specific prefix.<br><br>
+                        <b>Example:</b> A filter with prefix <code>activity:</code> will show options like "Food & Dining" which matches events tagged <code>activity:food</code>.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <p class="help-text" style="margin-bottom: 12px;">Configure filter dropdowns that appear in the filter bar. Each filter matches events by tag prefix.</p>
+
+                <div class="list-builder" id="filtersBuilder">
+                    <div class="list-builder-items" id="filtersList">
+                        <!-- Filters will be populated by JS -->
+                    </div>
+                    <button class="add-item-btn" onclick="addFilter()">+ Add Filter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Filter Buttons -->
+        <div class="card">
+            <div class="card-header">
+                <span>Quick Filter Buttons</span>
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Quick Filter Buttons</strong>
+                        These appear as colored buttons below the dropdown filters. Users click them to instantly filter events.<br><br>
+                        <b>Rules:</b> Each button can have multiple rules - ALL rules must match for an event to show. Common rules include "Has openings", "Weekend", "Free", etc.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <p class="help-text" style="margin-bottom: 12px;">Quick filter buttons appear below the filter bar. Each button can have multiple conditions (all must match).</p>
+
+                <div class="list-builder" id="quickFiltersBuilder">
+                    <div class="list-builder-items" id="quickFiltersList">
+                        <!-- Quick filters will be populated by JS -->
+                    </div>
+                    <button class="add-item-btn" onclick="addQuickFilter()">+ Add Quick Filter</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Tab: CSS -->
+    <div id="tab-css" class="tab-content">
+        <div class="info-banner">
+            <span class="info-banner-icon">🎨</span>
+            <div class="info-banner-text">
+                <strong>Styling Options</strong>
+                Customize how the calendar looks. By default, the widget inherits colors from your Wild Apricot theme.
+            </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+                Live Preview
+                <button class="btn btn-sm" onclick="updatePreview()" style="margin-left: auto;">Refresh Preview</button>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <div id="cssPreview" style="padding: 16px; background: #f5f5f5; border-radius: 0 0 8px 8px;">
+                    <!-- Preview header -->
+                    <div id="previewHeader" style="padding: 16px 20px; border-radius: 8px 8px 0 0; color: white; background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6b 100%);">
+                        <div style="font-weight: 600; font-size: 24px;">Club Events</div>
+                    </div>
+                    <!-- Preview filter bar -->
+                    <div id="previewFilterBar" style="background: #f8f9fa; padding: 12px 16px; border: 1px solid #e0e0e0; border-top: none;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <select style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <option>Interest Area</option>
+                            </select>
+                            <select style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <option>Committee</option>
+                            </select>
+                        </div>
+                        <!-- Quick filter buttons -->
+                        <div id="previewQuickFilters" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
+                            <span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; background: #4caf50; color: white;">Openings</span>
+                            <span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; background: #9c27b0; color: white;">Weekend</span>
+                            <span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; background: #ffc107; color: #333;">Free</span>
+                            <span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; background: #8bc34a; color: white;">Public Welcome</span>
+                        </div>
+                    </div>
+                    <!-- Preview calendar sample -->
+                    <div id="previewCalendar" style="background: white; border: 1px solid #e0e0e0; border-top: none; padding: 16px; border-radius: 0 0 8px 8px;">
+                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-size: 11px; color: #666; margin-bottom: 8px;">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;">
+                            <div style="padding: 8px 4px; text-align: center; font-size: 12px; color: #999;">29</div>
+                            <div style="padding: 8px 4px; text-align: center; font-size: 12px;">1</div>
+                            <div style="padding: 8px 4px; text-align: center; font-size: 12px;">2</div>
+                            <div style="padding: 8px 4px; text-align: center; font-size: 12px;">3</div>
+                            <div style="padding: 8px 4px; text-align: center; font-size: 12px;">4</div>
+                            <div style="padding: 8px 4px; text-align: center; font-size: 12px;">5</div>
+                            <div style="padding: 8px 4px; text-align: center; font-size: 12px;">6</div>
+                        </div>
+                        <!-- Sample events -->
+                        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                            <div id="previewEventMorning" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; background: #ff9800; color: white;">☀️ Morning Hike (9am)</div>
+                            <div id="previewEventAfternoon" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; background: #2196f3; color: white;">🍷 Wine Tasting (2pm)</div>
+                            <div id="previewEventEvening" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; background: #9c27b0; color: white;">🎭 Book Club (7pm)</div>
+                            <div id="previewEventAllDay" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; background: #4caf50; color: white;">📅 All-day Event</div>
+                        </div>
+                        <!-- Availability badges sample -->
+                        <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <span id="previewBadgeOpen" style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: #e8f5e9; color: #2e7d32;">12 spots</span>
+                            <span id="previewBadgeLimited" style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: #fff3e0; color: #e65100;">3 left</span>
+                            <span id="previewBadgeFull" style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: #ffebee; color: #c62828;">Full</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme Mode -->
+        <div class="card">
+            <div class="card-header">
+                Theme Mode
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Theme Inheritance</strong>
+                        Controls whether the widget tries to automatically match your Wild Apricot site's colors, or uses custom colors you define below.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="toggle-group">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="inheritTheme" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <strong>Inherit from site theme</strong>
+                        <small>Automatically detect and use Wild Apricot theme colors</small>
+                    </div>
+                </div>
+                <p class="help-text">When enabled, the widget will attempt to match your Wild Apricot site's color scheme. Disable to use custom colors below.</p>
+            </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="card" id="colorPaletteCard">
+            <div class="card-header">
+                Color Palette
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Custom Colors</strong>
+                        Only applies when "Inherit from site theme" is OFF. Set specific colors for different parts of the calendar widget.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #666;">Primary Colors</h4>
+                <div class="color-grid" style="margin-bottom: 20px;">
+                    <div class="color-row">
+                        <label>Primary</label>
+                        <input type="color" id="colorPrimary" value="#2c5aa0">
+                        <input type="text" id="colorPrimaryHex" value="#2c5aa0" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Accent</label>
+                        <input type="color" id="colorAccent" value="#d4a800">
+                        <input type="text" id="colorAccentHex" value="#d4a800" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Header Background</label>
+                        <input type="color" id="colorHeaderBg" value="#2c5aa0">
+                        <input type="text" id="colorHeaderBgHex" value="#2c5aa0" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Header Text</label>
+                        <input type="color" id="colorHeaderText" value="#ffffff">
+                        <input type="text" id="colorHeaderTextHex" value="#ffffff" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Filter Bar Background</label>
+                        <input type="color" id="colorFilterBarBg" value="#f8f9fa">
+                        <input type="text" id="colorFilterBarBgHex" value="#f8f9fa" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Border Color</label>
+                        <input type="color" id="colorBorder" value="#e0e0e0">
+                        <input type="text" id="colorBorderHex" value="#e0e0e0" style="width: 80px; font-family: monospace;">
+                    </div>
+                </div>
+
+                <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #666;">Event Colors by Time of Day</h4>
+                <div class="color-grid" style="margin-bottom: 20px;">
+                    <div class="color-row">
+                        <label>Morning</label>
+                        <input type="color" id="colorEventMorning" value="#ff9800">
+                        <input type="text" id="colorEventMorningHex" value="#ff9800" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Afternoon</label>
+                        <input type="color" id="colorEventAfternoon" value="#2196f3">
+                        <input type="text" id="colorEventAfternoonHex" value="#2196f3" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Evening</label>
+                        <input type="color" id="colorEventEvening" value="#9c27b0">
+                        <input type="text" id="colorEventEveningHex" value="#9c27b0" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>All-day</label>
+                        <input type="color" id="colorEventAllDay" value="#4caf50">
+                        <input type="text" id="colorEventAllDayHex" value="#4caf50" style="width: 80px; font-family: monospace;">
+                    </div>
+                </div>
+
+                <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #666;">Availability Badge Colors</h4>
+                <div class="color-grid">
+                    <div class="color-row">
+                        <label>Open</label>
+                        <input type="color" id="colorBadgeOpen" value="#e8f5e9">
+                        <input type="text" id="colorBadgeOpenHex" value="#e8f5e9" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Limited</label>
+                        <input type="color" id="colorBadgeLimited" value="#fff3e0">
+                        <input type="text" id="colorBadgeLimitedHex" value="#fff3e0" style="width: 80px; font-family: monospace;">
+                    </div>
+                    <div class="color-row">
+                        <label>Full</label>
+                        <input type="color" id="colorBadgeFull" value="#ffebee">
+                        <input type="text" id="colorBadgeFullHex" value="#ffebee" style="width: 80px; font-family: monospace;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Typography -->
+        <div class="card" id="typographyCard">
+            <div class="card-header">
+                Typography
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Font Settings</strong>
+                        Control the fonts used in the calendar. By default, the widget inherits fonts from your site. Use "Custom" to specify any Google Font or web-safe font.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="fontFamily">Font Family</label>
+                    <select id="fontFamily">
+                        <option value="">Inherit from site</option>
+                        <option value="system">System Default</option>
+                        <option value="arial">Arial, sans-serif</option>
+                        <option value="georgia">Georgia, serif</option>
+                        <option value="roboto">Roboto, sans-serif</option>
+                        <option value="custom">Custom...</option>
+                    </select>
+                </div>
+                <div class="form-group" id="customFontGroup" style="display: none;">
+                    <label for="customFont">Custom Font Family</label>
+                    <input type="text" id="customFont" placeholder="'Open Sans', sans-serif">
+                </div>
+                <div class="typography-grid">
+                    <div class="form-group">
+                        <label>Header Size</label>
+                        <div class="size-input">
+                            <input type="number" id="headerFontSize" value="24" min="14" max="48">
+                            <span>px</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Body Size</label>
+                        <div class="size-input">
+                            <input type="number" id="bodyFontSize" value="14" min="10" max="24">
+                            <span>px</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Label Size</label>
+                        <div class="size-input">
+                            <input type="number" id="labelFontSize" value="11" min="8" max="16">
+                            <span>px</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom CSS -->
+        <div class="card">
+            <div class="card-header">
+                Custom CSS
+                <span class="help-icon">?
+                    <span class="tooltip">
+                        <strong>Advanced Styling</strong>
+                        For users comfortable with CSS. Add rules here to override any widget styles. This is optional and only needed for fine-tuning beyond the color/typography options above.
+                    </span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="info-banner" style="background: #fff3e0; border-left-color: #ff9800;">
+                    <span class="info-banner-icon">💡</span>
+                    <div class="info-banner-text" style="color: #e65100;">
+                        <strong>For Advanced Users</strong>
+                        This section is optional. Only use if you know CSS and need custom styling beyond the options above. Widget classes use the <code>.clubcal-</code> prefix.
+                    </div>
+                </div>
+                <p class="help-text" style="margin-bottom: 12px;">Add custom CSS rules to override widget styles. Use <code>.clubcal-</code> prefixed classes.</p>
+                <textarea id="customCss" placeholder="/* Example: remove header border radius */
+.clubcal-header {
+    border-radius: 0;
+}
+
+/* Example: change popup width */
+.clubcal-popup {
+    max-width: 600px;
+}"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+        <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
+        <button class="btn btn-secondary" onclick="showEmbedCode()">
+            Get Embed Code
+            <span class="help-icon" style="margin-left: 8px; background: rgba(0,0,0,0.1);">?
+                <span class="tooltip" style="width: 320px;">
+                    <strong>What is Embed Code?</strong>
+                    This generates HTML/JavaScript code that you'll paste into your Wild Apricot page to display the calendar widget.<br><br>
+                    <b>Steps:</b><br>
+                    1. Click to generate the code<br>
+                    2. Copy the code<br>
+                    3. In WA, edit your page<br>
+                    4. Add a "Content" gadget<br>
+                    5. Switch to Source/HTML mode<br>
+                    6. Paste the code and save
+                </span>
+            </span>
+        </button>
+    </div>
+
+    <div class="info-banner" style="margin-top: 16px; background: #f5f5f5; border-left-color: #666;">
+        <span class="info-banner-icon">📋</span>
+        <div class="info-banner-text" style="color: #555;">
+            <strong>How to Use This Tool</strong>
+            1. Configure your settings above and click "Save Configuration" (saves to your browser).<br>
+            2. Click "Get Embed Code" to generate the code snippet.<br>
+            3. Paste the embed code into your Wild Apricot page using a Content gadget in HTML/Source mode.
+        </div>
+    </div>
+
+</div>
+
+<!-- Embed Code Modal -->
+<div id="embedModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Embed Code</h3>
+            <button class="modal-close" onclick="closeEmbedModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="info-banner" style="margin-bottom: 16px;">
+                <span class="info-banner-icon">📝</span>
+                <div class="info-banner-text">
+                    <strong>How to Add This to Your Wild Apricot Page</strong>
+                    1. In WA Admin, edit the page where you want the calendar<br>
+                    2. Add a "Content" gadget (or edit existing one)<br>
+                    3. Click the Source/HTML button (<code>&lt;/&gt;</code> icon)<br>
+                    4. Paste this code and save the page
+                </div>
+            </div>
+            <div class="embed-code" id="embedCode"></div>
+            <button class="btn btn-primary" style="margin-top: 12px;" onclick="copyEmbedCode()">Copy to Clipboard</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// =============================================================================
+// DATA STRUCTURES
+// =============================================================================
+
+// Default filters configuration
+const DEFAULT_FILTERS = [
+    {
+        id: 'interestArea',
+        label: 'Interest Area',
+        prefix: 'activity:',
+        enabled: true,
+        options: [
+            { id: 'food', label: 'Food & Dining' },
+            { id: 'wine', label: 'Wine' },
+            { id: 'beer', label: 'Beer & Brewery' },
+            { id: 'outdoors', label: 'Outdoors & Hiking' },
+            { id: 'fitness', label: 'Fitness' },
+            { id: 'arts', label: 'Arts & Culture' },
+            { id: 'games', label: 'Games' },
+            { id: 'books', label: 'Books & Reading' },
+            { id: 'travel', label: 'Travel' },
+            { id: 'social', label: 'Social' },
+            { id: 'education', label: 'Education' },
+            { id: 'wellness', label: 'Wellness' },
+            { id: 'garden', label: 'Garden' },
+            { id: 'crafts', label: 'Crafts' }
+        ]
+    },
+    {
+        id: 'committee',
+        label: 'Committee',
+        prefix: 'committee:',
+        enabled: true,
+        autoPopulate: true,
+        options: []
+    },
+    {
+        id: 'cost',
+        label: 'Cost',
+        prefix: 'cost:',
+        enabled: true,
+        options: [
+            { id: 'free', label: 'Free' },
+            { id: 'under-25', label: 'Under $25' },
+            { id: 'under-50', label: 'Under $50' },
+            { id: 'under-100', label: 'Under $100' },
+            { id: 'over-100', label: '$100+' }
+        ]
+    },
+    {
+        id: 'timeOfDay',
+        label: 'Time of Day',
+        prefix: 'time:',
+        enabled: true,
+        options: [
+            { id: 'morning', label: 'Morning' },
+            { id: 'afternoon', label: 'Afternoon' },
+            { id: 'evening', label: 'Evening' }
+        ]
+    }
+];
+
+// Default quick filters - matches widget's FILTER_RULES
+const DEFAULT_QUICK_FILTERS = [
+    {
+        id: 'openings',
+        label: 'Openings for Any Member',
+        color: '#4caf50',
+        enabled: true,
+        rules: [{ type: 'has-openings' }]
+    },
+    {
+        id: 'weekend',
+        label: 'Weekend',
+        color: '#9c27b0',
+        enabled: true,
+        rules: [{ type: 'is-weekend' }]
+    },
+    {
+        id: 'afterhours',
+        label: 'After Hours',
+        color: '#5c6bc0',
+        enabled: true,
+        rules: [{ type: 'is-afterhours' }]
+    },
+    {
+        id: 'free',
+        label: 'Free',
+        color: '#ffc107',
+        enabled: true,
+        rules: [{ type: 'is-free' }]
+    },
+    {
+        id: 'newbie',
+        label: 'Openings for Newbies',
+        color: '#00bcd4',
+        enabled: true,
+        rules: [{ type: 'has-openings' }]
+    },
+    {
+        id: 'public',
+        label: 'Public Welcome',
+        color: '#8bc34a',
+        enabled: true,
+        rules: [{ type: 'is-public' }]
+    }
+];
+
+// Rule type definitions - matches widget's FILTER_RULES criteria
+const RULE_TYPES = [
+    { id: 'has-openings', label: 'Has openings', hasValue: false },
+    { id: 'is-weekend', label: 'Weekend (Sat/Sun)', hasValue: false },
+    { id: 'is-afterhours', label: 'After Hours (evenings/weekends)', hasValue: false },
+    { id: 'is-free', label: 'Free event', hasValue: false },
+    { id: 'is-public', label: 'Public welcome', hasValue: false },
+    { id: 'has-tag', label: 'Has tag', hasValue: true, valuePlaceholder: 'tag name' },
+    { id: 'field-contains', label: 'Field contains', hasField: true, hasValue: true },
+    { id: 'spots-lte', label: 'Spots remaining <=', hasValue: true, valueType: 'number', valuePlaceholder: '5' }
+];
+
+// Field options for rules
+const FIELD_OPTIONS = ['name', 'location', 'description', 'committee'];
+
+// Current state
+let filters = JSON.parse(JSON.stringify(DEFAULT_FILTERS));
+let quickFilters = JSON.parse(JSON.stringify(DEFAULT_QUICK_FILTERS));
+
+// =============================================================================
+// TAB NAVIGATION
+// =============================================================================
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Don't allow clicking disabled tabs
+        if (btn.classList.contains('disabled')) return;
+
+        // Update button states
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update content visibility
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+});
+
+// =============================================================================
+// SETUP TAB - HOSTING OPTIONS & URL VALIDATION
+// =============================================================================
+
+function selectHostingOption(option) {
+    document.getElementById('hostingGoogle').checked = (option === 'google');
+    document.getElementById('hostingServer').checked = (option === 'server');
+
+    document.getElementById('googleSetupCard').style.display = (option === 'google') ? 'block' : 'none';
+    document.getElementById('serverSetupCard').style.display = (option === 'server') ? 'block' : 'none';
+
+    // Save preference
+    localStorage.setItem('clubcalendar-hosting', option);
+}
+
+function testEventsUrl() {
+    const url = document.getElementById('eventsJsonUrl').value.trim();
+    const resultDiv = document.getElementById('urlTestResult');
+
+    if (!url) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<div class="info-banner" style="background: #ffebee; border-left-color: #c62828; margin: 0;"><span class="info-banner-icon">❌</span><div class="info-banner-text" style="color: #c62828;">Please enter a URL first.</div></div>';
+        return;
+    }
+
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="info-banner" style="background: #e3f2fd; border-left-color: #2c5aa0; margin: 0;"><span class="info-banner-icon">⏳</span><div class="info-banner-text" style="color: #1565c0;">Testing URL...</div></div>';
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            // Validate it looks like events data
+            if (data.events && Array.isArray(data.events)) {
+                const eventCount = data.events.length;
+                const generated = data._generated ? new Date(data._generated).toLocaleString() : 'Unknown';
+                resultDiv.innerHTML = `
+                    <div class="info-banner" style="background: #e8f5e9; border-left-color: #4caf50; margin: 0;">
+                        <span class="info-banner-icon">✅</span>
+                        <div class="info-banner-text" style="color: #2e7d32;">
+                            <strong>Success!</strong> Found ${eventCount} events.<br>
+                            Last updated: ${generated}
+                        </div>
+                    </div>
+                `;
+                // Enable other tabs since setup is complete
+                enableOtherTabs();
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="info-banner" style="background: #fff3e0; border-left-color: #ff9800; margin: 0;">
+                        <span class="info-banner-icon">⚠️</span>
+                        <div class="info-banner-text" style="color: #e65100;">
+                            URL accessible but doesn't look like ClubCalendar events data. Expected an "events" array.
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            resultDiv.innerHTML = `
+                <div class="info-banner" style="background: #ffebee; border-left-color: #c62828; margin: 0;">
+                    <span class="info-banner-icon">❌</span>
+                    <div class="info-banner-text" style="color: #c62828;">
+                        <strong>Failed to load URL</strong><br>
+                        ${error.message}<br><br>
+                        Check that:<br>
+                        • The URL is correct<br>
+                        • The sync job has run at least once<br>
+                        • The file is publicly accessible (CORS enabled)
+                    </div>
+                </div>
+            `;
+        });
+}
+
+function checkSetupComplete() {
+    const url = document.getElementById('eventsJsonUrl').value.trim();
+    if (url) {
+        enableOtherTabs();
+    } else {
+        disableOtherTabs();
+    }
+}
+
+function enableOtherTabs() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('disabled');
+    });
+    localStorage.setItem('clubcalendar-setup-complete', 'true');
+}
+
+function disableOtherTabs() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.dataset.tab !== 'setup') {
+            btn.classList.add('disabled');
+        }
+    });
+}
+
+// Check setup status when URL changes
+document.getElementById('eventsJsonUrl').addEventListener('input', checkSetupComplete);
+document.getElementById('eventsJsonUrl').addEventListener('change', checkSetupComplete);
+
+// =============================================================================
+// COLOR PICKER SYNC
+// =============================================================================
+
+// Auto-sync color pickers with hex inputs
+document.querySelectorAll('input[type="color"]').forEach(picker => {
+    const hexInput = document.getElementById(picker.id + 'Hex');
+    if (hexInput) {
+        picker.addEventListener('input', () => {
+            hexInput.value = picker.value;
+        });
+        hexInput.addEventListener('input', () => {
+            if (/^#[0-9A-Fa-f]{6}$/.test(hexInput.value)) {
+                picker.value = hexInput.value;
+            }
+        });
+    }
+});
+
+// Theme toggle affects color/typography card visibility
+document.getElementById('inheritTheme').addEventListener('change', function() {
+    const colorCard = document.getElementById('colorPaletteCard');
+    const typographyCard = document.getElementById('typographyCard');
+    if (this.checked) {
+        colorCard.style.opacity = '0.5';
+        colorCard.style.pointerEvents = 'none';
+    } else {
+        colorCard.style.opacity = '1';
+        colorCard.style.pointerEvents = 'auto';
+    }
+});
+
+// Font family custom option
+document.getElementById('fontFamily').addEventListener('change', function() {
+    const customGroup = document.getElementById('customFontGroup');
+    customGroup.style.display = this.value === 'custom' ? 'block' : 'none';
+});
+
+// =============================================================================
+// FILTER BUILDER
+// =============================================================================
+
+function renderFilters() {
+    const container = document.getElementById('filtersList');
+    container.innerHTML = filters.map((filter, index) => `
+        <div class="list-item" data-index="${index}">
+            <div class="list-item-header" onclick="toggleFilterExpand(${index})">
+                <span class="list-item-expand">▶</span>
+                <span class="list-item-title">${escapeHtml(filter.label)}</span>
+                <label class="list-item-toggle" onclick="event.stopPropagation()">
+                    <input type="checkbox" ${filter.enabled ? 'checked' : ''} onchange="toggleFilterEnabled(${index}, this.checked)">
+                    <span>Enabled</span>
+                </label>
+                <button class="list-item-remove" onclick="event.stopPropagation(); removeFilter(${index})" title="Remove filter">&times;</button>
+            </div>
+            <div class="list-item-body">
+                <div class="form-group">
+                    <label>Filter Label</label>
+                    <input type="text" value="${escapeHtml(filter.label)}" onchange="updateFilterField(${index}, 'label', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Tag Prefix</label>
+                    <input type="text" value="${escapeHtml(filter.prefix)}" onchange="updateFilterField(${index}, 'prefix', this.value)" placeholder="activity:">
+                    <p class="help-text">Events must have tags starting with this prefix to match</p>
+                </div>
+                ${filter.autoPopulate ? `
+                    <p class="help-text" style="background: #e3f2fd; padding: 10px; border-radius: 4px;">
+                        This filter is auto-populated from event data
+                    </p>
+                ` : `
+                    <div class="form-group">
+                        <label>Options</label>
+                        <div class="options-list">
+                            ${filter.options.map((opt, optIndex) => `
+                                <div class="option-item">
+                                    <input type="text" value="${escapeHtml(opt.id)}" placeholder="id"
+                                           onchange="updateFilterOption(${index}, ${optIndex}, 'id', this.value)">
+                                    <span>→</span>
+                                    <input type="text" value="${escapeHtml(opt.label)}" placeholder="Label"
+                                           onchange="updateFilterOption(${index}, ${optIndex}, 'label', this.value)">
+                                    <button class="remove-btn" onclick="removeFilterOption(${index}, ${optIndex})">&times;</button>
+                                </div>
+                            `).join('')}
+                            <button class="add-option-btn" onclick="addFilterOption(${index})">+ Add Option</button>
+                        </div>
+                    </div>
+                `}
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleFilterExpand(index) {
+    const item = document.querySelector(`#filtersList .list-item[data-index="${index}"]`);
+    item.classList.toggle('expanded');
+}
+
+function toggleFilterEnabled(index, enabled) {
+    filters[index].enabled = enabled;
+}
+
+function updateFilterField(index, field, value) {
+    filters[index][field] = value;
+    if (field === 'label') {
+        renderFilters();
+    }
+}
+
+function updateFilterOption(filterIndex, optIndex, field, value) {
+    filters[filterIndex].options[optIndex][field] = value;
+}
+
+function addFilterOption(filterIndex) {
+    filters[filterIndex].options.push({ id: '', label: '' });
+    renderFilters();
+    // Re-expand the filter
+    const item = document.querySelector(`#filtersList .list-item[data-index="${filterIndex}"]`);
+    item.classList.add('expanded');
+}
+
+function removeFilterOption(filterIndex, optIndex) {
+    filters[filterIndex].options.splice(optIndex, 1);
+    renderFilters();
+    const item = document.querySelector(`#filtersList .list-item[data-index="${filterIndex}"]`);
+    item.classList.add('expanded');
+}
+
+function addFilter() {
+    const newId = 'filter_' + Date.now();
+    filters.push({
+        id: newId,
+        label: 'New Filter',
+        prefix: '',
+        enabled: true,
+        options: []
+    });
+    renderFilters();
+    // Expand the new filter
+    const items = document.querySelectorAll('#filtersList .list-item');
+    items[items.length - 1].classList.add('expanded');
+}
+
+function removeFilter(index) {
+    if (confirm('Remove this filter?')) {
+        filters.splice(index, 1);
+        renderFilters();
+    }
+}
+
+// =============================================================================
+// QUICK FILTER BUILDER
+// =============================================================================
+
+function renderQuickFilters() {
+    const container = document.getElementById('quickFiltersList');
+    container.innerHTML = quickFilters.map((qf, index) => `
+        <div class="list-item" data-index="${index}">
+            <div class="list-item-header" onclick="toggleQuickFilterExpand(${index})">
+                <span class="list-item-expand">▶</span>
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: ${qf.color};"></span>
+                <span class="list-item-title">${escapeHtml(qf.label)}</span>
+                <label class="list-item-toggle" onclick="event.stopPropagation()">
+                    <input type="checkbox" ${qf.enabled ? 'checked' : ''} onchange="toggleQuickFilterEnabled(${index}, this.checked)">
+                    <span>Enabled</span>
+                </label>
+                <button class="list-item-remove" onclick="event.stopPropagation(); removeQuickFilter(${index})" title="Remove">&times;</button>
+            </div>
+            <div class="list-item-body">
+                <div class="row">
+                    <div class="form-group">
+                        <label>Button Label</label>
+                        <input type="text" value="${escapeHtml(qf.label)}" onchange="updateQuickFilterField(${index}, 'label', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Button Color</label>
+                        <div class="color-input-group">
+                            <input type="color" value="${qf.color}" onchange="updateQuickFilterField(${index}, 'color', this.value)">
+                            <input type="text" value="${qf.color}" style="width: 80px; font-family: monospace;"
+                                   onchange="updateQuickFilterField(${index}, 'color', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Rules (all must match)</label>
+                    <div class="options-list">
+                        ${qf.rules.map((rule, ruleIndex) => renderRuleItem(index, ruleIndex, rule)).join('')}
+                        <button class="add-option-btn" onclick="addRule(${index})">+ Add Rule</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderRuleItem(qfIndex, ruleIndex, rule) {
+    const ruleType = RULE_TYPES.find(r => r.id === rule.type) || RULE_TYPES[0];
+
+    let fieldSelect = '';
+    if (ruleType.hasField) {
+        fieldSelect = `
+            <select onchange="updateRule(${qfIndex}, ${ruleIndex}, 'field', this.value)">
+                ${FIELD_OPTIONS.map(f => `<option value="${f}" ${rule.field === f ? 'selected' : ''}>${f}</option>`).join('')}
+            </select>
+        `;
+    }
+
+    let valueInput = '';
+    if (ruleType.hasValue) {
+        const inputType = ruleType.valueType === 'number' ? 'number' : 'text';
+        valueInput = `<input type="${inputType}" value="${escapeHtml(rule.value || '')}"
+                             placeholder="${ruleType.valuePlaceholder || 'value'}"
+                             onchange="updateRule(${qfIndex}, ${ruleIndex}, 'value', this.value)"
+                             style="width: ${ruleType.valueType === 'number' ? '60px' : '120px'};">`;
+    }
+
+    return `
+        <div class="rule-item">
+            <select onchange="updateRuleType(${qfIndex}, ${ruleIndex}, this.value)">
+                ${RULE_TYPES.map(rt => `<option value="${rt.id}" ${rule.type === rt.id ? 'selected' : ''}>${rt.label}</option>`).join('')}
+            </select>
+            ${fieldSelect}
+            ${valueInput}
+            <button class="remove-btn" onclick="removeRule(${qfIndex}, ${ruleIndex})">&times;</button>
+        </div>
+    `;
+}
+
+function toggleQuickFilterExpand(index) {
+    const item = document.querySelector(`#quickFiltersList .list-item[data-index="${index}"]`);
+    item.classList.toggle('expanded');
+}
+
+function toggleQuickFilterEnabled(index, enabled) {
+    quickFilters[index].enabled = enabled;
+}
+
+function updateQuickFilterField(index, field, value) {
+    quickFilters[index][field] = value;
+    if (field === 'label' || field === 'color') {
+        renderQuickFilters();
+        const item = document.querySelector(`#quickFiltersList .list-item[data-index="${index}"]`);
+        item.classList.add('expanded');
+    }
+}
+
+function updateRuleType(qfIndex, ruleIndex, newType) {
+    const ruleType = RULE_TYPES.find(r => r.id === newType);
+    quickFilters[qfIndex].rules[ruleIndex] = {
+        type: newType,
+        field: ruleType.hasField ? FIELD_OPTIONS[0] : undefined,
+        value: ruleType.hasValue ? '' : undefined
+    };
+    renderQuickFilters();
+    const item = document.querySelector(`#quickFiltersList .list-item[data-index="${qfIndex}"]`);
+    item.classList.add('expanded');
+}
+
+function updateRule(qfIndex, ruleIndex, field, value) {
+    quickFilters[qfIndex].rules[ruleIndex][field] = value;
+}
+
+function addRule(qfIndex) {
+    quickFilters[qfIndex].rules.push({ type: 'has-tag', value: '' });
+    renderQuickFilters();
+    const item = document.querySelector(`#quickFiltersList .list-item[data-index="${qfIndex}"]`);
+    item.classList.add('expanded');
+}
+
+function removeRule(qfIndex, ruleIndex) {
+    quickFilters[qfIndex].rules.splice(ruleIndex, 1);
+    renderQuickFilters();
+    const item = document.querySelector(`#quickFiltersList .list-item[data-index="${qfIndex}"]`);
+    item.classList.add('expanded');
+}
+
+function addQuickFilter() {
+    const newId = 'qf_' + Date.now();
+    quickFilters.push({
+        id: newId,
+        label: 'New Filter',
+        color: '#666666',
+        enabled: true,
+        rules: [{ type: 'has-tag', value: '' }]
+    });
+    renderQuickFilters();
+    const items = document.querySelectorAll('#quickFiltersList .list-item');
+    items[items.length - 1].classList.add('expanded');
+}
+
+function removeQuickFilter(index) {
+    if (confirm('Remove this quick filter?')) {
+        quickFilters.splice(index, 1);
+        renderQuickFilters();
+    }
+}
+
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
+
+function buildConfig() {
+    const inheritTheme = document.getElementById('inheritTheme').checked;
+
+    // Get font family
+    let fontFamily = null;
+    const fontSelect = document.getElementById('fontFamily').value;
+    if (fontSelect === 'custom') {
+        fontFamily = document.getElementById('customFont').value;
+    } else if (fontSelect === 'system') {
+        fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+    } else if (fontSelect === 'arial') {
+        fontFamily = 'Arial, sans-serif';
+    } else if (fontSelect === 'georgia') {
+        fontFamily = 'Georgia, serif';
+    } else if (fontSelect === 'roboto') {
+        fontFamily = "'Roboto', sans-serif";
+    }
+
+    const config = {
+        // Basic
+        title: document.getElementById('widgetTitle').value,
+        defaultView: document.getElementById('defaultView').value,
+        eventsUrl: document.getElementById('eventsJsonUrl').value,
+        container: document.getElementById('containerSelector').value,
+        weekStartsOn: parseInt(document.getElementById('weekStartsOn').value),
+
+        // Display Options
+        display: {
+            showEventDots: document.getElementById('showEventDots').checked,
+            showEventCount: document.getElementById('showEventCount').checked,
+            showTimeInTitle: document.getElementById('showTimeInTitle').checked,
+            showRegistrationStatus: document.getElementById('showRegistrationStatus').checked,
+            hidePastEvents: document.getElementById('hidePastEvents').checked
+        },
+
+        // Filter Bar Options
+        filterBar: {
+            show: document.getElementById('showFilterBar').checked,
+            showQuickFilters: document.getElementById('showQuickFilters').checked,
+            showSearchBox: document.getElementById('showSearchBox').checked,
+            defaultFilter: document.getElementById('defaultFilter').value
+        },
+
+        // Behavior Options
+        behavior: {
+            eventClickBehavior: document.getElementById('eventClickBehavior').value,
+            openLinksNewTab: document.getElementById('openLinksNewTab').checked,
+            showAddToCalendar: document.getElementById('showAddToCalendar').checked
+        },
+
+        // ICS endpoint (from Setup tab)
+        icsBaseUrl: document.getElementById('icsBaseUrl').value || null,
+
+        // Map Integration
+        maps: {
+            enabled: document.getElementById('enableMapDirections').checked,
+            provider: document.getElementById('mapProvider').value
+        },
+
+        // Filters
+        filters: filters.filter(f => f.enabled).map(f => ({
+            id: f.id,
+            label: f.label,
+            prefix: f.prefix,
+            autoPopulate: f.autoPopulate || false,
+            options: f.options
+        })),
+
+        // Quick Filters
+        quickFilters: quickFilters.filter(qf => qf.enabled).map(qf => ({
+            id: qf.id,
+            label: qf.label,
+            color: qf.color,
+            rules: qf.rules.filter(r => {
+                // Remove incomplete rules
+                const ruleType = RULE_TYPES.find(rt => rt.id === r.type);
+                if (ruleType.hasValue && !r.value) return false;
+                return true;
+            })
+        })),
+
+        // CSS
+        css: {
+            inheritTheme: inheritTheme,
+            colors: inheritTheme ? {} : {
+                primary: document.getElementById('colorPrimary').value,
+                accent: document.getElementById('colorAccent').value,
+                headerBg: document.getElementById('colorHeaderBg').value,
+                headerText: document.getElementById('colorHeaderText').value,
+                filterBarBg: document.getElementById('colorFilterBarBg').value,
+                border: document.getElementById('colorBorder').value,
+                eventMorning: document.getElementById('colorEventMorning').value,
+                eventAfternoon: document.getElementById('colorEventAfternoon').value,
+                eventEvening: document.getElementById('colorEventEvening').value,
+                eventAllDay: document.getElementById('colorEventAllDay').value,
+                badgeOpen: document.getElementById('colorBadgeOpen').value,
+                badgeLimited: document.getElementById('colorBadgeLimited').value,
+                badgeFull: document.getElementById('colorBadgeFull').value
+            },
+            typography: {
+                fontFamily: fontFamily,
+                headerSize: document.getElementById('headerFontSize').value + 'px',
+                bodySize: document.getElementById('bodyFontSize').value + 'px',
+                labelSize: document.getElementById('labelFontSize').value + 'px'
+            },
+            custom: document.getElementById('customCss').value
+        }
+    };
+
+    return config;
+}
+
+function saveConfig() {
+    const config = buildConfig();
+
+    // Save to localStorage
+    localStorage.setItem('clubcalendar-config', JSON.stringify(config));
+    localStorage.setItem('clubcalendar-filters', JSON.stringify(filters));
+    localStorage.setItem('clubcalendar-quickfilters', JSON.stringify(quickFilters));
+
+    showStatus('Configuration saved successfully!', 'success');
+}
+
+// =============================================================================
+// SAVED CONFIGURATIONS MANAGEMENT
+// =============================================================================
+
+// Get all saved configurations from localStorage
+function getSavedConfigs() {
+    const saved = localStorage.getItem('clubcalendar-saved-configs');
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error('Failed to parse saved configs:', e);
+            return {};
+        }
+    }
+    return {};
+}
+
+// Save all configurations to localStorage
+function setSavedConfigs(configs) {
+    localStorage.setItem('clubcalendar-saved-configs', JSON.stringify(configs));
+}
+
+// Populate the saved configs dropdown
+function populateSavedConfigsDropdown() {
+    const select = document.getElementById('savedConfigSelect');
+    const configs = getSavedConfigs();
+
+    // Clear existing options except the first one
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    // Add saved configurations
+    const configNames = Object.keys(configs).sort();
+    configNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
+// Handle dropdown selection change
+function onConfigSelectChange() {
+    const select = document.getElementById('savedConfigSelect');
+    const deleteBtn = document.getElementById('deleteConfigBtn');
+    const configName = select.value;
+
+    // Show/hide delete button
+    deleteBtn.style.display = configName ? 'inline-block' : 'none';
+
+    if (configName) {
+        loadSavedConfig(configName);
+    }
+}
+
+// Save current configuration with a name
+function saveConfigAs() {
+    const existingName = document.getElementById('savedConfigSelect').value;
+    const defaultName = existingName || '';
+
+    const name = prompt('Enter a name for this configuration:', defaultName);
+    if (!name || !name.trim()) {
+        return;
+    }
+
+    const trimmedName = name.trim();
+    const configs = getSavedConfigs();
+
+    // Check if overwriting
+    if (configs[trimmedName]) {
+        if (!confirm(`A configuration named "${trimmedName}" already exists. Overwrite it?`)) {
+            return;
+        }
+    }
+
+    // Build and save the configuration
+    const config = buildConfig();
+    configs[trimmedName] = {
+        config: config,
+        filters: filters,
+        quickFilters: quickFilters,
+        savedAt: new Date().toISOString()
+    };
+
+    setSavedConfigs(configs);
+    populateSavedConfigsDropdown();
+
+    // Select the newly saved config
+    document.getElementById('savedConfigSelect').value = trimmedName;
+    document.getElementById('deleteConfigBtn').style.display = 'inline-block';
+
+    showStatus(`Configuration "${trimmedName}" saved successfully!`, 'success');
+}
+
+// Load a saved configuration by name
+function loadSavedConfig(name) {
+    const configs = getSavedConfigs();
+    const savedData = configs[name];
+
+    if (!savedData) {
+        showStatus(`Configuration "${name}" not found.`, 'error');
+        return;
+    }
+
+    // Restore filters and quickFilters
+    if (savedData.filters) {
+        filters = savedData.filters;
+    }
+    if (savedData.quickFilters) {
+        quickFilters = savedData.quickFilters;
+    }
+
+    // Restore main config - store temporarily and call loadConfig logic
+    if (savedData.config) {
+        localStorage.setItem('clubcalendar-config', JSON.stringify(savedData.config));
+        localStorage.setItem('clubcalendar-filters', JSON.stringify(filters));
+        localStorage.setItem('clubcalendar-quickfilters', JSON.stringify(quickFilters));
+
+        // Reload UI from localStorage
+        loadConfig();
+
+        // Re-render filters and quick filters
+        renderFilters();
+        renderQuickFilters();
+
+        // Update preview
+        setTimeout(updatePreview, 100);
+    }
+
+    showStatus(`Configuration "${name}" loaded successfully!`, 'success');
+}
+
+// Delete a saved configuration
+function deleteSelectedConfig() {
+    const select = document.getElementById('savedConfigSelect');
+    const configName = select.value;
+
+    if (!configName) {
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete the configuration "${configName}"?`)) {
+        return;
+    }
+
+    const configs = getSavedConfigs();
+    delete configs[configName];
+    setSavedConfigs(configs);
+
+    // Reset dropdown
+    populateSavedConfigsDropdown();
+    select.value = '';
+    document.getElementById('deleteConfigBtn').style.display = 'none';
+
+    showStatus(`Configuration "${configName}" deleted.`, 'success');
+}
+
+function loadConfig() {
+    // Load filters
+    const savedFilters = localStorage.getItem('clubcalendar-filters');
+    if (savedFilters) {
+        try {
+            filters = JSON.parse(savedFilters);
+        } catch (e) {
+            console.error('Failed to load filters:', e);
+        }
+    }
+
+    // Load quick filters
+    const savedQuickFilters = localStorage.getItem('clubcalendar-quickfilters');
+    if (savedQuickFilters) {
+        try {
+            quickFilters = JSON.parse(savedQuickFilters);
+        } catch (e) {
+            console.error('Failed to load quick filters:', e);
+        }
+    }
+
+    // Load main config
+    const saved = localStorage.getItem('clubcalendar-config');
+    if (saved) {
+        try {
+            const config = JSON.parse(saved);
+
+            // Basic
+            document.getElementById('widgetTitle').value = config.title || config.headerTitle || 'Club Events';
+            document.getElementById('defaultView').value = config.defaultView || 'dayGridMonth';
+            document.getElementById('eventsJsonUrl').value = config.eventsUrl || '';
+            document.getElementById('containerSelector').value = config.container || '#clubcalendar';
+            document.getElementById('weekStartsOn').value = config.weekStartsOn ?? 0;
+
+            // Display Options
+            if (config.display) {
+                document.getElementById('showEventDots').checked = config.display.showEventDots !== false;
+                document.getElementById('showEventCount').checked = config.display.showEventCount === true;
+                document.getElementById('showTimeInTitle').checked = config.display.showTimeInTitle !== false;
+                document.getElementById('showRegistrationStatus').checked = config.display.showRegistrationStatus !== false;
+                document.getElementById('hidePastEvents').checked = config.display.hidePastEvents === true;
+            }
+
+            // Filter Bar Options
+            if (config.filterBar) {
+                document.getElementById('showFilterBar').checked = config.filterBar.show !== false;
+                document.getElementById('showQuickFilters').checked = config.filterBar.showQuickFilters !== false;
+                document.getElementById('showSearchBox').checked = config.filterBar.showSearchBox !== false;
+                document.getElementById('defaultFilter').value = config.filterBar.defaultFilter || '';
+            }
+
+            // Behavior Options
+            if (config.behavior) {
+                document.getElementById('eventClickBehavior').value = config.behavior.eventClickBehavior || 'popup';
+                document.getElementById('openLinksNewTab').checked = config.behavior.openLinksNewTab !== false;
+                document.getElementById('showAddToCalendar').checked = config.behavior.showAddToCalendar !== false;
+            }
+
+            // ICS endpoint (may be at top level or under behavior for backwards compat)
+            const icsUrl = config.icsBaseUrl || (config.behavior && config.behavior.icsBaseUrl) || '';
+            document.getElementById('icsBaseUrl').value = icsUrl;
+
+            // Map Integration
+            if (config.maps) {
+                document.getElementById('enableMapDirections').checked = config.maps.enabled !== false;
+                document.getElementById('mapProvider').value = config.maps.provider || 'both';
+            }
+
+            // CSS
+            if (config.css) {
+                document.getElementById('inheritTheme').checked = config.css.inheritTheme !== false;
+
+                if (config.css.colors) {
+                    const colors = config.css.colors;
+                    setColorValue('colorPrimary', colors.primary);
+                    setColorValue('colorAccent', colors.accent);
+                    setColorValue('colorHeaderBg', colors.headerBg);
+                    setColorValue('colorHeaderText', colors.headerText);
+                    setColorValue('colorFilterBarBg', colors.filterBarBg);
+                    setColorValue('colorBorder', colors.border);
+                    setColorValue('colorEventMorning', colors.eventMorning);
+                    setColorValue('colorEventAfternoon', colors.eventAfternoon);
+                    setColorValue('colorEventEvening', colors.eventEvening);
+                    setColorValue('colorEventAllDay', colors.eventAllDay);
+                    setColorValue('colorBadgeOpen', colors.badgeOpen);
+                    setColorValue('colorBadgeLimited', colors.badgeLimited);
+                    setColorValue('colorBadgeFull', colors.badgeFull);
+                }
+
+                if (config.css.typography) {
+                    const typo = config.css.typography;
+                    if (typo.fontFamily) {
+                        // Determine which option to select
+                        if (typo.fontFamily.includes('system') || typo.fontFamily.includes('BlinkMacSystemFont')) {
+                            document.getElementById('fontFamily').value = 'system';
+                        } else if (typo.fontFamily.toLowerCase().includes('arial')) {
+                            document.getElementById('fontFamily').value = 'arial';
+                        } else if (typo.fontFamily.toLowerCase().includes('georgia')) {
+                            document.getElementById('fontFamily').value = 'georgia';
+                        } else if (typo.fontFamily.toLowerCase().includes('roboto')) {
+                            document.getElementById('fontFamily').value = 'roboto';
+                        } else {
+                            document.getElementById('fontFamily').value = 'custom';
+                            document.getElementById('customFont').value = typo.fontFamily;
+                            document.getElementById('customFontGroup').style.display = 'block';
+                        }
+                    }
+                    if (typo.headerSize) document.getElementById('headerFontSize').value = parseInt(typo.headerSize);
+                    if (typo.bodySize) document.getElementById('bodyFontSize').value = parseInt(typo.bodySize);
+                    if (typo.labelSize) document.getElementById('labelFontSize').value = parseInt(typo.labelSize);
+                }
+
+                document.getElementById('customCss').value = config.css.custom || '';
+
+                // Update color card visibility
+                document.getElementById('inheritTheme').dispatchEvent(new Event('change'));
+            }
+
+        } catch (e) {
+            console.error('Failed to load config:', e);
+        }
+    }
+
+    // Render builders
+    renderFilters();
+    renderQuickFilters();
+}
+
+function setColorValue(id, value) {
+    if (!value) return;
+    const picker = document.getElementById(id);
+    const hex = document.getElementById(id + 'Hex');
+    if (picker) picker.value = value;
+    if (hex) hex.value = value;
+}
+
+// =============================================================================
+// EMBED CODE
+// =============================================================================
+
+function showEmbedCode() {
+    const config = buildConfig();
+
+    // Build a clean config object (only non-default values)
+    let embedConfig = {
+        eventsUrl: config.eventsUrl || 'YOUR_EVENTS_JSON_URL'
+    };
+
+    if (config.title !== 'Club Events') embedConfig.headerTitle = config.title;
+    if (config.defaultView !== 'dayGridMonth') embedConfig.defaultView = config.defaultView;
+    if (config.container !== '#clubcalendar') embedConfig.container = config.container;
+    if (config.weekStartsOn !== 0) embedConfig.weekStartsOn = config.weekStartsOn;
+
+    // Display options (only include non-defaults)
+    const displayDefaults = { showEventDots: true, showEventCount: false, showTimeInTitle: true, showRegistrationStatus: true, hidePastEvents: false };
+    const displayDiff = {};
+    Object.keys(config.display).forEach(key => {
+        if (config.display[key] !== displayDefaults[key]) {
+            displayDiff[key] = config.display[key];
+        }
+    });
+    if (Object.keys(displayDiff).length > 0) embedConfig.display = displayDiff;
+
+    // Filter bar options (only include non-defaults)
+    const filterBarDefaults = { show: true, showQuickFilters: true, showSearchBox: true, defaultFilter: '' };
+    const filterBarDiff = {};
+    Object.keys(config.filterBar).forEach(key => {
+        if (config.filterBar[key] !== filterBarDefaults[key]) {
+            filterBarDiff[key] = config.filterBar[key];
+        }
+    });
+    if (Object.keys(filterBarDiff).length > 0) embedConfig.filterBar = filterBarDiff;
+
+    // Behavior options (only include non-defaults)
+    const behaviorDefaults = { eventClickBehavior: 'popup', openLinksNewTab: true, showAddToCalendar: true };
+    const behaviorDiff = {};
+    Object.keys(config.behavior).forEach(key => {
+        if (config.behavior[key] !== behaviorDefaults[key]) {
+            behaviorDiff[key] = config.behavior[key];
+        }
+    });
+    if (Object.keys(behaviorDiff).length > 0) embedConfig.behavior = behaviorDiff;
+
+    // ICS endpoint (top-level)
+    if (config.icsBaseUrl) {
+        embedConfig.icsBaseUrl = config.icsBaseUrl;
+    }
+
+    // Map options (only include non-defaults)
+    const mapsDefaults = { enabled: true, provider: 'both' };
+    const mapsDiff = {};
+    Object.keys(config.maps).forEach(key => {
+        if (config.maps[key] !== mapsDefaults[key]) {
+            mapsDiff[key] = config.maps[key];
+        }
+    });
+    if (Object.keys(mapsDiff).length > 0) embedConfig.maps = mapsDiff;
+
+    // Only include filters/quickFilters if modified
+    if (config.filters.length > 0) {
+        embedConfig.filters = config.filters;
+    }
+    if (config.quickFilters.length > 0) {
+        embedConfig.quickFilters = config.quickFilters;
+    }
+
+    // CSS config
+    if (!config.css.inheritTheme || config.css.custom || Object.keys(config.css.colors).length > 0) {
+        embedConfig.css = config.css;
+    }
+
+    const configStr = JSON.stringify(embedConfig, null, 2);
+
+    const code = `<!-- ClubCalendar Widget -->
+<div id="clubcalendar"></div>
+<script>
+window.CLUBCALENDAR_CONFIG = ${configStr};
+<\/script>
+<script src="https://cdn.example.com/clubcalendar/widget/clubcalendar-widget.js"><\/script>`;
+
+    document.getElementById('embedCode').textContent = code;
+    document.getElementById('embedModal').classList.add('open');
+}
+
+function closeEmbedModal() {
+    document.getElementById('embedModal').classList.remove('open');
+}
+
+function copyEmbedCode() {
+    const code = document.getElementById('embedCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        showStatus('Embed code copied to clipboard!', 'success');
+        closeEmbedModal();
+    });
+}
+
+// =============================================================================
+// UTILITIES
+// =============================================================================
+
+function showStatus(message, type) {
+    const status = document.getElementById('status');
+    status.textContent = message;
+    status.className = 'status ' + type;
+
+    setTimeout(() => {
+        status.className = 'status';
+    }, 3000);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// =============================================================================
+// CSS PREVIEW
+// =============================================================================
+
+function updatePreview() {
+    const inheritTheme = document.getElementById('inheritTheme').checked;
+
+    // Get colors (use defaults if inheriting theme)
+    const primary = inheritTheme ? '#2c5aa0' : document.getElementById('colorPrimary').value;
+    const headerBg = inheritTheme ? '#2c5aa0' : document.getElementById('colorHeaderBg').value;
+    const headerText = inheritTheme ? '#ffffff' : document.getElementById('colorHeaderText').value;
+    const filterBarBg = inheritTheme ? '#f8f9fa' : document.getElementById('colorFilterBarBg').value;
+    const borderColor = inheritTheme ? '#e0e0e0' : document.getElementById('colorBorder').value;
+    const eventMorning = inheritTheme ? '#ff9800' : document.getElementById('colorEventMorning').value;
+    const eventAfternoon = inheritTheme ? '#2196f3' : document.getElementById('colorEventAfternoon').value;
+    const eventEvening = inheritTheme ? '#9c27b0' : document.getElementById('colorEventEvening').value;
+    const eventAllDay = inheritTheme ? '#4caf50' : document.getElementById('colorEventAllDay').value;
+    const badgeOpen = inheritTheme ? '#e8f5e9' : document.getElementById('colorBadgeOpen').value;
+    const badgeLimited = inheritTheme ? '#fff3e0' : document.getElementById('colorBadgeLimited').value;
+    const badgeFull = inheritTheme ? '#ffebee' : document.getElementById('colorBadgeFull').value;
+
+    // Get typography
+    const headerSize = document.getElementById('headerFontSize').value + 'px';
+    const bodySize = document.getElementById('bodyFontSize').value + 'px';
+    const labelSize = document.getElementById('labelFontSize').value + 'px';
+
+    // Get font family
+    let fontFamily = 'inherit';
+    const fontSelect = document.getElementById('fontFamily').value;
+    if (fontSelect === 'custom') {
+        fontFamily = document.getElementById('customFont').value || 'inherit';
+    } else if (fontSelect === 'system') {
+        fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+    } else if (fontSelect === 'arial') {
+        fontFamily = 'Arial, sans-serif';
+    } else if (fontSelect === 'georgia') {
+        fontFamily = 'Georgia, serif';
+    } else if (fontSelect === 'roboto') {
+        fontFamily = "'Roboto', sans-serif";
+    }
+
+    // Apply to preview elements
+    const preview = document.getElementById('cssPreview');
+    preview.style.fontFamily = fontFamily;
+
+    // Header
+    const header = document.getElementById('previewHeader');
+    header.style.background = `linear-gradient(135deg, ${headerBg} 0%, ${darkenColor(headerBg, 20)} 100%)`;
+    header.style.color = headerText;
+    header.querySelector('div').style.fontSize = headerSize;
+
+    // Filter bar
+    const filterBar = document.getElementById('previewFilterBar');
+    filterBar.style.background = filterBarBg;
+    filterBar.style.borderColor = borderColor;
+
+    // Calendar border
+    const calendar = document.getElementById('previewCalendar');
+    calendar.style.borderColor = borderColor;
+
+    // Event colors
+    document.getElementById('previewEventMorning').style.background = eventMorning;
+    document.getElementById('previewEventAfternoon').style.background = eventAfternoon;
+    document.getElementById('previewEventEvening').style.background = eventEvening;
+    document.getElementById('previewEventAllDay').style.background = eventAllDay;
+
+    // Badge colors
+    const openBadge = document.getElementById('previewBadgeOpen');
+    openBadge.style.background = badgeOpen;
+    openBadge.style.color = darkenColor(badgeOpen, 60);
+
+    const limitedBadge = document.getElementById('previewBadgeLimited');
+    limitedBadge.style.background = badgeLimited;
+    limitedBadge.style.color = darkenColor(badgeLimited, 60);
+
+    const fullBadge = document.getElementById('previewBadgeFull');
+    fullBadge.style.background = badgeFull;
+    fullBadge.style.color = darkenColor(badgeFull, 60);
+
+    // Update font sizes throughout preview
+    preview.style.fontSize = bodySize;
+
+    // Update widget title in preview
+    const title = document.getElementById('widgetTitle').value || 'Club Events';
+    header.querySelector('div').textContent = title;
+}
+
+// Helper: Darken a hex color by percentage
+function darkenColor(hex, percent) {
+    hex = hex.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, (num >> 16) - Math.round(2.55 * percent));
+    const g = Math.max(0, ((num >> 8) & 0x00FF) - Math.round(2.55 * percent));
+    const b = Math.max(0, (num & 0x0000FF) - Math.round(2.55 * percent));
+    return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+}
+
+// Auto-update preview when color pickers change
+document.querySelectorAll('#tab-css input[type="color"], #tab-css input[type="number"], #tab-css select').forEach(input => {
+    input.addEventListener('change', updatePreview);
+    input.addEventListener('input', updatePreview);
+});
+
+// Also update when widget title changes
+document.getElementById('widgetTitle').addEventListener('input', updatePreview);
+
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadConfig();
+
+    // Populate saved configurations dropdown
+    populateSavedConfigsDropdown();
+
+    // Load hosting preference
+    const hostingPref = localStorage.getItem('clubcalendar-hosting');
+    if (hostingPref) {
+        selectHostingOption(hostingPref);
+    }
+
+    // Check if setup is complete (has valid URL)
+    const setupComplete = localStorage.getItem('clubcalendar-setup-complete');
+    const eventsUrl = document.getElementById('eventsJsonUrl').value.trim();
+
+    if (!eventsUrl && !setupComplete) {
+        disableOtherTabs();
+    } else if (eventsUrl) {
+        enableOtherTabs();
+    }
+
+    // Initial preview update after config loads
+    setTimeout(updatePreview, 100);
+});
+
+// Load test suite (for development)
+function loadTests() {
+    if (window.ClubCalendarTests) {
+        console.log('Tests already loaded');
+        return;
+    }
+    const script = document.createElement('script');
+    script.src = 'tests/config-tests.js';
+    script.onload = () => {
+        console.log('Tests loaded! Run: await ClubCalendarTests.runAll()');
+    };
+    document.head.appendChild(script);
+}
+</script>
+
+</body>
+</html>
