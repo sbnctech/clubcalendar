@@ -1,12 +1,18 @@
 <!--
-  ClubCalendar - Wild Apricot Native (Self-Contained)
-  ════════════════════════════════════════════════════
+  ClubCalendar - Wild Apricot Inline Widget
+  ══════════════════════════════════════════════════════════════════
 
-  Paste this ENTIRE file into a WA Custom HTML gadget.
-  NO external server required. Runs entirely on WA.
+  INSTALLATION:
+  1. Paste this ENTIRE file into a WA Custom HTML gadget
+  2. Set your waAccountId in the config section below
+  3. Save and view the page while logged in
 
-  The widget auto-detects your WA account from the page context.
-  No configuration required for basic use!
+  NO external server required. Runs entirely on Wild Apricot.
+
+  HOW TO FIND YOUR ACCOUNT ID:
+  - Log into WA Admin -> Settings (gear) -> Account Details
+  - Your Account ID is shown at the top of the page
+  - It's a 5-6 digit number like "123456"
 -->
 
 <div id="clubcalendar"></div>
@@ -14,10 +20,10 @@
 <script>
 window.CLUBCALENDAR_CONFIG = {
     // ═══════════════════════════════════════════════════════════════
-    // CREDENTIALS (Auto-detected - only set if auto-detection fails)
+    // REQUIRED: Your Wild Apricot Account ID
+    // Find it: WA Admin -> Settings -> Account Details
     // ═══════════════════════════════════════════════════════════════
-    // waAccountId: '12345',  // Optional: Auto-detected from WA page
-    // waClientId: 'abc123',  // Optional: Only needed for external hosting
+    waAccountId: 'YOUR_ACCOUNT_ID',  // <-- REPLACE with your account ID (e.g., '123456')
 
     // ═══════════════════════════════════════════════════════════════
     // OPTIONAL - Customize as needed
@@ -29,26 +35,12 @@ window.CLUBCALENDAR_CONFIG = {
     primaryColor: '#2c5aa0',
     accentColor: '#d4a800',
 
-    // Auto-tagging rules - customize for your club
+    // Auto-tagging rules - customize for YOUR club's event naming conventions
+    // Example: If your events are named "Hiking: Mt. Tamalpais Trail"
+    // add a rule like: { type: 'name-prefix', pattern: 'Hiking:', tag: 'activity:hiking' }
     autoTagRules: [
-        { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
-        { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
-        { type: 'name-prefix', pattern: 'Wine Appreciation:', tag: 'committee:wine' },
-        { type: 'name-prefix', pattern: 'Epicurious:', tag: 'committee:epicurious' },
-        { type: 'name-prefix', pattern: 'TGIF:', tag: 'committee:tgif' },
-        { type: 'name-prefix', pattern: 'Cycling:', tag: 'committee:cycling' },
-        { type: 'name-prefix', pattern: 'Golf:', tag: 'committee:golf' },
-        { type: 'name-prefix', pattern: 'Performing Arts:', tag: 'committee:performing-arts' },
-        { type: 'name-prefix', pattern: 'Local Heritage:', tag: 'committee:local-heritage' },
-        { type: 'name-prefix', pattern: 'Wellness:', tag: 'committee:wellness' },
-        { type: 'name-prefix', pattern: 'Garden:', tag: 'committee:garden' },
-        { type: 'name-prefix', pattern: 'Arts:', tag: 'committee:arts' },
-        { type: 'name-prefix', pattern: 'Current Events:', tag: 'committee:current-events' },
-        { type: 'name-prefix', pattern: 'Pop-Up:', tag: 'committee:popup' },
-        { type: 'name-prefix', pattern: 'Beer Lovers:', tag: 'committee:beer' },
-        { type: 'name-prefix', pattern: 'Out to Lunch:', tag: 'committee:out-to-lunch' },
-        { type: 'name-prefix', pattern: 'Afternoon Book:', tag: 'committee:book-clubs' },
-        { type: 'name-prefix', pattern: 'Evening Book:', tag: 'committee:book-clubs' }
+        // { type: 'name-prefix', pattern: 'Committee Name:', tag: 'committee:committee-name' },
+        // { type: 'name-prefix', pattern: 'Activity:', tag: 'activity:activity-type' }
     ]
 };
 </script>

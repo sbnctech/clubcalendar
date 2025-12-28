@@ -2,15 +2,19 @@
 
 The widget is configured via the `CLUBCALENDAR_CONFIG` object near the top of the HTML file.
 
-## Basic Configuration
+## Required Configuration
+
 ```javascript
 window.CLUBCALENDAR_CONFIG = {
-    // Display
+    // REQUIRED - Your Wild Apricot Account ID
+    waAccountId: '123456',           // Find at: Settings -> Account Details
+
+    // OPTIONAL - Display settings
     headerTitle: 'Club Events',      // Title shown above calendar
     primaryColor: '#2c5aa0',         // Main accent color
     accentColor: '#d4a800',          // Secondary accent color
-    
-    // Features
+
+    // OPTIONAL - Features
     showMyEvents: true,              // Show "My Events" tab
     showFilters: true,               // Show filter dropdowns
     defaultView: 'dayGridMonth',     // Initial calendar view
@@ -19,15 +23,16 @@ window.CLUBCALENDAR_CONFIG = {
 
 ## Available Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| headerTitle | string | 'Club Events' | Title displayed above calendar |
-| primaryColor | string | '#2c5aa0' | Primary theme color (hex) |
-| accentColor | string | '#d4a800' | Accent/highlight color (hex) |
-| showMyEvents | boolean | true | Show "My Events" tab |
-| showFilters | boolean | true | Show filter buttons and dropdowns |
-| defaultView | string | 'dayGridMonth' | Initial view |
-| container | string | '#clubcalendar' | CSS selector for widget container |
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| waAccountId | string | **YES** | - | Your WA Account ID (5-6 digits) |
+| headerTitle | string | No | 'Club Events' | Title displayed above calendar |
+| primaryColor | string | No | '#2c5aa0' | Primary theme color (hex) |
+| accentColor | string | No | '#d4a800' | Accent/highlight color (hex) |
+| showMyEvents | boolean | No | true | Show "My Events" tab |
+| showFilters | boolean | No | true | Show filter buttons and dropdowns |
+| defaultView | string | No | 'dayGridMonth' | Initial view |
+| container | string | No | '#clubcalendar' | CSS selector for widget container |
 
 ## Calendar Views
 

@@ -5,12 +5,14 @@ No external servers. No API keys. Just paste and go.
 
 ## Quick Start
 
-1. Open `clubcalendar-wa-inline.html` in a text editor
-2. Copy the ENTIRE contents (all 2,400+ lines)
-3. Paste into a WA Custom HTML gadget
-4. Save and view while logged in
+1. Find your WA Account ID (Settings -> Account Details)
+2. Open `clubcalendar-wa-inline.html` in a text editor
+3. Replace `YOUR_ACCOUNT_ID` with your actual Account ID
+4. Copy the ENTIRE contents (all 2,400+ lines)
+5. Paste into a WA Custom HTML gadget
+6. Save and view while logged in
 
-The widget auto-detects your WA account. No configuration required.
+See INSTALLATION.md for detailed steps.
 
 ## Documentation
 
@@ -25,7 +27,7 @@ The widget auto-detects your WA account. No configuration required.
 ## Features
 
 - **No External Server** - Runs 100% on Wild Apricot
-- **Auto-Detection** - Automatically detects your WA account
+- **Simple Setup** - Just add your Account ID and paste
 - **Real-Time Data** - Fetches events directly from WA API
 - **Smart Filtering** - Activity, time, price, availability
 - **My Events** - See your registered events in one place
@@ -34,7 +36,7 @@ The widget auto-detects your WA account. No configuration required.
 ## How It Works
 
 The widget:
-1. Detects your WA account from the page context
+1. Reads your Account ID from the config
 2. Fetches events from WA's internal API
 3. Renders an interactive calendar using FullCalendar
 
