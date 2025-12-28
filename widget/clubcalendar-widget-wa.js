@@ -331,7 +331,7 @@
             endDate: waEvent.EndDate || '',
             location: waEvent.Location || '',
             description: waEvent.Details?.DescriptionHtml || '',
-            url: waEvent.Url || `${window.location.origin}/event-${waEvent.Id}`,
+            url: waEvent.Url || (typeof window !== 'undefined' ? `${window.location.origin}/event-${waEvent.Id}` : `/event-${waEvent.Id}`),
             registrationUrl: waEvent.RegistrationUrl || '',
             tags: allTags,
             tagsString: allTags.join(', '),
