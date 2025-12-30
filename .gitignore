@@ -50,3 +50,10 @@ site/docs/template.html
 node_modules/
 playwright-report/
 test-results/
+
+# Distribution artifacts
+ClubCalendar-*.zip
+ClubCalendar-*/
+
+# Downloads folder
+downloads/
