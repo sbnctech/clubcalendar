@@ -253,6 +253,28 @@ Both modes include failover mechanisms:
 5. **WA Native simplicity** - No external server needed for logged-in users
 6. **Filter persistence** - Users don't re-apply filters on each visit
 7. **Extensive test coverage** - 729 automated tests verify behavior
+8. **AI-assisted maintainability** - Extensive documentation enables AI tools to fix bugs and make enhancements
+
+### Codebase and Documentation
+
+The repository contains approximately 130 files with extensive documentation specifically designed to provide context for AI-assisted maintenance:
+
+| Documentation | Purpose |
+|---------------|---------|
+| Architecture docs | System design, data flow, code organization |
+| Setup guides | Installation for custom server and Google Cloud |
+| Schema references | JSON format, API contracts |
+| Capability analysis | Requirements traceability |
+| Inline code comments | Section-by-section maintenance guides |
+
+The widget code itself includes detailed header comments explaining:
+
+- Code organization (Settings, Data Layer, UI Layer)
+- Stability ratings for each section (HIGH/MEDIUM/LOW)
+- Break risk assessment
+- When and why each section might need changes
+
+This documentation enables AI coding assistants (like Claude Code) to effectively navigate the codebase, diagnose issues, and implement fixes without requiring deep JavaScript expertise from human maintainers. The 729 automated tests provide a safety net for AI-generated changes.
 
 ### Considerations by Mode
 
