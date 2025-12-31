@@ -19,7 +19,10 @@
     "test:buddy": "playwright test --config tests/certification/playwright.config.ts",
     "test:buddy:sbnc": "playwright test sbnc-live.spec.ts --config tests/certification/playwright.config.ts",
     "certify:sbnc": "npm run test:certify:sbnc && npm run test:buddy:sbnc",
-    "certify:full": "npm run test && npm run test:e2e && npm run certify:sbnc"
+    "certify:full": "npm run test && npm run test:e2e && npm run certify:sbnc",
+    "build:widget": "npx tsx scripts/build/build-widget.ts",
+    "build:sbnc": "npx tsx scripts/build/build-widget.ts sbnc",
+    "build:interactive": "npx tsx scripts/build/build-widget.ts --interactive"
   },
   "repository": {
     "type": "git",

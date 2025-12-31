@@ -1,7 +1,7 @@
 <!--
   ╔════════════════════════════════════════════════════════════════════════════╗
-  ║  SBNC ClubCalendar Widget - INLINE ONLY Edition                                      ║
-  ║  Santa Barbara Newcomers Club                                                  ║
+  ║  ENC ClubCalendar Widget - INLINE ONLY Edition                                       ║
+  ║  Example Newcomers Club                                                        ║
   ╠════════════════════════════════════════════════════════════════════════════╣
   ║                                                                             ║
   ║  INSTALLATION:                                                              ║
@@ -22,100 +22,30 @@
 <div id="clubcalendar"></div>
 <script>
 window.CLUBCALENDAR_CONFIG = {
-    waAccountId: '176353',
-    headerTitle: 'SBNC Events',
-    primaryColor: '#2c5aa0',
-    accentColor: '#d4a800',
+    waAccountId: '123456',
+    headerTitle: 'ENC Events',
+    primaryColor: '#1a5f7a',
+    accentColor: '#ff9800',
     autoTagRules: [
         {
             type: 'name-prefix',
-            pattern: 'Happy Hikers:',
-            tag: 'committee:happy-hikers'
+            pattern: 'Hiking:',
+            tag: 'committee:hiking'
         },
         {
             type: 'name-prefix',
-            pattern: 'Games!:',
+            pattern: 'Social:',
+            tag: 'committee:social'
+        },
+        {
+            type: 'name-prefix',
+            pattern: 'Book Club:',
+            tag: 'committee:book-club'
+        },
+        {
+            type: 'name-prefix',
+            pattern: 'Games:',
             tag: 'committee:games'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Wine Appreciation:',
-            tag: 'committee:wine'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Epicurious:',
-            tag: 'committee:epicurious'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'TGIF:',
-            tag: 'committee:tgif'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Cycling:',
-            tag: 'committee:cycling'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Golf:',
-            tag: 'committee:golf'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Performing Arts:',
-            tag: 'committee:performing-arts'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Local Heritage:',
-            tag: 'committee:local-heritage'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Wellness:',
-            tag: 'committee:wellness'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Garden:',
-            tag: 'committee:garden'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Arts:',
-            tag: 'committee:arts'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Current Events:',
-            tag: 'committee:current-events'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Pop-Up:',
-            tag: 'committee:popup'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Beer Lovers:',
-            tag: 'committee:beer'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Out to Lunch:',
-            tag: 'committee:out-to-lunch'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Afternoon Book:',
-            tag: 'committee:book-clubs'
-        },
-        {
-            type: 'name-prefix',
-            pattern: 'Evening Book:',
-            tag: 'committee:book-clubs'
         }
     ],
     quickFilters: {
@@ -124,6 +54,15 @@ window.CLUBCALENDAR_CONFIG = {
         afterhours: true,
         free: false,
         public: true
+    },
+    dropdownFilters: {
+        committee: true,
+        activity: true,
+        price: true,
+        eventType: true,
+        recurring: true,
+        venue: true,
+        tags: true
     },
     publicConfig: {
         showMyEvents: false,

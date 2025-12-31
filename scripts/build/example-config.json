@@ -1,0 +1,39 @@
+{
+  "organizationName": "Example Newcomers Club",
+  "organizationShortName": "ENC",
+  "waAccountId": "123456",
+  "headerTitle": "ENC Events",
+  "primaryColor": "#1a5f7a",
+  "accentColor": "#ff9800",
+  "autoTagRules": [
+    { "type": "name-prefix", "pattern": "Hiking:", "tag": "committee:hiking" },
+    { "type": "name-prefix", "pattern": "Social:", "tag": "committee:social" },
+    { "type": "name-prefix", "pattern": "Book Club:", "tag": "committee:book-club" },
+    { "type": "name-prefix", "pattern": "Games:", "tag": "committee:games" }
+  ],
+  "quickFilters": {
+    "weekend": true,
+    "openings": true,
+    "afterhours": true,
+    "free": false,
+    "public": true
+  },
+  "dropdownFilters": {
+    "committee": true,
+    "activity": true,
+    "price": true,
+    "eventType": true,
+    "recurring": true,
+    "venue": true,
+    "tags": true
+  },
+  "publicConfig": {
+    "showMyEvents": false,
+    "quickFilters": {
+      "public": false
+    }
+  },
+  "memberConfig": {
+    "showMyEvents": true
+  }
+}
