@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubCalendar Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c5aa0;
+            --accent: #d4a800;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --border: #e1e5eb;
+            --text: #1a1a2e;
+            --text-muted: #6c757d;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), #1e3a6e);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header p { opacity: 0.9; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step:hover { border-color: var(--primary); }
+        .step.active { border-color: var(--primary); background: var(--primary); color: white; }
+        .step.completed { border-color: var(--success); }
+        .step.completed::before { content: '✓ '; color: var(--success); }
+        .step.active.completed::before { color: white; }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .step.active .step-number { background: white; color: var(--primary); }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group label .required { color: var(--danger); }
+        .form-group .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="color"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        input[type="color"] {
+            height: 50px;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .color-preview {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .color-preview input[type="text"] {
+            flex: 1;
+        }
+
+        .color-preview input[type="color"] {
+            width: 50px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 6px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .rules-container {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .rule-item {
+            display: grid;
+            grid-template-columns: 120px 1fr 1fr auto;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+
+        .rule-item select,
+        .rule-item input {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover { background: #1e4a8a; }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover { background: #218838; }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .validation-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .package-contents {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .package-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .package-item-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .package-item-info { flex: 1; }
+        .package-item-info h4 { margin-bottom: 0.25rem; }
+        .package-item-info p { font-size: 0.85rem; color: var(--text-muted); }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--success);
+            width: 0;
+            transition: width 0.3s;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-item {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .summary-item h4 {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-item p {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .rule-item {
+                grid-template-columns: 1fr;
+            }
+            .steps {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ClubCalendar Builder</h1>
+        <p>Create custom calendar widgets for Wild Apricot organizations</p>
+    </div>
+
+    <div class="container">
+        <div class="steps">
+            <div class="step active" data-step="1">
+                <span class="step-number">1</span>
+                Organization
+            </div>
+            <div class="step" data-step="2">
+                <span class="step-number">2</span>
+                Appearance
+            </div>
+            <div class="step" data-step="3">
+                <span class="step-number">3</span>
+                Filters
+            </div>
+            <div class="step" data-step="4">
+                <span class="step-number">4</span>
+                Committee Rules
+            </div>
+            <div class="step" data-step="5">
+                <span class="step-number">5</span>
+                Generate Package
+            </div>
+        </div>
+
+        <!-- Step 1: Organization -->
+        <div class="section active" data-section="1">
+            <div class="card">
+                <h2>Organization Details</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Organization Name <span class="required">*</span></label>
+                        <input type="text" id="orgName" placeholder="Santa Barbara Newcomers Club">
+                        <div class="hint">Full organization name for documentation</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Short Name <span class="required">*</span></label>
+                        <input type="text" id="orgShortName" placeholder="SBNC" maxlength="10">
+                        <div class="hint">Used in filenames and headers (max 10 chars)</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Wild Apricot Account ID <span class="required">*</span></label>
+                        <input type="text" id="waAccountId" placeholder="176353">
+                        <div class="hint">Found in WA admin under Settings &gt; Account</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Header Title</label>
+                        <input type="text" id="headerTitle" placeholder="Events" value="Events">
+                        <div class="hint">Displayed at top of calendar widget</div>
+                    </div>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="nextStep()">Next: Appearance →</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Appearance -->
+        <div class="section" data-section="2">
+            <div class="card">
+                <h2>Colors & Theme</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Primary Color</label>
+                        <div class="color-preview">
+                            <input type="text" id="primaryColorText" value="#2c5aa0">
+                            <input type="color" id="primaryColor" value="#2c5aa0">
+                        </div>
+                        <div class="hint">Main brand color for buttons, headers</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Accent Color</label>
+                        <div class="color-preview">
+                            <input type="text" id="accentColorText" value="#d4a800">
+                            <input type="color" id="accentColor" value="#d4a800">
+                        </div>
+                        <div class="hint">Secondary color for highlights, tags</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Display Options</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Default View</label>
+                        <select id="defaultView">
+                            <option value="dayGridMonth">Month Grid</option>
+                            <option value="dayGridWeek">Week Grid</option>
+                            <option value="listWeek">Week List</option>
+                            <option value="listYear">Year List</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Past Events</label>
+                        <select id="pastEventsVisible">
+                            <option value="false">Hide past events</option>
+                            <option value="true">Show past events</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="checkbox-group" style="margin-top: 1rem;">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="showHeader" checked>
+                        Show header
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="showFilters" checked>
+                        Show filters
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="showEventTags" checked>
+                        Show event tags
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="showEventDots" checked>
+                        Show calendar dots
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="showWaitlistCount">
+                        Show waitlist count
+                    </label>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-outline" onclick="prevStep()">← Back</button>
+                <button class="btn btn-primary" onclick="nextStep()">Next: Filters →</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Filters -->
+        <div class="section" data-section="3">
+            <div class="card">
+                <h2>Quick Filter Buttons</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Toggle buttons shown above the calendar</p>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="qf_weekend" checked>
+                        Weekend events
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="qf_openings" checked>
+                        Has openings
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="qf_afterhours" checked>
+                        After hours (5pm+)
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="qf_free">
+                        Free events
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="qf_public" checked>
+                        Public events
+                    </label>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Dropdown Filters</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Filter menus in the toolbar</p>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="df_committee" checked>
+                        Committee
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="df_activity" checked>
+                        Activity type
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="df_price" checked>
+                        Price
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="df_eventType" checked>
+                        Event type
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="df_recurring" checked>
+                        Recurring
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="df_venue" checked>
+                        Venue
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="df_tags" checked>
+                        Tags
+                    </label>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Member vs Public Access</h2>
+                <div class="form-grid">
+                    <div>
+                        <h4 style="margin-bottom: 0.75rem;">Members (logged in)</h4>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="member_showMyEvents" checked>
+                            Show "My Events" toggle
+                        </label>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 0.75rem;">Public (guests)</h4>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="public_showMyEvents">
+                            Show "My Events" toggle
+                        </label>
+                        <label class="checkbox-item" style="margin-top: 0.5rem;">
+                            <input type="checkbox" id="public_hidePublicFilter">
+                            Hide "Public" quick filter
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-outline" onclick="prevStep()">← Back</button>
+                <button class="btn btn-primary" onclick="nextStep()">Next: Committee Rules →</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Committee Rules -->
+        <div class="section" data-section="4">
+            <div class="card">
+                <h2>Auto-Tag Rules</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                    Automatically tag events based on their title. For example, events starting with "Hiking:"
+                    can be tagged as "committee:hiking" for filtering.
+                </p>
+
+                <div class="rules-container" id="rulesContainer">
+                    <!-- Rules will be added here -->
+                </div>
+
+                <button class="btn btn-outline btn-small" onclick="addRule()" style="margin-top: 1rem;">
+                    + Add Rule
+                </button>
+
+                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg); border-radius: 8px;">
+                    <h4 style="margin-bottom: 0.5rem;">Common Patterns</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">
+                        <strong>name-prefix</strong>: Match at start (e.g., "Hiking:" matches "Hiking: Morning Walk")<br>
+                        <strong>name-contains</strong>: Match anywhere (e.g., "workshop" matches "Spring Workshop Event")<br>
+                        <strong>name-suffix</strong>: Match at end (e.g., "social" matches "Monthly Happy Hour social")
+                    </p>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-outline" onclick="prevStep()">← Back</button>
+                <button class="btn btn-primary" onclick="nextStep()">Next: Generate Package →</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Generate -->
+        <div class="section" data-section="5">
+            <div class="card">
+                <h2>Configuration Summary</h2>
+                <div class="summary-grid" id="summaryGrid">
+                    <!-- Summary will be populated -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Package Contents</h2>
+                <div class="package-contents">
+                    <div class="package-item">
+                        <div class="package-item-icon">📄</div>
+                        <div class="package-item-info">
+                            <h4>ClubCalendar_<span class="pkg-name">ORG</span>_EVENTS_PAGE.html</h4>
+                            <p>Main widget - paste into WA Custom HTML gadget</p>
+                        </div>
+                    </div>
+                    <div class="package-item">
+                        <div class="package-item-icon">📋</div>
+                        <div class="package-item-info">
+                            <h4>INSTALLATION.md</h4>
+                            <p>Step-by-step installation instructions</p>
+                        </div>
+                    </div>
+                    <div class="package-item">
+                        <div class="package-item-icon">⚙️</div>
+                        <div class="package-item-info">
+                            <h4>config.json</h4>
+                            <p>Configuration file for future updates</p>
+                        </div>
+                    </div>
+                    <div class="package-item">
+                        <div class="package-item-icon">✓</div>
+                        <div class="package-item-info">
+                            <h4>OPERATOR_CHECKLIST.md</h4>
+                            <p>Pre-launch verification checklist</p>
+                        </div>
+                    </div>
+                    <div class="package-item">
+                        <div class="package-item-icon">🧪</div>
+                        <div class="package-item-info">
+                            <h4>certification-tests/</h4>
+                            <p>Automated test files for development</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-bar" id="progressBar" style="display: none;">
+                    <div class="progress-bar-fill" id="progressFill"></div>
+                </div>
+                <p id="progressText" style="text-align: center; display: none;"></p>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-outline" onclick="prevStep()">← Back</button>
+                <button class="btn btn-success" onclick="generatePackage()" id="generateBtn">
+                    📦 Generate & Download Package
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentStep = 1;
+        const totalSteps = 5;
+
+        // Widget core template - will be loaded
+        let WIDGET_CORE = '';
+
+        // Load widget core on page load
+        async function loadWidgetCore() {
+            try {
+                const response = await fetch('widget-core.html');
+                if (response.ok) {
+                    WIDGET_CORE = await response.text();
+                } else {
+                    console.warn('widget-core.html not found, using embedded fallback');
+                }
+            } catch (e) {
+                console.warn('Could not load widget-core.html:', e);
+            }
+        }
+
+        loadWidgetCore();
+
+        // Color sync
+        document.getElementById('primaryColor').addEventListener('input', (e) => {
+            document.getElementById('primaryColorText').value = e.target.value;
+        });
+        document.getElementById('primaryColorText').addEventListener('input', (e) => {
+            if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
+                document.getElementById('primaryColor').value = e.target.value;
+            }
+        });
+        document.getElementById('accentColor').addEventListener('input', (e) => {
+            document.getElementById('accentColorText').value = e.target.value;
+        });
+        document.getElementById('accentColorText').addEventListener('input', (e) => {
+            if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
+                document.getElementById('accentColor').value = e.target.value;
+            }
+        });
+
+        // Navigation
+        function updateStepUI() {
+            document.querySelectorAll('.step').forEach(step => {
+                const stepNum = parseInt(step.dataset.step);
+                step.classList.remove('active');
+                if (stepNum === currentStep) step.classList.add('active');
+                if (stepNum < currentStep) step.classList.add('completed');
+            });
+
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+                if (parseInt(section.dataset.section) === currentStep) {
+                    section.classList.add('active');
+                }
+            });
+
+            // Update package name displays
+            const shortName = document.getElementById('orgShortName').value.toUpperCase() || 'ORG';
+            document.querySelectorAll('.pkg-name').forEach(el => el.textContent = shortName);
+
+            // Update summary on last step
+            if (currentStep === 5) {
+                updateSummary();
+            }
+        }
+
+        function validateStep(step) {
+            if (step === 1) {
+                const orgName = document.getElementById('orgName').value.trim();
+                const shortName = document.getElementById('orgShortName').value.trim();
+                const waId = document.getElementById('waAccountId').value.trim();
+
+                if (!orgName) { alert('Organization name is required'); return false; }
+                if (!shortName) { alert('Short name is required'); return false; }
+                if (!waId) { alert('Wild Apricot Account ID is required'); return false; }
+            }
+            return true;
+        }
+
+        function nextStep() {
+            if (!validateStep(currentStep)) return;
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateStepUI();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepUI();
+            }
+        }
+
+        // Step navigation click
+        document.querySelectorAll('.step').forEach(step => {
+            step.addEventListener('click', () => {
+                const targetStep = parseInt(step.dataset.step);
+                // Allow going back or to completed steps
+                if (targetStep < currentStep || step.classList.contains('completed')) {
+                    currentStep = targetStep;
+                    updateStepUI();
+                }
+            });
+        });
+
+        // Auto-tag rules
+        let ruleCounter = 0;
+
+        function addRule(type = 'name-prefix', pattern = '', tag = '') {
+            ruleCounter++;
+            const container = document.getElementById('rulesContainer');
+            const div = document.createElement('div');
+            div.className = 'rule-item';
+            div.id = `rule-${ruleCounter}`;
+            div.innerHTML = `
+                <select>
+                    <option value="name-prefix" ${type === 'name-prefix' ? 'selected' : ''}>Prefix</option>
+                    <option value="name-contains" ${type === 'name-contains' ? 'selected' : ''}>Contains</option>
+                    <option value="name-suffix" ${type === 'name-suffix' ? 'selected' : ''}>Suffix</option>
+                </select>
+                <input type="text" placeholder="Pattern (e.g., Hiking:)" value="${pattern}">
+                <input type="text" placeholder="Tag (e.g., committee:hiking)" value="${tag}">
+                <button class="btn btn-danger btn-small" onclick="removeRule(${ruleCounter})">×</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeRule(id) {
+            document.getElementById(`rule-${id}`).remove();
+        }
+
+        // Add initial empty rule
+        addRule();
+
+        function getRules() {
+            const rules = [];
+            document.querySelectorAll('.rule-item').forEach(item => {
+                const type = item.querySelector('select').value;
+                const pattern = item.querySelectorAll('input')[0].value.trim();
+                const tag = item.querySelectorAll('input')[1].value.trim();
+                if (pattern && tag) {
+                    rules.push({ type, pattern, tag });
+                }
+            });
+            return rules;
+        }
+
+        function getConfig() {
+            return {
+                organizationName: document.getElementById('orgName').value.trim(),
+                organizationShortName: document.getElementById('orgShortName').value.trim().toUpperCase(),
+                waAccountId: document.getElementById('waAccountId').value.trim(),
+                headerTitle: document.getElementById('headerTitle').value.trim() || 'Events',
+                primaryColor: document.getElementById('primaryColorText').value,
+                accentColor: document.getElementById('accentColorText').value,
+                defaultView: document.getElementById('defaultView').value,
+                pastEventsVisible: document.getElementById('pastEventsVisible').value === 'true',
+                showHeader: document.getElementById('showHeader').checked,
+                showFilters: document.getElementById('showFilters').checked,
+                showEventTags: document.getElementById('showEventTags').checked,
+                showEventDots: document.getElementById('showEventDots').checked,
+                showWaitlistCount: document.getElementById('showWaitlistCount').checked,
+                quickFilters: {
+                    weekend: document.getElementById('qf_weekend').checked,
+                    openings: document.getElementById('qf_openings').checked,
+                    afterhours: document.getElementById('qf_afterhours').checked,
+                    free: document.getElementById('qf_free').checked,
+                    public: document.getElementById('qf_public').checked
+                },
+                dropdownFilters: {
+                    committee: document.getElementById('df_committee').checked,
+                    activity: document.getElementById('df_activity').checked,
+                    price: document.getElementById('df_price').checked,
+                    eventType: document.getElementById('df_eventType').checked,
+                    recurring: document.getElementById('df_recurring').checked,
+                    venue: document.getElementById('df_venue').checked,
+                    tags: document.getElementById('df_tags').checked
+                },
+                autoTagRules: getRules(),
+                memberConfig: {
+                    showMyEvents: document.getElementById('member_showMyEvents').checked
+                },
+                publicConfig: {
+                    showMyEvents: document.getElementById('public_showMyEvents').checked,
+                    quickFilters: {
+                        public: !document.getElementById('public_hidePublicFilter').checked
+                    }
+                }
+            };
+        }
+
+        function updateSummary() {
+            const config = getConfig();
+            const grid = document.getElementById('summaryGrid');
+            grid.innerHTML = `
+                <div class="summary-item">
+                    <h4>Organization</h4>
+                    <p>${config.organizationName}</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Short Name</h4>
+                    <p>${config.organizationShortName}</p>
+                </div>
+                <div class="summary-item">
+                    <h4>WA Account ID</h4>
+                    <p>${config.waAccountId}</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Auto-Tag Rules</h4>
+                    <p>${config.autoTagRules.length} rules</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Quick Filters</h4>
+                    <p>${Object.values(config.quickFilters).filter(v => v).length} enabled</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Dropdown Filters</h4>
+                    <p>${Object.values(config.dropdownFilters).filter(v => v).length} enabled</p>
+                </div>
+            `;
+        }
+
+        // Generate package
+        async function generatePackage() {
+            const config = getConfig();
+            const shortName = config.organizationShortName;
+            const lowerName = shortName.toLowerCase();
+
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const generateBtn = document.getElementById('generateBtn');
+
+            progressBar.style.display = 'block';
+            progressText.style.display = 'block';
+            generateBtn.disabled = true;
+
+            const zip = new JSZip();
+
+            // Progress helper
+            const setProgress = (pct, text) => {
+                progressFill.style.width = pct + '%';
+                progressText.textContent = text;
+            };
+
+            try {
+                setProgress(10, 'Generating widget...');
+                await new Promise(r => setTimeout(r, 200));
+
+                // 1. Widget HTML
+                const widgetHtml = generateWidgetHtml(config);
+                zip.file(`ClubCalendar_${shortName}_EVENTS_PAGE.html`, widgetHtml);
+
+                setProgress(30, 'Creating documentation...');
+                await new Promise(r => setTimeout(r, 200));
+
+                // 2. Installation docs
+                const installation = generateInstallationDoc(config);
+                zip.file('INSTALLATION.md', installation);
+
+                // 3. Config JSON
+                zip.file('config.json', JSON.stringify(config, null, 2));
+
+                setProgress(50, 'Creating checklist...');
+                await new Promise(r => setTimeout(r, 200));
+
+                // 4. Operator checklist
+                const checklist = generateOperatorChecklist(config);
+                zip.file('OPERATOR_CHECKLIST.md', checklist);
+
+                setProgress(70, 'Generating test files...');
+                await new Promise(r => setTimeout(r, 200));
+
+                // 5. Certification tests
+                const testFolder = zip.folder('certification-tests');
+                const profile = generateProfileTs(config);
+                const tests = generateTestTs(config);
+                testFolder.file(`${lowerName}-profile.ts`, profile);
+                testFolder.file(`${lowerName}-certification.test.ts`, tests);
+
+                setProgress(85, 'Creating README...');
+                await new Promise(r => setTimeout(r, 200));
+
+                // 6. README
+                const readme = generateReadme(config);
+                zip.file('README.md', readme);
+
+                setProgress(95, 'Packaging...');
+                await new Promise(r => setTimeout(r, 200));
+
+                // Generate and download
+                const blob = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ClubCalendar_${shortName}_Package.zip`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                setProgress(100, 'Download started!');
+
+            } catch (error) {
+                alert('Error generating package: ' + error.message);
+                console.error(error);
+            } finally {
+                generateBtn.disabled = false;
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressText.style.display = 'none';
+                    progressFill.style.width = '0';
+                }, 2000);
+            }
+        }
+
+        // File generators
+        function generateWidgetHtml(config) {
+            const shortName = config.organizationShortName;
+            const fullName = config.organizationName;
+            const date = new Date().toISOString().split('T')[0];
+
+            // Build config object for embedding
+            const embedConfig = {
+                waAccountId: config.waAccountId,
+                headerTitle: config.headerTitle,
+                primaryColor: config.primaryColor,
+                accentColor: config.accentColor,
+                defaultView: config.defaultView,
+                showHeader: config.showHeader,
+                showFilters: config.showFilters,
+                showEventTags: config.showEventTags,
+                showEventDots: config.showEventDots,
+                showWaitlistCount: config.showWaitlistCount,
+                pastEventsVisible: config.pastEventsVisible,
+                quickFilters: config.quickFilters,
+                dropdownFilters: config.dropdownFilters,
+                autoTagRules: config.autoTagRules,
+                memberConfig: config.memberConfig,
+                publicConfig: config.publicConfig
+            };
+
+            const configStr = JSON.stringify(embedConfig, null, 4)
+                .replace(/"([^"]+)":/g, '$1:')
+                .replace(/"/g, "'");
+
+            let html = `<!--
+  ╔════════════════════════════════════════════════════════════════════════════╗
+  ║  ${shortName} ClubCalendar Widget - INLINE ONLY Edition                    ║
+  ║  ${fullName}                                                               ║
+  ╠════════════════════════════════════════════════════════════════════════════╣
+  ║                                                                             ║
+  ║  INSTALLATION:                                                              ║
+  ║  1. Copy this ENTIRE file                                                   ║
+  ║  2. Paste into a Wild Apricot Custom HTML gadget                           ║
+  ║  3. Save and view the page while logged in                                 ║
+  ║                                                                             ║
+  ║  NO EXTERNAL DEPENDENCIES:                                                  ║
+  ║  - No external server hosting required                                      ║
+  ║  - No script src loading required                                          ║
+  ║  - Runs entirely within Wild Apricot                                       ║
+  ║                                                                             ║
+  ║  Generated: ${date}                                                         ║
+  ║  Built with: ClubCalendar Builder                                          ║
+  ║                                                                             ║
+  ╚════════════════════════════════════════════════════════════════════════════╝
+-->
+
+<div id="clubcalendar"></div>
+
+<script>
+window.CLUBCALENDAR_CONFIG = ${configStr};
+</script>
+
+`;
+
+            // Append widget core if loaded
+            if (WIDGET_CORE) {
+                html += WIDGET_CORE;
+            } else {
+                html += `<!-- Widget core not loaded - copy from widget-core.html -->
+<script>
+console.error('ClubCalendar: Widget core not embedded. Please ensure widget-core.html is available.');
+</script>`;
+            }
+
+            return html;
+        }
+
+        function generateInstallationDoc(config) {
+            const shortName = config.organizationShortName;
+            return `# ${config.organizationName} - ClubCalendar Installation Guide
+
+## Quick Start
+
+1. **Open Wild Apricot Admin**
+   - Log in to your WA admin panel
+
+2. **Create Events Page**
+   - Go to Website > Site pages
+   - Create a new page or edit existing Events page
+   - Add a "Custom HTML" gadget
+
+3. **Install Widget**
+   - Open \`ClubCalendar_${shortName}_EVENTS_PAGE.html\`
+   - Copy the ENTIRE contents
+   - Paste into the Custom HTML gadget
+   - Save the page
+
+4. **Test**
+   - View the page while logged in as a member
+   - Verify events load correctly
+   - Test the filter buttons
+
+## Configuration
+
+Your widget is configured with:
+
+- **WA Account ID**: ${config.waAccountId}
+- **Header**: "${config.headerTitle}"
+- **Colors**: Primary ${config.primaryColor}, Accent ${config.accentColor}
+- **Auto-Tag Rules**: ${config.autoTagRules.length} committee rules
+
+## Auto-Tag Rules
+
+Events are automatically tagged based on their title:
+
+| Pattern | Tag |
+|---------|-----|
+${config.autoTagRules.map(r => `| ${r.pattern} | ${r.tag} |`).join('\n')}
+
+## Troubleshooting
+
+### Events not loading
+- Verify WA Account ID is correct: ${config.waAccountId}
+- Check browser console for errors
+- Ensure you're logged in to WA
+
+### Filters not working
+- Ensure auto-tag rules match your event naming conventions
+- Check that committee dropdown is enabled
+
+## Support
+
+For issues, check:
+- OPERATOR_CHECKLIST.md for verification steps
+- config.json for your configuration backup
+
+Generated: ${new Date().toISOString().split('T')[0]}
+`;
+        }
+
+        function generateOperatorChecklist(config) {
+            const shortName = config.organizationShortName;
+            return `# ${config.organizationName} - Operator Checklist
+
+Use this checklist before going live with ClubCalendar.
+
+## Pre-Installation
+
+- [ ] Backup existing events page content
+- [ ] Verify WA Account ID: ${config.waAccountId}
+- [ ] Test on staging/playground site first
+
+## Installation Verification
+
+- [ ] Widget HTML pasted into Custom HTML gadget
+- [ ] Page saved without errors
+- [ ] Calendar renders on page load
+
+## Functionality Tests
+
+### As Member (logged in)
+
+- [ ] Calendar loads with events
+- [ ] Month/Week/List views work
+- [ ] Event details show on click
+- [ ] "My Events" toggle works (if enabled)
+- [ ] Quick filters respond to clicks
+- [ ] Dropdown filters show correct options
+
+### Committee Filters
+
+${config.autoTagRules.map(r => `- [ ] "${r.pattern}" events show as ${r.tag}`).join('\n')}
+
+### As Guest (logged out)
+
+- [ ] Public events display correctly
+- [ ] Member-only events are hidden
+- [ ] Registration links work
+
+## Performance
+
+- [ ] Page loads in under 3 seconds
+- [ ] No console errors
+- [ ] Mobile view works correctly
+
+## Go-Live
+
+- [ ] Stakeholder approval obtained
+- [ ] Old events page archived
+- [ ] New page linked in navigation
+- [ ] Announcement sent to members
+
+---
+
+Completed by: _______________________
+
+Date: _______________________
+
+${shortName} ClubCalendar v1.0
+Generated: ${new Date().toISOString().split('T')[0]}
+`;
+        }
+
+        function generateReadme(config) {
+            const shortName = config.organizationShortName;
+            return `# ${config.organizationName} ClubCalendar Package
+
+This package contains everything needed to deploy ClubCalendar for ${config.organizationName}.
+
+## Contents
+
+| File | Description |
+|------|-------------|
+| ClubCalendar_${shortName}_EVENTS_PAGE.html | Main widget - paste into WA |
+| INSTALLATION.md | Step-by-step installation guide |
+| OPERATOR_CHECKLIST.md | Pre-launch verification checklist |
+| config.json | Configuration backup for updates |
+| certification-tests/ | Automated tests for developers |
+
+## Quick Install
+
+1. Open \`ClubCalendar_${shortName}_EVENTS_PAGE.html\`
+2. Copy entire contents
+3. Paste into WA Custom HTML gadget
+4. Save and test
+
+## Configuration Summary
+
+- **Organization**: ${config.organizationName} (${shortName})
+- **WA Account ID**: ${config.waAccountId}
+- **Primary Color**: ${config.primaryColor}
+- **Accent Color**: ${config.accentColor}
+- **Auto-Tag Rules**: ${config.autoTagRules.length}
+
+## Need Changes?
+
+To modify this configuration:
+1. Go to ClubCalendar Builder
+2. Upload config.json
+3. Make changes
+4. Generate new package
+
+---
+
+Generated: ${new Date().toISOString().split('T')[0]}
+Built with ClubCalendar Builder
+`;
+        }
+
+        function generateProfileTs(config) {
+            const shortName = config.organizationShortName;
+            const varName = shortName.replace(/[^A-Z0-9]/g, '_');
+
+            return `/**
+ * ${config.organizationName} Build Profile
+ *
+ * Auto-generated by ClubCalendar Builder
+ * ${new Date().toISOString().split('T')[0]}
+ */
+
+import { BuildProfile } from './config-schema';
+
+export const ${varName}_AUTO_TAG_RULES = ${JSON.stringify(config.autoTagRules, null, 2)};
+
+export const ${varName}_PROFILE: BuildProfile = {
+  name: '${shortName}',
+  description: '${config.organizationName}',
+  config: ${JSON.stringify({
+    waAccountId: config.waAccountId,
+    headerTitle: config.headerTitle,
+    primaryColor: config.primaryColor,
+    accentColor: config.accentColor,
+    autoTagRules: config.autoTagRules,
+    quickFilters: config.quickFilters,
+    dropdownFilters: config.dropdownFilters,
+    publicConfig: config.publicConfig,
+    memberConfig: config.memberConfig,
+  }, null, 4)},
+  expectedBehaviors: [
+    {
+      description: 'WA Account ID is set to ${shortName} (${config.waAccountId})',
+      test: (config) => config.waAccountId === '${config.waAccountId}',
+    },
+    {
+      description: 'Has ${config.autoTagRules.length} auto-tag rules',
+      test: (config) => config.autoTagRules.length === ${config.autoTagRules.length},
+    },
+  ],
+  sampleEventTitles: [
+${config.autoTagRules.map(rule => `    '${rule.pattern} Sample Event',`).join('\n')}
+  ],
+};
+`;
+        }
+
+        function generateTestTs(config) {
+            const shortName = config.organizationShortName;
+            const varName = shortName.replace(/[^A-Z0-9]/g, '_');
+            const lowerName = shortName.toLowerCase();
+
+            return `/**
+ * ${config.organizationName} Build Certification Tests
+ *
+ * Auto-generated by ClubCalendar Builder
+ * Run with: npm run test:certify:${lowerName}
+ */
+
+import { describe, it, expect, beforeAll } from 'vitest';
+import { applyAutoTags } from '../../widget/src/core';
+import { DEFAULT_CONFIG, ClubCalendarConfig } from './config-schema';
+import { ${varName}_PROFILE, ${varName}_AUTO_TAG_RULES } from './${lowerName}-profile';
+
+function mergeConfig(base: ClubCalendarConfig, overrides: Partial<ClubCalendarConfig>): ClubCalendarConfig {
+  const result = { ...base };
+  for (const key of Object.keys(overrides) as (keyof ClubCalendarConfig)[]) {
+    const value = overrides[key];
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      (result as any)[key] = { ...(result as any)[key], ...value };
+    } else if (value !== undefined) {
+      (result as any)[key] = value;
+    }
+  }
+  return result;
+}
+
+describe('${shortName} Build Profile Validation', () => {
+  let config: ClubCalendarConfig;
+
+  beforeAll(() => {
+    config = mergeConfig(DEFAULT_CONFIG, ${varName}_PROFILE.config);
+  });
+
+  it('should have valid profile definition', () => {
+    expect(${varName}_PROFILE.name).toBe('${shortName}');
+    expect(${varName}_PROFILE.config.waAccountId).toBe('${config.waAccountId}');
+  });
+
+  describe('Expected behaviors', () => {
+    for (const behavior of ${varName}_PROFILE.expectedBehaviors) {
+      it(behavior.description, () => {
+        expect(behavior.test(config)).toBe(true);
+      });
+    }
+  });
+});
+
+describe('${shortName} Auto-Tag Rules', () => {
+  it('should have ${config.autoTagRules.length} rules', () => {
+    expect(${varName}_AUTO_TAG_RULES.length).toBe(${config.autoTagRules.length});
+  });
+
+${config.autoTagRules.map((rule, i) => `
+  it('rule ${i + 1}: "${rule.pattern}" → "${rule.tag}"', () => {
+    const tags = applyAutoTags({ Name: '${rule.pattern} Test Event' }, ${varName}_AUTO_TAG_RULES);
+    expect(tags).toContain('${rule.tag}');
+  });
+`).join('')}
+});
+
+describe('${shortName} Certification Summary', () => {
+  it('should report certification stats', () => {
+    console.log('\\n═══════════════════════════════════════════════════════════════');
+    console.log('${shortName} BUILD CERTIFICATION SUMMARY');
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(\`Build Profile: \${${varName}_PROFILE.name}\`);
+    console.log(\`WA Account ID: \${${varName}_PROFILE.config.waAccountId}\`);
+    console.log(\`Auto-Tag Rules: \${${varName}_AUTO_TAG_RULES.length}\`);
+    console.log('═══════════════════════════════════════════════════════════════\\n');
+  });
+});
+`;
+        }
+    </script>
+</body>
+</html>
