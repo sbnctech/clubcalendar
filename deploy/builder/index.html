@@ -336,6 +336,84 @@
             font-weight: 600;
         }
 
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            background: var(--card-bg);
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .preset-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .preset-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            min-width: 250px;
+            margin-top: 0.25rem;
+        }
+
+        .preset-menu.show {
+            display: block;
+        }
+
+        .preset-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preset-item:last-child {
+            border-bottom: none;
+        }
+
+        .preset-item:hover {
+            background: var(--bg);
+        }
+
+        .preset-item h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.95rem;
+        }
+
+        .preset-item p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        #configFileInput {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .rule-item {
                 grid-template-columns: 1fr;
@@ -354,6 +432,36 @@
     </div>
 
     <div class="container">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="preset-dropdown">
+                <button class="toolbar-btn" onclick="togglePresetMenu()">
+                    📋 Load Preset ▼
+                </button>
+                <div class="preset-menu" id="presetMenu">
+                    <div class="preset-item" onclick="loadPreset('sbnc')">
+                        <h4>SBNC - Santa Barbara Newcomers</h4>
+                        <p>18 committees, full configuration</p>
+                    </div>
+                    <div class="preset-item" onclick="loadPreset('minimal')">
+                        <h4>Minimal</h4>
+                        <p>Basic setup, no auto-tag rules</p>
+                    </div>
+                    <div class="preset-item" onclick="loadPreset('example')">
+                        <h4>Example Newcomers Club</h4>
+                        <p>4 committees, demo configuration</p>
+                    </div>
+                </div>
+            </div>
+            <button class="toolbar-btn" onclick="document.getElementById('configFileInput').click()">
+                📂 Load Config
+            </button>
+            <button class="toolbar-btn" onclick="saveConfig()">
+                💾 Save Config
+            </button>
+            <input type="file" id="configFileInput" accept=".json" onchange="loadConfigFile(event)">
+        </div>
+
         <div class="steps">
             <div class="step active" data-step="1">
                 <span class="step-number">1</span>
@@ -694,6 +802,219 @@
         }
 
         loadWidgetCore();
+
+        // ═══════════════════════════════════════════════════════════════
+        // PRESET CONFIGURATIONS
+        // ═══════════════════════════════════════════════════════════════
+
+        const PRESETS = {
+            sbnc: {
+                organizationName: 'Santa Barbara Newcomers Club',
+                organizationShortName: 'SBNC',
+                waAccountId: '176353',
+                headerTitle: 'SBNC Events',
+                primaryColor: '#2c5aa0',
+                accentColor: '#d4a800',
+                defaultView: 'dayGridMonth',
+                showHeader: true,
+                showFilters: true,
+                showEventTags: true,
+                showEventDots: true,
+                showWaitlistCount: false,
+                pastEventsVisible: false,
+                quickFilters: {
+                    weekend: true,
+                    openings: true,
+                    afterhours: true,
+                    free: false,
+                    public: true
+                },
+                dropdownFilters: {
+                    committee: true,
+                    activity: true,
+                    price: true,
+                    eventType: true,
+                    recurring: true,
+                    venue: true,
+                    tags: true
+                },
+                autoTagRules: [
+                    { type: 'name-prefix', pattern: 'Happy Hikers:', tag: 'committee:happy-hikers' },
+                    { type: 'name-prefix', pattern: 'Games!:', tag: 'committee:games' },
+                    { type: 'name-prefix', pattern: 'Wine Appreciation:', tag: 'committee:wine' },
+                    { type: 'name-prefix', pattern: 'Epicurious:', tag: 'committee:epicurious' },
+                    { type: 'name-prefix', pattern: 'TGIF:', tag: 'committee:tgif' },
+                    { type: 'name-prefix', pattern: 'Cycling:', tag: 'committee:cycling' },
+                    { type: 'name-prefix', pattern: 'Golf:', tag: 'committee:golf' },
+                    { type: 'name-prefix', pattern: 'Performing Arts:', tag: 'committee:performing-arts' },
+                    { type: 'name-prefix', pattern: 'Local Heritage:', tag: 'committee:local-heritage' },
+                    { type: 'name-prefix', pattern: 'Wellness:', tag: 'committee:wellness' },
+                    { type: 'name-prefix', pattern: 'Garden:', tag: 'committee:garden' },
+                    { type: 'name-prefix', pattern: 'Arts:', tag: 'committee:arts' },
+                    { type: 'name-prefix', pattern: 'Current Events:', tag: 'committee:current-events' },
+                    { type: 'name-prefix', pattern: 'Pop-Up:', tag: 'committee:popup' },
+                    { type: 'name-prefix', pattern: 'Beer Lovers:', tag: 'committee:beer' },
+                    { type: 'name-prefix', pattern: 'Out to Lunch:', tag: 'committee:out-to-lunch' },
+                    { type: 'name-prefix', pattern: 'Afternoon Book:', tag: 'committee:book-clubs' },
+                    { type: 'name-prefix', pattern: 'Evening Book:', tag: 'committee:book-clubs' }
+                ],
+                memberConfig: { showMyEvents: true },
+                publicConfig: { showMyEvents: false, quickFilters: { public: false } }
+            },
+            minimal: {
+                organizationName: 'My Organization',
+                organizationShortName: 'ORG',
+                waAccountId: '',
+                headerTitle: 'Events',
+                primaryColor: '#2c5aa0',
+                accentColor: '#d4a800',
+                autoTagRules: []
+            },
+            example: {
+                organizationName: 'Example Newcomers Club',
+                organizationShortName: 'ENC',
+                waAccountId: '123456',
+                headerTitle: 'ENC Events',
+                primaryColor: '#1a5f7a',
+                accentColor: '#ff9800',
+                autoTagRules: [
+                    { type: 'name-prefix', pattern: 'Hiking:', tag: 'committee:hiking' },
+                    { type: 'name-prefix', pattern: 'Social:', tag: 'committee:social' },
+                    { type: 'name-prefix', pattern: 'Book Club:', tag: 'committee:book-club' },
+                    { type: 'name-prefix', pattern: 'Games:', tag: 'committee:games' }
+                ]
+            }
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // SAVE / LOAD CONFIGURATION
+        // ═══════════════════════════════════════════════════════════════
+
+        function togglePresetMenu() {
+            const menu = document.getElementById('presetMenu');
+            menu.classList.toggle('show');
+        }
+
+        // Close preset menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.querySelector('.preset-dropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                document.getElementById('presetMenu').classList.remove('show');
+            }
+        });
+
+        function loadPreset(name) {
+            const preset = PRESETS[name];
+            if (!preset) {
+                alert('Preset not found: ' + name);
+                return;
+            }
+            applyConfig(preset);
+            document.getElementById('presetMenu').classList.remove('show');
+            currentStep = 1;
+            updateStepUI();
+        }
+
+        function saveConfig() {
+            const config = getConfig();
+            const json = JSON.stringify(config, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'clubcalendar-config-' + config.organizationShortName.toLowerCase() + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadConfigFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    applyConfig(config);
+                    currentStep = 1;
+                    updateStepUI();
+                } catch (err) {
+                    alert('Invalid configuration file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset for same file selection
+        }
+
+        function applyConfig(config) {
+            // Organization
+            document.getElementById('orgName').value = config.organizationName || '';
+            document.getElementById('orgShortName').value = config.organizationShortName || '';
+            document.getElementById('waAccountId').value = config.waAccountId || '';
+            document.getElementById('headerTitle').value = config.headerTitle || 'Events';
+
+            // Colors
+            if (config.primaryColor) {
+                document.getElementById('primaryColor').value = config.primaryColor;
+                document.getElementById('primaryColorText').value = config.primaryColor;
+            }
+            if (config.accentColor) {
+                document.getElementById('accentColor').value = config.accentColor;
+                document.getElementById('accentColorText').value = config.accentColor;
+            }
+
+            // Display options
+            document.getElementById('defaultView').value = config.defaultView || 'dayGridMonth';
+            document.getElementById('pastEventsVisible').value = config.pastEventsVisible ? 'true' : 'false';
+            document.getElementById('showHeader').checked = config.showHeader !== false;
+            document.getElementById('showFilters').checked = config.showFilters !== false;
+            document.getElementById('showEventTags').checked = config.showEventTags !== false;
+            document.getElementById('showEventDots').checked = config.showEventDots !== false;
+            document.getElementById('showWaitlistCount').checked = config.showWaitlistCount === true;
+
+            // Quick filters
+            if (config.quickFilters) {
+                document.getElementById('qf_weekend').checked = config.quickFilters.weekend !== false;
+                document.getElementById('qf_openings').checked = config.quickFilters.openings !== false;
+                document.getElementById('qf_afterhours').checked = config.quickFilters.afterhours !== false;
+                document.getElementById('qf_free').checked = config.quickFilters.free === true;
+                document.getElementById('qf_public').checked = config.quickFilters.public !== false;
+            }
+
+            // Dropdown filters
+            if (config.dropdownFilters) {
+                document.getElementById('df_committee').checked = config.dropdownFilters.committee !== false;
+                document.getElementById('df_activity').checked = config.dropdownFilters.activity !== false;
+                document.getElementById('df_price').checked = config.dropdownFilters.price !== false;
+                document.getElementById('df_eventType').checked = config.dropdownFilters.eventType !== false;
+                document.getElementById('df_recurring').checked = config.dropdownFilters.recurring !== false;
+                document.getElementById('df_venue').checked = config.dropdownFilters.venue !== false;
+                document.getElementById('df_tags').checked = config.dropdownFilters.tags !== false;
+            }
+
+            // Member/public config
+            if (config.memberConfig) {
+                document.getElementById('member_showMyEvents').checked = config.memberConfig.showMyEvents !== false;
+            }
+            if (config.publicConfig) {
+                document.getElementById('public_showMyEvents').checked = config.publicConfig.showMyEvents === true;
+                document.getElementById('public_hidePublicFilter').checked =
+                    config.publicConfig.quickFilters && config.publicConfig.quickFilters.public === false;
+            }
+
+            // Auto-tag rules - clear and rebuild
+            const container = document.getElementById('rulesContainer');
+            container.innerHTML = '';
+            ruleCounter = 0;
+
+            if (config.autoTagRules && config.autoTagRules.length > 0) {
+                for (const rule of config.autoTagRules) {
+                    addRule(rule.type, rule.pattern, rule.tag);
+                }
+            } else {
+                addRule(); // Add empty rule
+            }
+        }
 
         // Color sync
         document.getElementById('primaryColor').addEventListener('input', (e) => {

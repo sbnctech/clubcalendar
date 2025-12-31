@@ -443,3 +443,152 @@ describe('Builder SBNC Profile Compatibility', () => {
     expect(ruleMatches!.length).toBeGreaterThanOrEqual(18);
   });
 });
+
+describe('Builder Presets', () => {
+  const builderHtml = fs.readFileSync(path.join(__dirname, '../../deploy/builder/index.html'), 'utf-8');
+
+  it('should have SBNC preset with all 18 committees', () => {
+    expect(builderHtml).toContain("organizationName: 'Santa Barbara Newcomers Club'");
+    expect(builderHtml).toContain("waAccountId: '176353'");
+    expect(builderHtml).toContain("pattern: 'Happy Hikers:'");
+    expect(builderHtml).toContain("pattern: 'Evening Book:'");
+  });
+
+  it('should have minimal preset', () => {
+    expect(builderHtml).toContain("organizationName: 'My Organization'");
+    expect(builderHtml).toContain("organizationShortName: 'ORG'");
+  });
+
+  it('should have example preset', () => {
+    expect(builderHtml).toContain("organizationName: 'Example Newcomers Club'");
+    expect(builderHtml).toContain("pattern: 'Hiking:'");
+  });
+
+  it('should have save/load functions', () => {
+    expect(builderHtml).toContain('function saveConfig()');
+    expect(builderHtml).toContain('function loadConfigFile(event)');
+    expect(builderHtml).toContain('function applyConfig(config)');
+    expect(builderHtml).toContain('function loadPreset(name)');
+  });
+
+  it('should have toolbar with save/load buttons', () => {
+    expect(builderHtml).toContain('Load Preset');
+    expect(builderHtml).toContain('Load Config');
+    expect(builderHtml).toContain('Save Config');
+  });
+});
+
+describe('Builder Validation Edge Cases', () => {
+  it('should handle empty auto-tag rules array', () => {
+    const result = validateConfig({
+      organizationName: 'Test',
+      organizationShortName: 'T',
+      waAccountId: '123',
+      autoTagRules: [],
+    });
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toContain('No autoTagRules defined - committee filtering will not work');
+  });
+
+  it('should handle missing optional fields', () => {
+    const result = validateConfig({
+      organizationName: 'Test',
+      organizationShortName: 'T',
+      waAccountId: '123',
+    });
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toContain('No headerTitle specified - will use default "Club Events"');
+  });
+
+  it('should validate multiple auto-tag rules', () => {
+    const result = validateConfig({
+      organizationName: 'Test',
+      organizationShortName: 'T',
+      waAccountId: '123',
+      autoTagRules: [
+        { type: 'name-prefix', pattern: 'A:', tag: 'a' },
+        { type: 'name-contains', pattern: 'B', tag: 'b' },
+        { type: 'name-suffix', pattern: 'C', tag: 'c' },
+      ],
+    });
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('should reject multiple invalid rules with specific errors', () => {
+    const result = validateConfig({
+      organizationName: 'Test',
+      organizationShortName: 'T',
+      waAccountId: '123',
+      autoTagRules: [
+        { type: 'invalid' as any, pattern: '', tag: '' },
+        { type: 'name-prefix', pattern: 'Valid:', tag: '' },
+      ],
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(2);
+  });
+
+  it('should accept 3-character hex colors with alpha', () => {
+    const result = validateConfig({
+      organizationName: 'Test',
+      organizationShortName: 'T',
+      waAccountId: '123',
+      primaryColor: '#abc123',
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  it('should reject rgb() color format', () => {
+    const result = validateConfig({
+      organizationName: 'Test',
+      organizationShortName: 'T',
+      waAccountId: '123',
+      primaryColor: 'rgb(255, 0, 0)',
+    });
+    expect(result.valid).toBe(false);
+  });
+});
+
+describe('Builder Config Block Edge Cases', () => {
+  it('should handle special characters in organization name', () => {
+    const config: BuildConfig = {
+      organizationName: "Test's Club & Friends",
+      organizationShortName: 'TC',
+      waAccountId: '123',
+    };
+    const block = generateConfigBlock(config);
+    expect(block).toContain('waAccountId');
+    // Should not break JavaScript
+    expect(block).not.toContain('undefined');
+  });
+
+  it('should handle empty quickFilters', () => {
+    const config: BuildConfig = {
+      organizationName: 'Test',
+      organizationShortName: 'TC',
+      waAccountId: '123',
+      quickFilters: {},
+    };
+    const block = generateConfigBlock(config);
+    expect(block).toContain('quickFilters');
+  });
+
+  it('should handle all boolean options set to false', () => {
+    const config: BuildConfig = {
+      organizationName: 'Test',
+      organizationShortName: 'TC',
+      waAccountId: '123',
+      quickFilters: {
+        weekend: false,
+        openings: false,
+        afterhours: false,
+        free: false,
+        public: false,
+      },
+    };
+    const block = generateConfigBlock(config);
+    expect(block).toContain('weekend: false');
+    expect(block).toContain('public: false');
+  });
+});
