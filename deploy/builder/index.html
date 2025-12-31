@@ -1042,9 +1042,9 @@
 
 <div id="clubcalendar"></div>
 
-<script>
+` + '<scr' + 'ipt>' + `
 window.CLUBCALENDAR_CONFIG = ${configStr};
-</script>
+` + '</scr' + 'ipt>' + `
 
 `;
 
@@ -1052,10 +1052,10 @@ window.CLUBCALENDAR_CONFIG = ${configStr};
             if (WIDGET_CORE) {
                 html += WIDGET_CORE;
             } else {
-                html += `<!-- Widget core not loaded - copy from widget-core.html -->
-<script>
-console.error('ClubCalendar: Widget core not embedded. Please ensure widget-core.html is available.');
-</script>`;
+                html += '<!-- Widget core not loaded - copy from widget-core.html -->\n' +
+                    '<scr' + 'ipt>\n' +
+                    "console.error('ClubCalendar: Widget core not embedded. Please ensure widget-core.html is available.');\n" +
+                    '</scr' + 'ipt>';
             }
 
             return html;
@@ -1348,9 +1348,9 @@ describe('${shortName} Certification Summary', () => {
     console.log('\\n═══════════════════════════════════════════════════════════════');
     console.log('${shortName} BUILD CERTIFICATION SUMMARY');
     console.log('═══════════════════════════════════════════════════════════════');
-    console.log(\`Build Profile: \${${varName}_PROFILE.name}\`);
-    console.log(\`WA Account ID: \${${varName}_PROFILE.config.waAccountId}\`);
-    console.log(\`Auto-Tag Rules: \${${varName}_AUTO_TAG_RULES.length}\`);
+    console.log('Build Profile: ' + ${varName}_PROFILE.name);
+    console.log('WA Account ID: ' + ${varName}_PROFILE.config.waAccountId);
+    console.log('Auto-Tag Rules: ' + ${varName}_AUTO_TAG_RULES.length);
     console.log('═══════════════════════════════════════════════════════════════\\n');
   });
 });
