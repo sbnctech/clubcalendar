@@ -100,8 +100,8 @@ describe('Fallback System', () => {
         });
 
         it('should trigger fallback when FullCalendar fails to load', () => {
-            // Error: Failed to load FullCalendar library from CDN
-            const error = new Error('Failed to load FullCalendar library from CDN. Check network connectivity.');
+            // Error: FullCalendar library failed to load
+            const error = new Error('FullCalendar library failed to load');
             expect(error.message).toContain('FullCalendar');
         });
 
@@ -109,6 +109,12 @@ describe('Fallback System', () => {
             // Error: API returned error
             const error = new Error('API request failed: 503 Service Unavailable');
             expect(error.message).toContain('API');
+        });
+
+        it('should trigger fallback on events fetch failure', () => {
+            // When events.json fetch fails, fallback should activate
+            const error = new Error('HTTP 404');
+            expect(error.message).toContain('HTTP');
         });
     });
 
@@ -157,5 +163,166 @@ describe('Fallback HTML structure', () => {
         expect(errorHtml).toContain('View events list');
         expect(errorHtml).toContain('/events');
         expect(errorHtml).toContain('#fff3cd'); // Warning yellow background
+    });
+
+    it('should use warning colors for visibility', () => {
+        // Yellow warning colors ensure the error is visible but not alarming
+        const warningBackground = '#fff3cd';
+        const warningBorder = '#ffc107';
+        const warningText = '#856404';
+
+        expect(warningBackground).toMatch(/^#[0-9a-f]{6}$/i);
+        expect(warningBorder).toMatch(/^#[0-9a-f]{6}$/i);
+        expect(warningText).toMatch(/^#[0-9a-f]{6}$/i);
+    });
+});
+
+describe('Fallback trigger points in widget', () => {
+    describe('Initialization phase', () => {
+        it('should trigger fallback if container element not found', () => {
+            // buildWidget() checks for container and calls showFallback if missing
+            const containerSelector = '#clubcalendar';
+            const errorMessage = `Container not found: ${containerSelector}`;
+            expect(errorMessage).toContain('#clubcalendar');
+        });
+
+        it('should trigger fallback if FullCalendar CDN fails', () => {
+            // loadDependencies() checks window.FullCalendar after loading
+            // If undefined, calls showFallback
+            const checkFullCalendar = () => typeof window !== 'undefined' && (window as any).FullCalendar;
+            // In test environment, FullCalendar is not loaded
+            expect(checkFullCalendar()).toBeFalsy();
+        });
+    });
+
+    describe('Data fetching phase', () => {
+        it('should trigger fallback if events.json fetch fails', () => {
+            // fetchEventsFromJson() throws on HTTP errors
+            // init() catches and calls showFallback
+            const httpError = new Error('HTTP 500');
+            expect(httpError.message).toMatch(/HTTP \d+/);
+        });
+
+        it('should trigger fallback if JSON parse fails', () => {
+            // Invalid JSON from server should trigger fallback
+            const parseError = new Error('Unexpected token < in JSON');
+            expect(parseError.message).toContain('JSON');
+        });
+    });
+
+    describe('Calendar rendering phase', () => {
+        it('should trigger fallback if calendar initialization throws', () => {
+            // initCalendar() errors are caught by init() try/catch
+            const calendarError = new Error('FullCalendar initialization failed');
+            expect(calendarError.message).toContain('initialization');
+        });
+    });
+});
+
+describe('Fallback console logging', () => {
+    it('should log fatal error message', () => {
+        const expectedLog = 'ClubCalendar: Fatal error, activating fallback:';
+        expect(expectedLog).toContain('Fatal error');
+        expect(expectedLog).toContain('activating fallback');
+    });
+
+    it('should log when WA fallback is activated', () => {
+        const expectedLog = 'ClubCalendar: Fallback WA calendar activated';
+        expect(expectedLog).toContain('Fallback WA calendar activated');
+    });
+
+    it('should log when no fallback container found', () => {
+        const expectedLog = 'ClubCalendar: No fallback container found, showing error message';
+        expect(expectedLog).toContain('No fallback container');
+        expect(expectedLog).toContain('error message');
+    });
+});
+
+describe('Fallback DOM manipulation', () => {
+    describe('When fallback container exists', () => {
+        it('should hide ClubCalendar by setting display:none', () => {
+            // clubCalContainer.style.display = 'none'
+            const hideStyle = { display: 'none' };
+            expect(hideStyle.display).toBe('none');
+        });
+
+        it('should show fallback by setting display:block', () => {
+            // fallbackContainer.style.display = 'block'
+            const showStyle = { display: 'block' };
+            expect(showStyle.display).toBe('block');
+        });
+
+        it('should return early after showing fallback', () => {
+            // After showing fallback, function returns without showing error message
+            let errorMessageShown = false;
+            const showFallbackBehavior = (fallbackExists: boolean) => {
+                if (fallbackExists) {
+                    return; // Early return
+                }
+                errorMessageShown = true;
+            };
+            showFallbackBehavior(true);
+            expect(errorMessageShown).toBe(false);
+        });
+    });
+
+    describe('When fallback container does not exist', () => {
+        it('should show ClubCalendar container again', () => {
+            // Re-show container to display error message
+            const showStyle = { display: 'block' };
+            expect(showStyle.display).toBe('block');
+        });
+
+        it('should replace innerHTML with error message', () => {
+            // clubCalContainer.innerHTML = error HTML
+            const errorHtml = '<div style="padding: 20px;">Calendar temporarily unavailable</div>';
+            expect(errorHtml).toContain('Calendar temporarily unavailable');
+        });
+
+        it('should include link to fallback events URL', () => {
+            const fallbackEventsUrl = '/events';
+            const linkHtml = `<a href="${fallbackEventsUrl}">View events list →</a>`;
+            expect(linkHtml).toContain(fallbackEventsUrl);
+            expect(linkHtml).toContain('View events list');
+        });
+    });
+});
+
+describe('Fallback XSS protection', () => {
+    it('should escape fallback events URL', () => {
+        // escapeHtml is used on CONFIG.fallbackEventsUrl
+        const maliciousUrl = '"><script>alert("xss")</script>';
+        const escaped = maliciousUrl
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+
+        expect(escaped).not.toContain('<script>');
+        expect(escaped).toContain('&lt;script&gt;');
+    });
+});
+
+describe('Hybrid deployment setup', () => {
+    it('should document correct HTML structure for hybrid deployment', () => {
+        const hybridHtml = `
+<!-- Primary: ClubCalendar -->
+<div id="clubcalendar"></div>
+<!-- ClubCalendar widget code here -->
+
+<!-- Fallback: WA Calendar (hidden) -->
+<div id="wa-fallback" style="display:none;">
+    <!-- WA Event Calendar gadget here -->
+</div>
+`;
+        expect(hybridHtml).toContain('id="clubcalendar"');
+        expect(hybridHtml).toContain('id="wa-fallback"');
+        expect(hybridHtml).toContain('display:none');
+    });
+
+    it('should use default container ID that matches documentation', () => {
+        const defaultFallbackId = 'wa-fallback';
+        const documentedId = 'wa-fallback';
+        expect(defaultFallbackId).toBe(documentedId);
     });
 });

@@ -230,7 +230,10 @@
         memberLevel: null,                     // Member level: 'Newbie', 'NewcomerMember', 'Alumni', 'Guest', or null for public
         useLiveApi: false,                     // Use live WA API instead of SQLite-cached data
         showAddToCalendar: true,               // Show "Add to Calendar" button in event popup
-        icsBaseUrl: 'https://mail.sbnewcomers.org/ics/event.php'  // ICS generator endpoint URL
+        icsBaseUrl: 'https://mail.sbnewcomers.org/ics/event.php',  // ICS generator endpoint URL
+        // Failover configuration
+        fallbackContainerId: 'wa-fallback',    // ID of hidden WA calendar container to show on error
+        fallbackEventsUrl: '/events'           // URL to link to if no fallback container exists
     };
 
     /**
@@ -1850,6 +1853,12 @@
     /** @type {Object|null} FullCalendar instance */
     let calendarInstance = null;
 
+    /** @type {number} Timestamp of last data refresh (for debouncing) */
+    let lastRefreshTime = 0;
+
+    /** @type {number} Minimum seconds between auto-refreshes */
+    const REFRESH_DEBOUNCE_SECONDS = 60;
+
     /**
      * Detects API base URL from the script's src attribute or page location.
      *
@@ -2394,10 +2403,18 @@
 
         let loaded = 0;
         const total = dependencies.length;
+        let fullCalendarFailed = false;
 
         function onLoad() {
             loaded++;
-            if (loaded === total) callback();
+            if (loaded === total) {
+                // Check if FullCalendar loaded successfully
+                if (!window.FullCalendar) {
+                    showFallback(new Error('FullCalendar library failed to load'));
+                    return;
+                }
+                callback();
+            }
         }
 
         dependencies.forEach(dep => {
@@ -2422,6 +2439,9 @@
                 script.onload = onLoad;
                 script.onerror = () => {
                     console.error('ClubCalendar: Failed to load JS:', dep.url);
+                    if (dep.url.includes('fullcalendar')) {
+                        fullCalendarFailed = true;
+                    }
                     onLoad();
                 };
                 document.head.appendChild(script);
@@ -2437,7 +2457,7 @@
     function buildWidget() {
         const container = document.querySelector(CONFIG.container);
         if (!container) {
-            console.error('ClubCalendar: Container not found:', CONFIG.container);
+            showFallback(new Error('Container not found: ' + CONFIG.container));
             return false;
         }
 
@@ -3524,12 +3544,50 @@
     }
 
     /**
-     * Shows error message.
+     * Shows error message (for non-fatal errors).
      */
     function showError(message) {
         const container = document.getElementById('clubcalendar-content');
         if (container) {
             container.innerHTML = `<div class="clubcal-error">${escapeHtml(message)}</div>`;
+        }
+    }
+
+    /**
+     * Shows fallback WA calendar on fatal error.
+     * 1. Hides ClubCalendar container
+     * 2. Shows pre-placed WA Calendar container if it exists
+     * 3. Shows error message with events link if no fallback container
+     */
+    function showFallback(error) {
+        console.error('ClubCalendar: Fatal error, activating fallback:', error);
+
+        // Hide ClubCalendar container
+        const clubCalContainer = document.querySelector(CONFIG.container);
+        if (clubCalContainer) {
+            clubCalContainer.style.display = 'none';
+        }
+
+        // Try to show fallback WA calendar container
+        const fallbackContainer = document.getElementById(CONFIG.fallbackContainerId);
+        if (fallbackContainer) {
+            fallbackContainer.style.display = 'block';
+            console.log('ClubCalendar: Fallback WA calendar activated');
+            return;
+        }
+
+        // No fallback container - show error message with link
+        console.log('ClubCalendar: No fallback container found, showing error message');
+        if (clubCalContainer) {
+            clubCalContainer.style.display = 'block';
+            clubCalContainer.innerHTML = `
+                <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
+                    <h3 style="margin: 0 0 10px 0; color: #856404;">Calendar temporarily unavailable</h3>
+                    <p style="margin: 0; color: #856404;">
+                        <a href="${escapeHtml(CONFIG.fallbackEventsUrl)}" style="color: #856404; font-weight: 500;">View events list →</a>
+                    </p>
+                </div>
+            `;
         }
     }
 
@@ -3790,8 +3848,21 @@
                 allEvents = await fetchEvents(currentFilters.pastMonths);
                 filteredEvents = [...allEvents];
                 filterAndRender();
+                lastRefreshTime = Date.now();
+                console.log('ClubCalendar: Events refreshed');
             } catch (error) {
                 showError('Failed to refresh events. Please try again.');
+            }
+        },
+
+        /** Refresh if data is stale (for visibility change handler) */
+        refreshIfStale: async function() {
+            const secondsSinceRefresh = (Date.now() - lastRefreshTime) / 1000;
+            if (secondsSinceRefresh >= REFRESH_DEBOUNCE_SECONDS) {
+                console.log('ClubCalendar: Tab visible, refreshing (last refresh ' + Math.round(secondsSinceRefresh) + 's ago)');
+                await this.refresh();
+            } else {
+                console.log('ClubCalendar: Tab visible, skipping refresh (last refresh ' + Math.round(secondsSinceRefresh) + 's ago)');
             }
         },
 
@@ -3879,14 +3950,31 @@
                 // Fetch events (start with current only, user can select past months)
                 allEvents = await fetchEvents(0);
                 filteredEvents = [...allEvents];
+                lastRefreshTime = Date.now();
 
                 // Initialize calendar
                 initCalendar();
 
+                // Set up visibility change handler for auto-refresh on tab focus
+                setupVisibilityHandler();
+
             } catch (error) {
-                showError('Failed to load events. Please try again later.');
+                showFallback(error);
             }
         });
+    }
+
+    /**
+     * Sets up visibility change handler to refresh data when user returns to tab.
+     * Refreshes if data is older than REFRESH_DEBOUNCE_SECONDS.
+     */
+    function setupVisibilityHandler() {
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                window.ClubCalendar.refreshIfStale();
+            }
+        });
+        console.log('ClubCalendar: Visibility change handler installed (auto-refresh on tab focus)');
     }
 
     // Auto-initialize when DOM ready
