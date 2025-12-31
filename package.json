@@ -13,7 +13,13 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:all": "vitest run && playwright test"
+    "test:all": "vitest run && playwright test",
+    "test:certify": "vitest run tests/certification",
+    "test:certify:sbnc": "vitest run tests/certification/sbnc-certification.test.ts",
+    "test:buddy": "playwright test --config tests/certification/playwright.config.ts",
+    "test:buddy:sbnc": "playwright test sbnc-live.spec.ts --config tests/certification/playwright.config.ts",
+    "certify:sbnc": "npm run test:certify:sbnc && npm run test:buddy:sbnc",
+    "certify:full": "npm run test && npm run test:e2e && npm run certify:sbnc"
   },
   "repository": {
     "type": "git",
