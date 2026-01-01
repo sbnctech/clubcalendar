@@ -2,7 +2,6 @@
 
 **Prepared for:** SBNC Technology Team
 **Date:** January 1, 2026
-**Perspective:** Risk-averse senior development manager
 
 ---
 
@@ -236,7 +235,7 @@ The primary risk mitigation is built into the architecture: automatic fallback t
 
 ---
 
-#### 3.2 Rate Limiting / API Blocking
+#### 3.2 Rate Limiting / API Blocking / Opaque Access Controls
 
 | Attribute | Assessment |
 |-----------|------------|
@@ -264,7 +263,44 @@ The primary risk mitigation is built into the architecture: automatic fallback t
 
 ---
 
-#### 3.3 Maintenance Burden / Knowledge Concentration
+#### 3.3 Opaque WA Security Controls
+
+| Attribute | Assessment |
+|-----------|------------|
+| **Likelihood** | Low (production), Medium (development) |
+| **Impact** | Medium-High |
+| **Detection** | Immediate (generic error message) |
+
+**What could happen:** Wild Apricot's undocumented security systems block access to the API or site without clear explanation or published remediation steps.
+
+**Conditions:** Intensive API usage during development/testing, patterns WA's security systems interpret as suspicious, unknown triggers.
+
+**Observed behavior (January 2026):**
+- During widget development, repeated API calls triggered an account-level block
+- Block was specific to one WA site (playground) while production site remained accessible
+- Block persisted across IP address changes and browser cookie clears
+- Block appeared tied to WA user account on specific site instance
+- No published documentation exists for this blocking behavior
+- WA support required for remediation (unavailable on holidays)
+
+**Current mitigation:**
+- Fallback activates when API returns errors
+- Development/testing isolated from production environment
+- Production widget makes minimal API calls (unlikely to trigger limits)
+
+**Additional mitigation options:**
+- Maintain multiple admin accounts for development/testing
+- Establish relationship with WA support for expedited unblocking
+- Document observed blocking behavior for team reference
+- Test primarily on playground/staging sites to protect production access
+
+**Recommendation:** This is an inherent risk of building on the WA platform. The opaque nature of their security controls means issues may arise without warning or clear resolution path. Mitigation focuses on isolation (keeping development separate from production) and redundancy (multiple admin accounts).
+
+**Note:** This risk applies equally to any custom development on the WA platform, not just ClubCalendar.
+
+---
+
+#### 3.4 Maintenance Burden / Knowledge Concentration
 
 | Attribute | Assessment |
 |-----------|------------|
@@ -292,7 +328,7 @@ The primary risk mitigation is built into the architecture: automatic fallback t
 
 ---
 
-#### 3.4 Performance Impact on Page Load
+#### 3.5 Performance Impact on Page Load
 
 | Attribute | Assessment |
 |-----------|------------|
@@ -429,6 +465,7 @@ The primary risk mitigation is built into the architecture: automatic fallback t
 | Registration Data | Very Low | High | ✅ Strong | Very Low |
 | WA Updates | Medium | Medium | ⚠️ Adequate | Low-Medium |
 | Rate Limiting | Low | High | ✅ Strong | Low |
+| Opaque WA Security | Low (prod) | Medium-High | ⚠️ Adequate | Low-Medium |
 | Maintenance Burden | Medium | Medium | ⚠️ Adequate | Low-Medium |
 | Performance | Low | Low | ✅ Strong | Very Low |
 | User Confusion | Medium | Low | ⚠️ Adequate | Low |
