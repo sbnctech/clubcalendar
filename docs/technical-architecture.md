@@ -275,7 +275,7 @@ function loadFullCalendar() {
         if (window.FullCalendar) { resolve(); return; }
 
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js';
+        script.src = 'https://cdnjs.cloudflare.com/npm/fullcalendar@6.1.8/index.global.min.js';
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);

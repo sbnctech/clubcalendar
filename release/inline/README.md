@@ -50,7 +50,7 @@ No external servers. Your data stays in Wild Apricot.
 
 ## External Dependencies
 
-- FullCalendar library (loaded from cdn.jsdelivr.net)
+- FullCalendar library (loaded from cdnjs.cloudflare.com)
 
 That's the only external dependency. No other servers involved.
 

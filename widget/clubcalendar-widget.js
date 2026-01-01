@@ -125,7 +125,7 @@
  * │                                                                         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * @version 1.0.0
+ * @version 1.01
  * @author ClubCalendar
  */
 
@@ -143,7 +143,7 @@
    ║  ─────────────────────────────────────────────────────────────────────   ║
    ║  Purpose: Calendar display, event rendering, date navigation             ║
    ║  Docs: https://fullcalendar.io/docs                                      ║
-   ║  CDN: https://cdn.jsdelivr.net/npm/fullcalendar@6                        ║
+   ║  CDN: https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8                        ║
    ║  Key methods we use:                                                     ║
    ║    - new FullCalendar.Calendar(el, options) - Initialize calendar        ║
    ║    - calendar.render() - Display the calendar                            ║
@@ -155,7 +155,7 @@
    ║  ─────────────────────────────────────────────────────────────────────   ║
    ║  Purpose: DOM manipulation, event handling                               ║
    ║  Docs: https://api.jquery.com/                                           ║
-   ║  CDN: https://cdn.jsdelivr.net/npm/jquery@3/                             ║
+   ║  CDN: https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/               ║
    ║                                                                           ║
    ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
@@ -225,6 +225,9 @@
         eventClickBehavior: 'popup',           // 'popup', 'link', or 'both'
         primaryColor: '#2c5aa0',               // WA primary blue
         accentColor: '#d4a800',                // WA secondary gold
+        // Typography customization
+        fontFamily: null,                      // Custom font (e.g., 'Arial, sans-serif') - null uses system fonts
+        baseFontSize: null,                    // Base font size (e.g., '15px') - null uses widget defaults
         cacheDuration: 300,                    // Seconds to cache events
         refreshInterval: 0,                    // Auto-refresh interval (0 = disabled)
         memberLevel: null,                     // Member level: 'Newbie', 'NewcomerMember', 'Alumni', 'Guest', or null for public
@@ -1345,6 +1348,16 @@
     background: #43a047;
 }
 
+/* --- Popup text links (not buttons) should be underlined for accessibility --- */
+.clubcal-event-popup-body a:not(.clubcal-btn) {
+    text-decoration: underline;
+    color: #2c5aa0;
+}
+.clubcal-event-popup-body a:not(.clubcal-btn):hover {
+    text-decoration: underline;
+    color: #1e3d6b;
+}
+
 /* --- Expandable Sections (Accordion) --- */
 .clubcal-popup-sections {
     border-top: 1px solid #eee;
@@ -1857,7 +1870,10 @@
     let lastRefreshTime = 0;
 
     /** @type {number} Minimum seconds between auto-refreshes */
-    const REFRESH_DEBOUNCE_SECONDS = 60;
+    const REFRESH_DEBOUNCE_SECONDS = 30;
+
+    /** @type {Date|null} Earliest date for which we have events loaded */
+    let earliestLoadedDate = null;
 
     /**
      * Detects API base URL from the script's src attribute or page location.
@@ -1921,8 +1937,9 @@
             const events = data.events || [];
 
             // Filter past events based on selected months
+            // Use start of day to include all events for today
             const now = new Date();
-            const cutoff = new Date(now);
+            const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today (midnight)
             if (pastMonths > 0) {
                 cutoff.setMonth(cutoff.getMonth() - pastMonths);
             }
@@ -1970,7 +1987,7 @@
             maxPrice: minPrice,
             isFree: isFree ? 1 : 0,
             hasGuestTickets: event.is_public ? 1 : 0,
-            registrationOpenDate: null,
+            registrationOpenDate: event.registration_open_date || null,
             registrationUrl: event.registration_url,
             committee: event.committee,
             costCategory: event.cost_category,
@@ -1985,9 +2002,10 @@
      * @param {number} pastMonths - Number of months back to include (0 = current only)
      */
     async function fetchEventsFromSqlite(pastMonths = 0) {
+        // Use date('now', 'start of day') to include all events for today
         const dateFilter = pastMonths > 0
-            ? `datetime(StartDate) >= datetime('now', '-${pastMonths} months')`
-            : "datetime(StartDate) >= datetime('now')";
+            ? `date(StartDate) >= date('now', '-${pastMonths} months')`
+            : "date(StartDate) >= date('now')";
 
         const sql = `SELECT
             Id, Name, StartDate, EndDate, Location,
@@ -2386,17 +2404,17 @@
         const dependencies = [
             {
                 type: 'css',
-                url: 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css',
+                url: 'https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.css',
                 check: () => true // CSS always loads
             },
             {
                 type: 'js',
-                url: 'https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js',
+                url: 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js',
                 check: () => window.jQuery
             },
             {
                 type: 'js',
-                url: 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js',
+                url: 'https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.js',
                 check: () => window.FullCalendar
             }
         ];
@@ -2682,6 +2700,15 @@
 
         container.innerHTML = html;
 
+        // Apply custom typography settings if configured
+        const widgetEl = container.querySelector('.clubcalendar-widget') || container;
+        if (CONFIG.fontFamily) {
+            widgetEl.style.fontFamily = CONFIG.fontFamily;
+        }
+        if (CONFIG.baseFontSize) {
+            widgetEl.style.fontSize = CONFIG.baseFontSize;
+        }
+
         // Bind events
         bindFilterEvents();
 
@@ -2789,6 +2816,13 @@
         try {
             allEvents = await fetchEvents(currentFilters.pastMonths);
             filteredEvents = [...allEvents];
+
+            // Update earliest loaded date based on loaded events
+            if (allEvents.length > 0) {
+                const dates = allEvents.map(e => new Date(e.startDate));
+                earliestLoadedDate = new Date(Math.min(...dates));
+            }
+
             filterAndRender();
         } catch (error) {
             showError('Failed to load events. Please try again.');
@@ -2816,11 +2850,10 @@
     function applyFilters() {
         const $ = window.jQuery;
 
-        currentFilters = {
-            interest: $('#clubcal-filter-interest').val() || null,
-            time: $('#clubcal-filter-time').val() || 'upcoming',
-            availability: $('#clubcal-filter-availability').val() || null
-        };
+        // Update dropdown filter values while preserving other filter state
+        currentFilters.interest = $('#clubcal-filter-interest').val() || null;
+        currentFilters.time = $('#clubcal-filter-time').val() || 'upcoming';
+        currentFilters.availability = $('#clubcal-filter-availability').val() || null;
 
         filterAndRender();
     }
@@ -2973,6 +3006,10 @@
             const isFree = event.isFree === 1 || event.minPrice === 0;
             const dayOfWeek = eventDate.getDay();
 
+            // CRITICAL: Always hide member-only events from non-members
+            // This ensures anonymous/public users only see public events
+            if (memberAvail.status === 'unavailable') return false;
+
             // Interest filter (from dropdown)
             if (currentFilters.interest) {
                 const keywords = INTEREST_KEYWORDS[currentFilters.interest] || [];
@@ -3016,6 +3053,15 @@
                         const sevenDaysFromNow = new Date(now);
                         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
                         if (regOpenDate <= now || regOpenDate > sevenDaysFromNow) return false;
+                    }
+                    if (qf === 'public') {
+                        // Public events only = tagged as public or has guest tickets
+                        const eventTags = parseTags(event.tags);
+                        const isPublic = eventTags.some(t =>
+                            t.toLowerCase() === 'public' ||
+                            t.toLowerCase() === 'public event'
+                        ) || event.hasGuestTickets === 1;
+                        if (!isPublic) return false;
                     }
                 }
             }
@@ -3082,6 +3128,7 @@
             eventClick: handleEventClick,
             displayEventTime: false,  // We'll handle time display ourselves
             dayMaxEvents: false,  // Allow cells to expand
+            datesSet: handleCalendarDatesChange,  // Detect navigation to past months
             eventContent: function(arg) {
                 const props = arg.event.extendedProps;
                 const originalEvent = props.originalEvent;
@@ -3268,6 +3315,52 @@
                 currentFilters.pastMonths = months;
                 reloadEvents();
             });
+        }
+    }
+
+    /**
+     * Handles calendar date navigation.
+     * When user navigates to a month before our earliest loaded event,
+     * automatically fetch more past events.
+     */
+    async function handleCalendarDatesChange(dateInfo) {
+        const viewStart = dateInfo.start;
+
+        // If we haven't set the earliest date yet, set it to start of today
+        if (!earliestLoadedDate) {
+            const now = new Date();
+            earliestLoadedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        }
+
+        // Check if user navigated to a month before our earliest loaded events
+        if (viewStart < earliestLoadedDate) {
+            // Calculate how many months back we need to go
+            const monthsDiff = (earliestLoadedDate.getFullYear() - viewStart.getFullYear()) * 12
+                + (earliestLoadedDate.getMonth() - viewStart.getMonth()) + 1;
+
+            // Update pastMonths in currentFilters and reload
+            const newPastMonths = Math.max(currentFilters.pastMonths, monthsDiff);
+            if (newPastMonths > currentFilters.pastMonths) {
+                console.log(`ClubCalendar: Loading ${newPastMonths} months of past events for navigation`);
+                currentFilters.pastMonths = newPastMonths;
+                currentFilters.showPast = true;
+
+                // Update the "Past events" dropdown if it exists
+                const pastEventsDropdown = document.querySelector('#clubcal-past-events-select select');
+                if (pastEventsDropdown) {
+                    // Find the closest option value that covers our needs
+                    const options = pastEventsDropdown.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (parseInt(options[i].value, 10) >= newPastMonths) {
+                            pastEventsDropdown.value = options[i].value;
+                            break;
+                        }
+                    }
+                }
+
+                // Reload events with the new range
+                await reloadEvents();
+            }
         }
     }
 
@@ -3951,6 +4044,16 @@
                 allEvents = await fetchEvents(0);
                 filteredEvents = [...allEvents];
                 lastRefreshTime = Date.now();
+
+                // Track earliest loaded date for navigation
+                if (allEvents.length > 0) {
+                    const dates = allEvents.map(e => new Date(e.startDate));
+                    earliestLoadedDate = new Date(Math.min(...dates));
+                } else {
+                    // Default to start of today if no events
+                    const now = new Date();
+                    earliestLoadedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                }
 
                 // Initialize calendar
                 initCalendar();

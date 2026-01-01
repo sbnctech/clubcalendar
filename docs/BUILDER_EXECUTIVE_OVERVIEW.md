@@ -150,7 +150,7 @@ External dependencies in generated widgets:
 
 | Dependency | Source | Risk Mitigation |
 |------------|--------|-----------------|
-| FullCalendar | CDN (jsdelivr) | Pinned version, fallback on failure |
+| FullCalendar | Cloudflare cdnjs | Pinned version, fallback on failure |
 | JSZip | Bundled in builder | No runtime dependency |
 
 **Fallback behavior:** If FullCalendar CDN fails, widget displays error message with link to WA's native calendar.
@@ -197,7 +197,7 @@ Generated widgets include:
 | Limitation | Impact | Mitigation |
 |------------|--------|------------|
 | Manual deployment | Requires copy/paste into WA | Clear installation docs, checklist |
-| CDN dependency | FullCalendar loaded from jsdelivr | Fallback UI on failure |
+| CDN dependency | FullCalendar loaded from Cloudflare cdnjs | Fallback UI on failure |
 | No hot updates | Config changes require rebuild | Save/load config reduces friction |
 | File size (~450KB) | Slower initial load | Single load per page, cached by browser |
 
