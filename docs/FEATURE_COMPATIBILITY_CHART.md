@@ -1,7 +1,7 @@
 # ClubCalendar Feature Compatibility Chart
 
-**Version:** 1.01
-**Date:** December 31, 2025
+**Version:** 1.02
+**Date:** January 1, 2026
 
 This document compares feature availability between ClubCalendar's two deployment modes.
 
@@ -77,6 +77,22 @@ This document compares feature availability between ClubCalendar's two deploymen
 | Event tags | Yes | Yes | |
 | Location display | Yes | Yes | |
 | Event description | Yes | Yes | |
+
+---
+
+## Event Popup Features
+
+| Feature | WA Native | External Server | Notes |
+|---------|:---------:|:---------------:|-------|
+| **Event Actions** | | | |
+| View & Register button | Yes | Yes | Links to WA event page |
+| Add to Calendar icons | Yes | Yes | Google, Outlook, Yahoo, Apple (.ics) |
+| **Popup Content** | | | |
+| Event details | Yes | Yes | |
+| Cost display (category) | Yes | Yes | Shows "Free", "Under $25", etc. |
+| Availability status | Yes | Yes | |
+| Registrant list | Yes | Yes | Members only |
+| Event photos link | Yes | Yes | Members only |
 
 ---
 

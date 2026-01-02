@@ -13,7 +13,7 @@
  * │                                                                         │
  * │  1. EXTERNAL LIBRARIES (loaded from CDN - we don't maintain these)     │
  * │     - FullCalendar: Calendar display and navigation                    │
- * │     - jQuery: DOM manipulation (may already be loaded by WA)           │
+ * │     - Vanilla JS: DOM manipulation (no jQuery required)                │
  * │                                                                         │
  * │  2. CLUBCALENDAR SHIM (this file - we maintain this code)                      │
  * │     Organized into three broad categories:                             │
@@ -82,7 +82,7 @@
  * │  │                                                                 │   │
  * │  │ Section 4: Widget Integration                                   │   │
  * │  │   Lines: ~600 (~47%)                                            │   │
- * │  │   Dependencies: FullCalendar, jQuery                            │   │
+ * │  │   Dependencies: FullCalendar only (vanilla JS for DOM)          │   │
  * │  │   Stability: MEDIUM                                             │   │
  * │  │   Break risk: MEDIUM-HIGH                                       │   │
  * │  │   Reason to change: New filters, layout changes, lib updates    │   │
@@ -119,13 +119,11 @@
  * │    Watch for: Options renamed, deprecated features                     │
  * │    Mitigation: Test after any version update                           │
  * │                                                                         │
- * │  jQuery (v3.x)                                                         │
- * │    Risk: LOW - Extremely stable, rarely has breaking changes           │
- * │    Pinned to: Major version 3 (auto-updates minors)                    │
+ * │  Note: jQuery dependency removed in v1.02 - using vanilla JS           │
  * │                                                                         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * @version 1.01
+ * @version 1.02
  * @author ClubCalendar
  */
 
@@ -151,11 +149,7 @@
    ║    - calendar.changeView(viewName) - Switch between views                ║
    ║  Views: dayGridMonth, timeGridWeek, timeGridDay, listMonth               ║
    ║                                                                           ║
-   ║  jQuery (v3.x)                                                           ║
-   ║  ─────────────────────────────────────────────────────────────────────   ║
-   ║  Purpose: DOM manipulation, event handling                               ║
-   ║  Docs: https://api.jquery.com/                                           ║
-   ║  CDN: https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/               ║
+   ║  Note: jQuery removed in v1.02 - using vanilla JS for DOM operations    ║
    ║                                                                           ║
    ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
@@ -230,7 +224,7 @@
         baseFontSize: null,                    // Base font size (e.g., '15px') - null uses widget defaults
         cacheDuration: 300,                    // Seconds to cache events
         refreshInterval: 0,                    // Auto-refresh interval (0 = disabled)
-        memberLevel: null,                     // Member level: 'Newbie', 'NewcomerMember', 'Alumni', 'Guest', or null for public
+        memberLevel: 'public',                 // Member level: 'Newbie', 'NewcomerMember', 'Alumni', 'Guest', or 'public' for anonymous
         useLiveApi: false,                     // Use live WA API instead of SQLite-cached data
         showAddToCalendar: true,               // Show "Add to Calendar" button in event popup
         icsBaseUrl: 'https://mail.sbnewcomers.org/ics/event.php',  // ICS generator endpoint URL
@@ -572,12 +566,76 @@
    ClubCalendar Widget Styles
 
    These styles override/extend FullCalendar styles to match WA theme.
+   All colors use CSS custom properties for easy theming via WA Custom CSS.
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* --- Theme Color Variables --- */
+/* Override these in WA's Custom CSS to match your theme */
+:root {
+    /* Primary brand colors */
+    --clubcal-primary: #2c5aa0;
+    --clubcal-primary-dark: #1e3d6b;
+    --clubcal-primary-hover: #234a80;
+    --clubcal-primary-light: #6c9bd1;
+    --clubcal-accent: #d4a800;
+
+    /* Text colors */
+    --clubcal-text: #333333;
+    --clubcal-text-muted: #666666;
+    --clubcal-text-light: #888888;
+
+    /* Background colors */
+    --clubcal-bg-light: #f8f9fa;
+    --clubcal-bg-hover: #f5f5f5;
+    --clubcal-bg-active: #f0f0f0;
+
+    /* Border colors */
+    --clubcal-border: #dddddd;
+    --clubcal-border-light: #eeeeee;
+    --clubcal-border-dark: #bbbbbb;
+
+    /* Status colors */
+    --clubcal-success: #4caf50;
+    --clubcal-success-dark: #2e7d32;
+    --clubcal-success-bg: #e8f5e9;
+    --clubcal-warning: #ff9800;
+    --clubcal-warning-dark: #e65100;
+    --clubcal-warning-bg: #fff3e0;
+    --clubcal-error: #dc3545;
+    --clubcal-error-dark: #c82333;
+    --clubcal-error-bg: #ffebee;
+    --clubcal-info: #2196f3;
+    --clubcal-info-dark: #1565c0;
+    --clubcal-info-bg: #e3f2fd;
+
+    /* Time of day colors */
+    --clubcal-morning: #ff9800;
+    --clubcal-afternoon: #42a5f5;
+    --clubcal-evening: #5c6bc0;
+    --clubcal-allday: #66bb6a;
+
+    /* Filter dot colors */
+    --clubcal-dot-justopened: #e91e63;
+    --clubcal-dot-openingsoon: #009688;
+    --clubcal-dot-openings: #4caf50;
+    --clubcal-dot-newbie: #00bcd4;
+    --clubcal-dot-public: #8bc34a;
+    --clubcal-dot-weekend: #9c27b0;
+    --clubcal-dot-free: #ffc107;
+    --clubcal-dot-afterhours: #5c6bc0;
+
+    /* Availability colors */
+    --clubcal-avail-public: #4caf50;
+    --clubcal-avail-available: #2196f3;
+    --clubcal-avail-limited: #ff9800;
+    --clubcal-avail-waitlist: #f44336;
+    --clubcal-avail-unavailable: #9e9e9e;
+}
 
 /* --- Base Container --- */
 .clubcalendar-widget {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    color: #333;
+    color: var(--clubcal-text);
     line-height: 1.5;
     width: 100%;
     box-sizing: border-box;
@@ -587,17 +645,17 @@
 .clubcalendar-header {
     padding: 15px 0;
     margin-bottom: 15px;
-    border-bottom: 2px solid #2c5aa0;
+    border-bottom: 2px solid var(--clubcal-primary);
 }
 .clubcalendar-header h2 {
     margin: 0;
-    color: #2c5aa0;
+    color: var(--clubcal-primary);
     font-size: 24px;
     font-weight: 600;
 }
 .clubcalendar-header p {
     margin: 5px 0 0;
-    color: #666;
+    color: var(--clubcal-text-muted);
     font-size: 14px;
 }
 
@@ -615,16 +673,16 @@
     height: 22px;
     border-radius: 50%;
     background: #e8f0fe;
-    color: #2c5aa0;
+    color: var(--clubcal-primary);
     font-size: 13px;
     font-weight: 700;
     cursor: help;
     position: relative;
-    border: 1px solid #2c5aa0;
+    border: 1px solid var(--clubcal-primary);
     transition: all 0.2s ease;
 }
 .clubcal-help-icon:hover {
-    background: #2c5aa0;
+    background: var(--clubcal-primary);
     color: white;
 }
 .clubcal-help-tooltip {
@@ -635,7 +693,7 @@
     margin-top: 10px;
     width: 320px;
     background: white;
-    border: 1px solid #ddd;
+    border: 1px solid var(--clubcal-border);
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     padding: 15px;
@@ -673,13 +731,13 @@
 .clubcal-help-tooltip h4 {
     margin: 0 0 10px 0;
     font-size: 14px;
-    color: #2c5aa0;
+    color: var(--clubcal-primary);
     font-weight: 600;
 }
 .clubcal-help-tooltip p {
     margin: 0 0 8px 0;
     font-size: 12px;
-    color: #666;
+    color: var(--clubcal-text-muted);
     line-height: 1.5;
 }
 .clubcal-help-section {
@@ -695,7 +753,7 @@
 .clubcal-help-section strong {
     display: block;
     font-size: 11px;
-    color: #333;
+    color: var(--clubcal-text);
     margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -727,7 +785,7 @@
     align-items: flex-end;
     margin-bottom: 15px;
     padding: 15px;
-    background: #f8f9fa;
+    background: var(--clubcal-bg-light);
     border-radius: 8px;
 }
 .clubcal-filter-group {
@@ -737,7 +795,7 @@
 }
 .clubcal-filter-group label {
     font-size: 11px;
-    color: #666;
+    color: var(--clubcal-text-muted);
     margin-bottom: 4px;
     font-weight: 600;
     text-transform: uppercase;
@@ -745,14 +803,14 @@
 }
 .clubcal-filter-group select {
     padding: 8px 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--clubcal-border);
     border-radius: 4px;
     font-size: 14px;
     background: white;
 }
 .clubcal-filter-group select:focus {
     outline: none;
-    border-color: #2c5aa0;
+    border-color: var(--clubcal-primary);
     box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
 }
 
@@ -768,35 +826,35 @@
 .clubcal-quick-filter {
     padding: 6px 14px;
     background: #fff;
-    border: 1px solid #ddd;
+    border: 1px solid var(--clubcal-border);
     border-radius: 20px;
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
 }
 .clubcal-quick-filter:hover {
-    background: #2c5aa0;
+    background: var(--clubcal-primary);
     color: white;
-    border-color: #2c5aa0;
+    border-color: var(--clubcal-primary);
 }
 .clubcal-quick-filter.active {
-    background: #2c5aa0;
+    background: var(--clubcal-primary);
     color: white;
-    border-color: #2c5aa0;
+    border-color: var(--clubcal-primary);
 }
 
 /* --- Clear Button --- */
 .clubcal-btn-clear {
     padding: 8px 16px;
     background: white;
-    border: 1px solid #ddd;
+    border: 1px solid var(--clubcal-border);
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
     transition: background-color 0.2s;
 }
 .clubcal-btn-clear:hover {
-    background: #f0f0f0;
+    background: var(--clubcal-bg-active);
 }
 .clubcal-clear-btn {
     padding: 8px 16px;
@@ -818,7 +876,7 @@
 .clubcal-view-toggle {
     display: flex;
     gap: 4px;
-    background: #2c5aa0;
+    background: var(--clubcal-primary);
     padding: 4px;
     border-radius: 6px;
 }
@@ -839,7 +897,7 @@
 }
 .clubcal-view-btn.active {
     background: white;
-    color: #2c5aa0;
+    color: var(--clubcal-primary);
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
@@ -850,10 +908,10 @@
     align-items: center;
     margin-bottom: 15px;
     font-size: 14px;
-    color: #666;
+    color: var(--clubcal-text-muted);
 }
 .clubcal-results-bar strong {
-    color: #333;
+    color: var(--clubcal-text);
 }
 
 /* --- Calendar Container --- */
@@ -878,12 +936,12 @@
 }
 .clubcalendar-widget .fc-toolbar-title {
     font-size: 1.2em;
-    color: #333;
+    color: var(--clubcal-text);
     display: inline;
 }
 .clubcalendar-widget .fc-button-primary {
-    background-color: #2c5aa0;
-    border-color: #2c5aa0;
+    background-color: var(--clubcal-primary);
+    border-color: var(--clubcal-primary);
 }
 .clubcalendar-widget .fc-button-primary:hover {
     background-color: #234a80;
@@ -898,10 +956,10 @@
     border-color: #1e3d6b;
 }
 .clubcalendar-widget .fc-daygrid-day-number {
-    color: #333;
+    color: var(--clubcal-text);
 }
 .clubcalendar-widget .fc-col-header-cell-cushion {
-    color: #666;
+    color: var(--clubcal-text-muted);
 }
 
 /* --- Event Styling --- */
@@ -937,7 +995,7 @@
     display: inline;
 }
 .clubcalendar-widget .fc-list-day-cushion {
-    background: #f8f9fa;
+    background: var(--clubcal-bg-light);
 }
 .clubcalendar-widget .fc-list-event-graphic {
     display: none; /* Hide default dot */
@@ -968,8 +1026,8 @@
     color: #7b1fa2;
 }
 .clubcal-badge.openings {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: var(--clubcal-success-bg);
+    color: var(--clubcal-success-dark);
 }
 .clubcal-badge.free {
     background: #fff8e1;
@@ -999,7 +1057,7 @@
     gap: 8px;
     padding: 8px 0;
     font-size: 13px;
-    color: #666;
+    color: var(--clubcal-text-muted);
     min-height: 20px;
 }
 .clubcal-active-filters:empty {
@@ -1009,8 +1067,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #e3f2fd;
-    color: #1565c0;
+    background: var(--clubcal-info-bg);
+    color: var(--clubcal-info-dark);
     padding: 4px 10px;
     border-radius: 12px;
     font-size: 12px;
@@ -1019,7 +1077,7 @@
     font-weight: 600;
 }
 .clubcal-filter-count {
-    background: #2c5aa0;
+    background: var(--clubcal-primary);
     color: white;
     padding: 2px 8px;
     border-radius: 10px;
@@ -1063,32 +1121,32 @@
     align-items: center;
     gap: 5px;
     padding: 5px 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--clubcal-border);
     border-radius: 15px;
     background: white;
     font-size: 12px;
-    color: #666;
+    color: var(--clubcal-text-muted);
     cursor: pointer;
     transition: all 0.2s;
 }
 .clubcal-time-filter-btn:hover {
-    background: #f5f5f5;
+    background: var(--clubcal-bg-hover);
     border-color: #bbb;
 }
 .clubcal-time-filter-btn.active {
-    background: #e3f2fd;
+    background: var(--clubcal-info-bg);
     border-color: #2196f3;
-    color: #1565c0;
+    color: var(--clubcal-info-dark);
 }
 .clubcal-time-filter-dot {
     width: 10px;
     height: 10px;
     border-radius: 3px;
 }
-.clubcal-time-filter-dot.morning { background: #ff9800; }
-.clubcal-time-filter-dot.afternoon { background: #42a5f5; }
-.clubcal-time-filter-dot.evening { background: #5c6bc0; }
-.clubcal-time-filter-dot.allday { background: #66bb6a; }
+.clubcal-time-filter-dot.morning { background: var(--clubcal-morning); }
+.clubcal-time-filter-dot.afternoon { background: var(--clubcal-afternoon); }
+.clubcal-time-filter-dot.evening { background: var(--clubcal-evening); }
+.clubcal-time-filter-dot.allday { background: var(--clubcal-allday); }
 
 /* Availability filter buttons */
 .clubcal-avail-filters {
@@ -1102,22 +1160,22 @@
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--clubcal-border);
     border-radius: 12px;
     background: white;
     font-size: 11px;
-    color: #666;
+    color: var(--clubcal-text-muted);
     cursor: pointer;
     transition: all 0.2s;
 }
 .clubcal-avail-filter-btn:hover {
-    background: #f5f5f5;
+    background: var(--clubcal-bg-hover);
     border-color: #bbb;
 }
 .clubcal-avail-filter-btn.active {
-    background: #e8f5e9;
+    background: var(--clubcal-success-bg);
     border-color: #4caf50;
-    color: #2e7d32;
+    color: var(--clubcal-success-dark);
 }
 
 /* Availability indicator dots */
@@ -1128,11 +1186,11 @@
     display: inline-block;
     flex-shrink: 0;
 }
-.clubcal-avail-dot.public { background: #4caf50; }
-.clubcal-avail-dot.available { background: #2196f3; }
-.clubcal-avail-dot.limited { background: #ff9800; }
-.clubcal-avail-dot.waitlist { background: #f44336; }
-.clubcal-avail-dot.unavailable { background: #9e9e9e; }
+.clubcal-avail-dot.public { background: var(--clubcal-avail-public); }
+.clubcal-avail-dot.available { background: var(--clubcal-avail-available); }
+.clubcal-avail-dot.limited { background: var(--clubcal-avail-limited); }
+.clubcal-avail-dot.waitlist { background: var(--clubcal-avail-waitlist); }
+.clubcal-avail-dot.unavailable { background: var(--clubcal-avail-unavailable); }
 
 /* Filter button dots - each filter type has a unique color */
 .clubcal-filter-dot {
@@ -1142,14 +1200,14 @@
     display: inline-block;
     flex-shrink: 0;
 }
-.clubcal-filter-dot.weekend { background: #9c27b0; }
-.clubcal-filter-dot.openings { background: #4caf50; }
-.clubcal-filter-dot.free { background: #ffc107; }
-.clubcal-filter-dot.afterhours { background: #5c6bc0; }
-.clubcal-filter-dot.newbie { background: #00bcd4; }
-.clubcal-filter-dot.public { background: #8bc34a; }
-.clubcal-filter-dot.justopened { background: #e91e63; }
-.clubcal-filter-dot.openingsoon { background: #009688; }
+.clubcal-filter-dot.weekend { background: var(--clubcal-dot-weekend); }
+.clubcal-filter-dot.openings { background: var(--clubcal-dot-openings); }
+.clubcal-filter-dot.free { background: var(--clubcal-dot-free); }
+.clubcal-filter-dot.afterhours { background: var(--clubcal-dot-afterhours); }
+.clubcal-filter-dot.newbie { background: var(--clubcal-dot-newbie); }
+.clubcal-filter-dot.public { background: var(--clubcal-dot-public); }
+.clubcal-filter-dot.justopened { background: var(--clubcal-dot-justopened); }
+.clubcal-filter-dot.openingsoon { background: var(--clubcal-dot-openingsoon); }
 
 /* Event display - custom content with time+dots on first line */
 .clubcalendar-widget .fc-daygrid-event {
@@ -1211,7 +1269,7 @@
     align-items: center;
     gap: 4px;
     padding: 6px 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--clubcal-border);
     border-radius: 14px;
     background: white;
     font-size: 12px;
@@ -1221,12 +1279,12 @@
     white-space: nowrap;
 }
 .clubcal-action-btn:hover {
-    background: #f0f0f0;
+    background: var(--clubcal-bg-active);
     border-color: #bbb;
 }
 .clubcal-action-btn.active {
-    background: #2c5aa0;
-    border-color: #2c5aa0;
+    background: var(--clubcal-primary);
+    border-color: var(--clubcal-primary);
     color: white;
 }
 .clubcal-action-btn.active .clubcal-filter-dot,
@@ -1241,7 +1299,7 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: #666;
+    color: var(--clubcal-text-muted);
     margin-left: auto;
 }
 .clubcal-past-toggle input {
@@ -1253,7 +1311,7 @@
 /* Cost filter */
 .clubcal-cost-filter {
     padding: 5px 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--clubcal-border);
     border-radius: 4px;
     font-size: 12px;
     background: white;
@@ -1274,7 +1332,7 @@
     overflow: hidden;
 }
 .clubcal-event-popup-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6b 100%);
+    background: linear-gradient(135deg, var(--clubcal-primary) 0%, var(--clubcal-primary-dark) 100%);
     color: white;
     padding: 20px;
 }
@@ -1304,10 +1362,10 @@
     align-items: center;
     gap: 10px;
     font-size: 14px;
-    color: #666;
+    color: var(--clubcal-text-muted);
 }
 .clubcal-event-popup-meta-item strong {
-    color: #333;
+    color: var(--clubcal-text);
 }
 .clubcal-event-popup-actions {
     display: flex;
@@ -1326,32 +1384,68 @@
     text-decoration: none;
 }
 .clubcal-btn-primary {
-    background: #2c5aa0;
+    background: var(--clubcal-primary);
     color: white;
 }
 .clubcal-btn-primary:hover {
     background: #234a80;
 }
 .clubcal-btn-secondary {
-    background: #f0f0f0;
-    color: #333;
+    background: var(--clubcal-bg-active);
+    color: var(--clubcal-text);
 }
 .clubcal-btn-secondary:hover {
     background: #e0e0e0;
 }
 .clubcal-btn-calendar {
-    background: #4caf50;
+    background: var(--clubcal-success);
     color: white;
     text-decoration: none;
 }
 .clubcal-btn-calendar:hover {
-    background: #43a047;
+    background: var(--clubcal-success-dark);
 }
+
+/* --- Add to Calendar Icons --- */
+.clubcal-calendar-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.clubcal-calendar-label {
+    font-size: 12px;
+    color: var(--clubcal-text-muted);
+    margin-right: 2px;
+}
+.clubcal-cal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: none;
+    padding: 0;
+}
+.clubcal-cal-btn svg {
+    display: block;
+}
+.clubcal-cal-btn:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+}
+.clubcal-cal-google { background: #4285f4; }
+.clubcal-cal-outlook { background: #0078d4; }
+.clubcal-cal-yahoo { background: #6001d2; }
+.clubcal-cal-apple { background: #333; }
 
 /* --- Popup text links (not buttons) should be underlined for accessibility --- */
 .clubcal-event-popup-body a:not(.clubcal-btn) {
     text-decoration: underline;
-    color: #2c5aa0;
+    color: var(--clubcal-primary);
 }
 .clubcal-event-popup-body a:not(.clubcal-btn):hover {
     text-decoration: underline;
@@ -1377,7 +1471,7 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    color: #2c5aa0;
+    color: var(--clubcal-primary);
     transition: color 0.2s;
 }
 .clubcal-popup-section-header:hover {
@@ -1417,7 +1511,7 @@
     align-items: center;
     gap: 8px;
     padding: 6px 10px;
-    background: #f8f9fa;
+    background: var(--clubcal-bg-light);
     border-radius: 6px;
     font-size: 13px;
 }
@@ -1425,7 +1519,7 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: #2c5aa0;
+    background: var(--clubcal-primary);
     color: white;
     display: flex;
     align-items: center;
@@ -1435,10 +1529,10 @@
 }
 .clubcal-registrant-name {
     flex: 1;
-    color: #333;
+    color: var(--clubcal-text);
 }
 .clubcal-registrant-name a {
-    color: #2c5aa0;
+    color: var(--clubcal-primary);
     text-decoration: none;
 }
 .clubcal-registrant-name a:hover {
@@ -1448,12 +1542,12 @@
 .clubcal-registrants-empty {
     padding: 15px;
     text-align: center;
-    color: #666;
+    color: var(--clubcal-text-muted);
     font-size: 13px;
 }
 .clubcal-registrants-count {
     font-size: 12px;
-    color: #666;
+    color: var(--clubcal-text-muted);
     font-weight: normal;
     margin-left: 8px;
 }
@@ -1520,7 +1614,7 @@
     font-weight: 600;
     border: none;
     background: #e0e0e0;
-    color: #666;
+    color: var(--clubcal-text-muted);
     cursor: pointer;
     transition: all 0.2s;
     border-radius: 8px 8px 0 0;
@@ -1530,7 +1624,7 @@
 }
 .clubcal-tab-btn.active {
     background: white;
-    color: #2c5aa0;
+    color: var(--clubcal-primary);
 }
 .clubcal-tab-content {
     display: none;
@@ -1561,11 +1655,11 @@
     outline: none;
 }
 .clubcal-my-events-search input[type="email"]:focus {
-    border-color: #2c5aa0;
+    border-color: var(--clubcal-primary);
 }
 .clubcal-my-events-search button {
     padding: 12px 24px;
-    background: #2c5aa0;
+    background: var(--clubcal-primary);
     color: white;
     border: none;
     border-radius: 8px;
@@ -1581,7 +1675,7 @@
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: #666;
+    color: var(--clubcal-text-muted);
 }
 .clubcal-my-events-options input[type="checkbox"] {
     width: 16px;
@@ -1614,7 +1708,7 @@
     border-left: 4px solid #ff9800;
 }
 .clubcal-event-card-date {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6b 100%);
+    background: linear-gradient(135deg, var(--clubcal-primary) 0%, var(--clubcal-primary-dark) 100%);
     color: white;
     padding: 16px;
     min-width: 80px;
@@ -1645,18 +1739,18 @@
 .clubcal-event-card-category {
     display: inline-block;
     padding: 4px 10px;
-    background: #f0f0f0;
+    background: var(--clubcal-bg-active);
     border-radius: 12px;
     font-size: 11px;
     font-weight: 600;
-    color: #666;
+    color: var(--clubcal-text-muted);
     margin-bottom: 8px;
     text-transform: uppercase;
 }
 .clubcal-event-card-title {
     font-size: 16px;
     font-weight: 600;
-    color: #333;
+    color: var(--clubcal-text);
     margin-bottom: 6px;
 }
 .clubcal-event-card-meta {
@@ -1664,7 +1758,7 @@
     flex-wrap: wrap;
     gap: 12px;
     font-size: 13px;
-    color: #666;
+    color: var(--clubcal-text-muted);
 }
 .clubcal-event-card-status {
     padding: 16px;
@@ -1682,8 +1776,8 @@
     font-weight: 600;
 }
 .clubcal-status-badge.confirmed {
-    background: #e3f2fd;
-    color: #1565c0;
+    background: var(--clubcal-info-bg);
+    color: var(--clubcal-info-dark);
 }
 .clubcal-status-badge.waitlist {
     background: #fff3e0;
@@ -1960,17 +2054,7 @@
      *                confirmed_count, cost_category, good_for_newbies, tags, is_public }
      */
     function mapJsonEventToInternal(event) {
-        // Map cost_category to minPrice for filtering
-        const costMap = {
-            'Free': 0,
-            'Under $25': 12,
-            '$25-50': 37,
-            '$50-100': 75,
-            'Over $100': 150
-        };
-
-        const minPrice = costMap[event.cost_category] ?? null;
-        const isFree = event.cost_category === 'Free' || minPrice === 0;
+        const isFree = event.cost_category === 'Free';
 
         return {
             id: event.id,
@@ -1983,8 +2067,8 @@
             confirmed: event.confirmed_count,
             tags: Array.isArray(event.tags) ? event.tags.join(', ') : event.tags,
             status: event.is_full ? 'Full' : 'Open',
-            minPrice: minPrice,
-            maxPrice: minPrice,
+            minPrice: isFree ? 0 : null,
+            maxPrice: isFree ? 0 : null,
             isFree: isFree ? 1 : 0,
             hasGuestTickets: event.is_public ? 1 : 0,
             registrationOpenDate: event.registration_open_date || null,
@@ -2253,7 +2337,7 @@
         }
 
         // Public/guest viewing (not logged in)
-        if (!memberLevel) {
+        if (memberLevel === 'public') {
             if (isPublic) {
                 if (availability.status === 'low') {
                     return { status: 'limited', label: 'Limited spots' };
@@ -2344,9 +2428,91 @@
     }
 
     /**
+     * Generates a Google Calendar URL for an event.
+     * Opens Google Calendar with pre-filled event details.
+     */
+    function generateGoogleCalendarUrl(event) {
+        const startDate = new Date(event.startDate);
+        const endDate = new Date(event.endDate || event.startDate);
+
+        // Google Calendar uses YYYYMMDDTHHmmssZ format
+        const formatGoogleDate = (date) => {
+            return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+        };
+
+        const params = new URLSearchParams({
+            action: 'TEMPLATE',
+            text: event.name || 'Event',
+            dates: `${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}`,
+            details: `View event details and register: https://sbnewcomers.org/event-${event.id}`,
+            location: event.location || '',
+            sf: 'true'
+        });
+
+        return `https://calendar.google.com/calendar/render?${params.toString()}`;
+    }
+
+    /**
+     * Generates an Outlook.com calendar URL for an event.
+     * Opens Outlook web calendar with pre-filled event details.
+     */
+    function generateOutlookUrl(event) {
+        const startDate = new Date(event.startDate);
+        const endDate = new Date(event.endDate || event.startDate);
+
+        const params = new URLSearchParams({
+            path: '/calendar/action/compose',
+            rru: 'addevent',
+            subject: event.name || 'Event',
+            startdt: startDate.toISOString(),
+            enddt: endDate.toISOString(),
+            body: `View event details and register: https://sbnewcomers.org/event-${event.id}`,
+            location: event.location || ''
+        });
+
+        return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+    }
+
+    /**
+     * Generates a Yahoo Calendar URL for an event.
+     */
+    function generateYahooUrl(event) {
+        const startDate = new Date(event.startDate);
+        const endDate = new Date(event.endDate || event.startDate);
+
+        // Yahoo uses YYYYMMDDTHHmmss format (no Z)
+        const formatYahooDate = (date) => {
+            return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, '');
+        };
+
+        // Calculate duration in hours and minutes (HHmm format)
+        const durationMs = endDate - startDate;
+        const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+        const durationMins = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+        const duration = String(durationHours).padStart(2, '0') + String(durationMins).padStart(2, '0');
+
+        const params = new URLSearchParams({
+            v: '60',
+            title: event.name || 'Event',
+            st: formatYahooDate(startDate),
+            dur: duration,
+            desc: `View event details and register: https://sbnewcomers.org/event-${event.id}`,
+            in_loc: event.location || ''
+        });
+
+        return `https://calendar.yahoo.com/?${params.toString()}`;
+    }
+
+    /**
      * Formats event price for display.
+     * Uses cost category strings (e.g., "Under $25") rather than fake numeric midpoints.
      */
     function formatPrice(event) {
+        // Prefer the human-readable category from sync data
+        if (event.costCategory) {
+            return event.costCategory;
+        }
+        // Fallback for legacy data with numeric prices
         if (event.isFree === 1 || event.minPrice === 0) {
             return 'Free';
         }
@@ -2379,7 +2545,7 @@
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 4: WIDGET INTEGRATION (Connects ClubCalendar data to FullCalendar)
-// CATEGORY C: UI LAYER | ~47% of code | Dependencies: FullCalendar, jQuery
+// CATEGORY C: UI LAYER | ~47% of code | Dependencies: FullCalendar only (vanilla JS for DOM)
 // Risk: MEDIUM-HIGH | Breaks if: Library APIs change, HTML structure assumptions fail
 // ═══════════════════════════════════════════════════════════════════════════
 //
@@ -2396,7 +2562,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Loads external library dependencies (FullCalendar, jQuery).
+     * Loads external library dependencies (FullCalendar only - jQuery removed).
      *
      * @param {Function} callback - Called when all dependencies ready
      */
@@ -2406,11 +2572,6 @@
                 type: 'css',
                 url: 'https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.css',
                 check: () => true // CSS always loads
-            },
-            {
-                type: 'js',
-                url: 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js',
-                check: () => window.jQuery
             },
             {
                 type: 'js',
@@ -2554,8 +2715,11 @@
             `;
         }
 
-        // Tabs (if My Events is enabled)
-        if (CONFIG.showMyEvents) {
+        // Tabs (if My Events is enabled AND user is logged in)
+        // Security: My Events requires login to prevent arbitrary email lookup
+        const isLoggedIn = CONFIG.memberLevel && CONFIG.memberLevel !== 'public';
+        const showMyEventsTab = CONFIG.showMyEvents && isLoggedIn;
+        if (showMyEventsTab) {
             html += `
                 <div class="clubcal-tabs">
                     <button class="clubcal-tab-btn active" data-tab="find-events">Find Events</button>
@@ -2565,7 +2729,7 @@
         }
 
         // Find Events Tab Content
-        const tabClass = CONFIG.showMyEvents ? 'clubcal-tab-content active' : '';
+        const tabClass = showMyEventsTab ? 'clubcal-tab-content active' : '';
         html += `<div id="clubcal-tab-find-events" class="${tabClass}">`;
 
         // Filter bar
@@ -2575,7 +2739,7 @@
             // View toggle first, then filters
             html += `
                 <div class="clubcal-filter-group">
-                    <div class="clubcal-view-toggle" style="background: #2c5aa0; padding: 4px;">
+                    <div class="clubcal-view-toggle" style="background: var(--clubcal-primary); padding: 4px;">
                         <button class="clubcal-view-btn active" data-view="dayGridMonth" style="font-weight: 600;">Calendar</button>
                         <button class="clubcal-view-btn" data-view="listMonth" style="font-weight: 600;">List</button>
                     </div>
@@ -2635,7 +2799,7 @@
                             <option value="over100">$100+</option>
                         </select>
                     </div>
-                    <button class="clubcal-clear-btn" onclick="ClubCalendar.clearFilters()">Clear All</button>
+                    <button class="clubcal-clear-btn" data-action="clearFilters">Clear All</button>
                 `;
             }
 
@@ -2676,16 +2840,16 @@
             <div id="clubcal-tab-my-events" class="clubcal-tab-content">
                 <div class="clubcal-my-events-search">
                     <input type="email" id="clubcal-member-email" placeholder="Enter your email address">
-                    <button onclick="window.ClubCalendar.findMyEvents()">Look Up My Events</button>
+                    <button data-action="findMyEvents">Look Up My Events</button>
                     <div class="clubcal-my-events-options" style="display: flex; align-items: center; gap: 6px;">
-                        <label for="clubcal-my-events-past" style="color: #666; font-size: 13px;">Include past:</label>
-                        <select id="clubcal-my-events-past" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd; font-size: 13px;">
+                        <label for="clubcal-my-events-past" style="color: var(--clubcal-text-muted); font-size: 13px;">Include past:</label>
+                        <select id="clubcal-my-events-past" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--clubcal-border); font-size: 13px;">
                             <option value="0">None</option>
                             ${Array.from({length: CONFIG.pastEventsMonthsList || 6}, (_, i) => i + 1).map(m => `<option value="${m}"${m === 3 ? ' selected' : ''}>${m} month${m > 1 ? 's' : ''}</option>`).join('')}
                         </select>
                     </div>
                 </div>
-                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+                <p style="font-size: 13px; color: var(--clubcal-text-muted); margin-bottom: 15px;">
                     Enter your email to see events you're registered for and any waitlist positions.
                 </p>
                 <div id="clubcal-my-events-list">
@@ -2711,101 +2875,169 @@
 
         // Bind events
         bindFilterEvents();
+        bindDelegatedEvents();
 
         return true;
     }
 
     /**
      * Binds event listeners for filters and view toggle.
+     * Uses vanilla JS (no jQuery dependency).
      */
     function bindFilterEvents() {
-        const $ = window.jQuery;
+        const container = document.querySelector('.clubcal-container');
+        if (!container) return;
 
         // Tab switching
-        $('.clubcal-tab-btn').on('click', function() {
-            const tab = $(this).data('tab');
-            switchTab(tab);
+        container.querySelectorAll('.clubcal-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                switchTab(tab);
+            });
         });
 
         // Filter dropdowns
-        $('#clubcal-filter-interest, #clubcal-filter-time, #clubcal-filter-availability')
-            .on('change', applyFilters);
+        ['clubcal-filter-interest', 'clubcal-filter-time', 'clubcal-filter-availability'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', applyFilters);
+        });
 
         // View toggle buttons
-        $('.clubcal-view-btn').on('click', function() {
-            $('.clubcal-view-btn').removeClass('active');
-            $(this).addClass('active');
-            const view = $(this).data('view');
-            if (calendarInstance) {
-                calendarInstance.changeView(view);
-            }
+        container.querySelectorAll('.clubcal-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.clubcal-view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const view = btn.dataset.view;
+                if (calendarInstance) {
+                    calendarInstance.changeView(view);
+                }
+            });
         });
 
         // Quick filter buttons
-        $('.clubcal-quick-filter').on('click', function() {
-            const filter = $(this).data('filter');
-            quickFilter(filter);
+        container.querySelectorAll('.clubcal-quick-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = btn.dataset.filter;
+                quickFilter(filter);
+            });
         });
 
         // My Events email input - allow Enter key to submit
-        $('#clubcal-member-email').on('keypress', function(e) {
-            if (e.which === 13) {
-                findMyEvents();
-            }
-        });
+        const emailInput = document.getElementById('clubcal-member-email');
+        if (emailInput) {
+            emailInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.which === 13) {
+                    findMyEvents();
+                }
+            });
+        }
 
         // Action buttons (multiple can be active - AND logic)
-        $('.clubcal-action-btn').on('click', function() {
-            const $btn = $(this);
-            $btn.toggleClass('active');
+        container.querySelectorAll('.clubcal-action-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
 
-            // Handle different button types
-            const filterVal = $btn.data('filter');
-            const timeVal = $btn.data('time');
-            const availVal = $btn.data('avail');
+                // Handle different button types
+                const filterVal = btn.dataset.filter;
+                const timeVal = btn.dataset.time;
+                const availVal = btn.dataset.avail;
+                const isActive = btn.classList.contains('active');
 
-            if (filterVal) {
-                // Quick filters (weekend, openings, free, afterhours)
-                if ($btn.hasClass('active')) {
-                    if (!currentFilters.quickFilters.includes(filterVal)) {
-                        currentFilters.quickFilters.push(filterVal);
+                if (filterVal) {
+                    // Quick filters (weekend, openings, free, afterhours)
+                    if (!currentFilters.quickFilters) currentFilters.quickFilters = [];
+                    if (isActive) {
+                        if (!currentFilters.quickFilters.includes(filterVal)) {
+                            currentFilters.quickFilters.push(filterVal);
+                        }
+                    } else {
+                        currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filterVal);
                     }
-                } else {
-                    currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filterVal);
-                }
-            } else if (timeVal) {
-                // Time of day filters
-                if ($btn.hasClass('active')) {
-                    if (!currentFilters.timeOfDay.includes(timeVal)) {
-                        currentFilters.timeOfDay.push(timeVal);
+                } else if (timeVal) {
+                    // Time of day filters
+                    if (!currentFilters.timeOfDay) currentFilters.timeOfDay = [];
+                    if (isActive) {
+                        if (!currentFilters.timeOfDay.includes(timeVal)) {
+                            currentFilters.timeOfDay.push(timeVal);
+                        }
+                    } else {
+                        currentFilters.timeOfDay = currentFilters.timeOfDay.filter(t => t !== timeVal);
                     }
-                } else {
-                    currentFilters.timeOfDay = currentFilters.timeOfDay.filter(t => t !== timeVal);
-                }
-            } else if (availVal) {
-                // Availability filters
-                if ($btn.hasClass('active')) {
-                    if (!currentFilters.memberAvailability.includes(availVal)) {
-                        currentFilters.memberAvailability.push(availVal);
+                } else if (availVal) {
+                    // Availability filters
+                    if (!currentFilters.memberAvailability) currentFilters.memberAvailability = [];
+                    if (isActive) {
+                        if (!currentFilters.memberAvailability.includes(availVal)) {
+                            currentFilters.memberAvailability.push(availVal);
+                        }
+                    } else {
+                        currentFilters.memberAvailability = currentFilters.memberAvailability.filter(a => a !== availVal);
                     }
-                } else {
-                    currentFilters.memberAvailability = currentFilters.memberAvailability.filter(a => a !== availVal);
                 }
-            }
 
-            filterAndRender();
+                filterAndRender();
+            });
         });
 
         // Cost filter dropdown
-        $('#clubcal-filter-cost').on('change', function() {
-            currentFilters.cost = $(this).val() || null;
-            filterAndRender();
-        });
+        const costFilter = document.getElementById('clubcal-filter-cost');
+        if (costFilter) {
+            costFilter.addEventListener('change', () => {
+                currentFilters.cost = costFilter.value || null;
+                filterAndRender();
+            });
+        }
 
         // Committee filter dropdown
-        $('#clubcal-filter-committee').on('change', function() {
-            currentFilters.committee = $(this).val() || null;
-            filterAndRender();
+        const committeeFilter = document.getElementById('clubcal-filter-committee');
+        if (committeeFilter) {
+            committeeFilter.addEventListener('change', () => {
+                currentFilters.committee = committeeFilter.value || null;
+                filterAndRender();
+            });
+        }
+    }
+
+    /**
+     * Binds delegated event handlers for dynamically generated content.
+     * This replaces inline onclick handlers with data-action attributes.
+     * Uses vanilla JS (no jQuery dependency).
+     */
+    function bindDelegatedEvents() {
+        // Use event delegation on document for popup and dynamic content
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+            const eventId = target.dataset.eventId;
+            const icsUrl = target.dataset.icsUrl;
+            const section = target.dataset.section;
+
+            switch (action) {
+                case 'closePopup':
+                    closeEventPopup();
+                    break;
+                case 'toggleSection':
+                    if (section) togglePopupSection(section);
+                    break;
+                case 'downloadIcs':
+                    if (icsUrl && eventId) {
+                        window.ClubCalendar.downloadIcs(icsUrl, eventId);
+                    }
+                    break;
+                case 'clearFilters':
+                    clearFilters();
+                    break;
+                case 'findMyEvents':
+                    findMyEvents();
+                    break;
+                case 'openEvent':
+                    if (eventId) {
+                        window.open(`https://sbnewcomers.org/event-${eventId}`, '_blank');
+                    }
+                    break;
+            }
         });
     }
 
@@ -2831,56 +3063,72 @@
 
     /**
      * Switches between Find Events and My Events tabs.
+     * Uses vanilla JS (no jQuery dependency).
      */
     function switchTab(tab) {
-        const $ = window.jQuery;
-
         // Update tab buttons
-        $('.clubcal-tab-btn').removeClass('active');
-        $(`.clubcal-tab-btn[data-tab="${tab}"]`).addClass('active');
+        document.querySelectorAll('.clubcal-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const activeTabBtn = document.querySelector(`.clubcal-tab-btn[data-tab="${tab}"]`);
+        if (activeTabBtn) activeTabBtn.classList.add('active');
 
         // Update tab content
-        $('.clubcal-tab-content').removeClass('active');
-        $(`#clubcal-tab-${tab}`).addClass('active');
+        document.querySelectorAll('.clubcal-tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        const activeTabContent = document.getElementById(`clubcal-tab-${tab}`);
+        if (activeTabContent) activeTabContent.classList.add('active');
     }
 
     /**
      * Applies current filter settings and refreshes calendar.
+     * Uses vanilla JS (no jQuery dependency).
      */
     function applyFilters() {
-        const $ = window.jQuery;
-
         // Update dropdown filter values while preserving other filter state
-        currentFilters.interest = $('#clubcal-filter-interest').val() || null;
-        currentFilters.time = $('#clubcal-filter-time').val() || 'upcoming';
-        currentFilters.availability = $('#clubcal-filter-availability').val() || null;
+        const interestEl = document.getElementById('clubcal-filter-interest');
+        const timeEl = document.getElementById('clubcal-filter-time');
+        const availEl = document.getElementById('clubcal-filter-availability');
+
+        currentFilters.interest = interestEl ? (interestEl.value || null) : null;
+        currentFilters.time = timeEl ? (timeEl.value || 'upcoming') : 'upcoming';
+        currentFilters.availability = availEl ? (availEl.value || null) : null;
 
         filterAndRender();
     }
 
     /**
      * Handles quick filter button clicks.
+     * Uses vanilla JS (no jQuery dependency).
      */
     function quickFilter(type) {
-        const $ = window.jQuery;
-
         // Reset filters
-        $('#clubcal-filter-interest').val('');
-        $('#clubcal-filter-time').val('upcoming');
-        $('#clubcal-filter-availability').val('');
+        const interestEl = document.getElementById('clubcal-filter-interest');
+        const timeEl = document.getElementById('clubcal-filter-time');
+        const availEl = document.getElementById('clubcal-filter-availability');
 
-        // Remove active class
-        $('.clubcal-quick-filter').removeClass('active');
+        if (interestEl) interestEl.value = '';
+        if (timeEl) timeEl.value = 'upcoming';
+        if (availEl) availEl.value = '';
+
+        // Remove active class from all quick filters
+        document.querySelectorAll('.clubcal-quick-filter').forEach(btn => {
+            btn.classList.remove('active');
+        });
 
         if (type === 'this-weekend') {
-            $('#clubcal-filter-time').val('weekend');
-            $('[data-filter="this-weekend"]').addClass('active');
+            if (timeEl) timeEl.value = 'weekend';
+            const weekendBtn = document.querySelector('[data-filter="this-weekend"]');
+            if (weekendBtn) weekendBtn.classList.add('active');
         } else if (type === 'has-openings') {
-            $('#clubcal-filter-availability').val('available');
-            $('[data-filter="has-openings"]').addClass('active');
+            if (availEl) availEl.value = 'available';
+            const openingsBtn = document.querySelector('[data-filter="has-openings"]');
+            if (openingsBtn) openingsBtn.classList.add('active');
         } else if (type === 'free') {
-            $('#clubcal-filter-availability').val('free');
-            $('[data-filter="free"]').addClass('active');
+            if (availEl) availEl.value = 'free';
+            const freeBtn = document.querySelector('[data-filter="free"]');
+            if (freeBtn) freeBtn.classList.add('active');
         }
 
         applyFilters();
@@ -2888,16 +3136,24 @@
 
     /**
      * Clears all filters and resets calendar.
+     * Uses vanilla JS (no jQuery dependency).
      */
     function clearFilters() {
-        const $ = window.jQuery;
+        // Reset all filter dropdowns
+        const filterIds = ['clubcal-filter-interest', 'clubcal-filter-committee',
+                          'clubcal-filter-availability', 'clubcal-filter-cost'];
+        filterIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
 
-        $('#clubcal-filter-interest').val('');
-        $('#clubcal-filter-committee').val('');
-        $('#clubcal-filter-availability').val('');
-        $('#clubcal-filter-cost').val('');
-        $('.clubcal-quick-filter').removeClass('active');
-        $('.clubcal-action-btn').removeClass('active');
+        // Remove active class from filter buttons
+        document.querySelectorAll('.clubcal-quick-filter').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelectorAll('.clubcal-action-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
 
         currentFilters = {
             interest: null,
@@ -2956,19 +3212,19 @@
             'afterhours': 'After Hours', 'newbie': 'Openings for Newbies',
             'justopened': 'Just Opened', 'openingsoon': 'Opening Soon'
         };
-        currentFilters.quickFilters.forEach(qf => {
+        (currentFilters.quickFilters || []).forEach(qf => {
             tags.push(`<span class="clubcal-active-filter-tag">${quickFilterLabels[qf] || qf}</span>`);
         });
 
         // Time of day
         const timeLabels = { 'morning': 'Morning', 'afternoon': 'Afternoon', 'evening': 'Evening' };
-        currentFilters.timeOfDay.forEach(t => {
+        (currentFilters.timeOfDay || []).forEach(t => {
             tags.push(`<span class="clubcal-active-filter-tag">${timeLabels[t] || t}</span>`);
         });
 
         // Member availability
         const availLabels = { 'public': 'Guests Welcome', 'available': 'Spots Open', 'limited': 'Few Spots Left' };
-        currentFilters.memberAvailability.forEach(a => {
+        (currentFilters.memberAvailability || []).forEach(a => {
             tags.push(`<span class="clubcal-active-filter-tag">${availLabels[a] || a}</span>`);
         });
 
@@ -3018,7 +3274,7 @@
             }
 
             // Quick filters (AND logic - all must match)
-            if (currentFilters.quickFilters.length > 0) {
+            if (currentFilters.quickFilters && currentFilters.quickFilters.length > 0) {
                 for (const qf of currentFilters.quickFilters) {
                     if (qf === 'weekend' && dayOfWeek !== 0 && dayOfWeek !== 6) return false;
                     if (qf === 'openings' && availability.status === 'full') return false;
@@ -3067,23 +3323,23 @@
             }
 
             // Time of day filters (OR logic within group, but AND with other groups)
-            if (currentFilters.timeOfDay.length > 0) {
+            if (currentFilters.timeOfDay && currentFilters.timeOfDay.length > 0) {
                 if (!currentFilters.timeOfDay.includes(timeOfDay)) return false;
             }
 
             // Member availability filters (OR logic within group)
-            if (currentFilters.memberAvailability.length > 0) {
+            if (currentFilters.memberAvailability && currentFilters.memberAvailability.length > 0) {
                 if (!currentFilters.memberAvailability.includes(memberAvail.status)) return false;
             }
 
-            // Cost filter
+            // Cost filter - using category strings directly (cleaner than fake numeric midpoints)
             if (currentFilters.cost) {
-                const price = event.minPrice || 0;
-                if (currentFilters.cost === 'free' && !isFree) return false;
-                if (currentFilters.cost === 'under25' && price >= 25) return false;
-                if (currentFilters.cost === 'under50' && price >= 50) return false;
-                if (currentFilters.cost === 'under100' && price >= 100) return false;
-                if (currentFilters.cost === 'over100' && price < 100) return false;
+                const category = event.costCategory || '';
+                if (currentFilters.cost === 'free' && category !== 'Free') return false;
+                if (currentFilters.cost === 'under25' && !['Free', 'Under $25'].includes(category)) return false;
+                if (currentFilters.cost === 'under50' && !['Free', 'Under $25', '$25-50'].includes(category)) return false;
+                if (currentFilters.cost === 'under100' && !['Free', 'Under $25', '$25-50', '$50-100'].includes(category)) return false;
+                if (currentFilters.cost === 'over100' && category !== 'Over $100') return false;
             }
 
             // Committee filter (based on event name prefix)
@@ -3301,8 +3557,8 @@
             }
 
             pastSelector.innerHTML = `
-                <label for="clubcal-past-months" style="color: #666;">Show:</label>
-                <select id="clubcal-past-months" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd;">
+                <label for="clubcal-past-months" style="color: var(--clubcal-text-muted);">Show:</label>
+                <select id="clubcal-past-months" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--clubcal-border);">
                     ${options}
                 </select>
             `;
@@ -3421,7 +3677,7 @@
             : '';
 
         const popupHtml = `
-            <div class="clubcal-popup-overlay" onclick="window.ClubCalendar.closePopup()"></div>
+            <div class="clubcal-popup-overlay" data-action="closePopup"></div>
             <div class="clubcal-event-popup">
                 <div class="clubcal-event-popup-header">
                     <span class="clubcal-event-popup-category">${escapeHtml(event.category)}</span>
@@ -3437,7 +3693,7 @@
                             <span>🕐</span>
                             <strong>${timeStr}</strong>
                         </div>
-                        ${event.location && CONFIG.memberLevel ? `
+                        ${event.location && CONFIG.memberLevel !== 'public' ? `
                         <div class="clubcal-event-popup-meta-item">
                             <span>📍</span>
                             <strong>${escapeHtml(event.location)}</strong>
@@ -3459,11 +3715,11 @@
                     </div>
 
                     <!-- Expandable Sections (Members Only) -->
-                    ${CONFIG.memberLevel ? `
+                    ${CONFIG.memberLevel !== 'public' ? `
                     <div class="clubcal-popup-sections">
                         <!-- Who's Registered Section - MEMBERS ONLY -->
                         <div class="clubcal-popup-section" id="clubcal-registrants-section">
-                            <div class="clubcal-popup-section-header" onclick="window.ClubCalendar.toggleSection('registrants')">
+                            <div class="clubcal-popup-section-header" data-action="toggleSection" data-section="registrants">
                                 <span>
                                     <span class="clubcal-section-icon">👥</span>
                                     Who's Registered?
@@ -3480,7 +3736,7 @@
 
                         <!-- Photo Gallery Section - MEMBERS ONLY -->
                         <div class="clubcal-popup-section" id="clubcal-gallery-section" style="display:none;">
-                            <div class="clubcal-popup-section-header" onclick="window.ClubCalendar.toggleSection('gallery')">
+                            <div class="clubcal-popup-section-header" data-action="toggleSection" data-section="gallery">
                                 <span>
                                     <span class="clubcal-section-icon">📷</span>
                                     Photo Gallery
@@ -3501,11 +3757,23 @@
                             View & Register
                         </a>
                         ${CONFIG.showAddToCalendar ? `
-                        <button class="clubcal-btn clubcal-btn-calendar" onclick="window.ClubCalendar.downloadIcs('${generateIcsUrl(event)}', '${event.id}')">
-                            📅 Add to Calendar
-                        </button>
+                        <div class="clubcal-calendar-icons">
+                            <span class="clubcal-calendar-label">Add to:</span>
+                            <a href="${generateGoogleCalendarUrl(event)}" target="_blank" rel="noopener" class="clubcal-cal-btn clubcal-cal-google" title="Google Calendar">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                            </a>
+                            <a href="${generateOutlookUrl(event)}" target="_blank" rel="noopener" class="clubcal-cal-btn clubcal-cal-outlook" title="Outlook.com">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zm0-13H5V5h14v1zM7 10h5v5H7z"/></svg>
+                            </a>
+                            <a href="${generateYahooUrl(event)}" target="_blank" rel="noopener" class="clubcal-cal-btn clubcal-cal-yahoo" title="Yahoo Calendar">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M12 2L8.5 9H4l4 7v6h4v-6l4-7h-4.5L12 2z"/></svg>
+                            </a>
+                            <button data-action="downloadIcs" data-ics-url="${generateIcsUrl(event)}" data-event-id="${event.id}" class="clubcal-cal-btn clubcal-cal-apple" title="Apple Calendar / Download .ics">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                            </button>
+                        </div>
                         ` : ''}
-                        <button class="clubcal-btn clubcal-btn-secondary" onclick="window.ClubCalendar.closePopup()">
+                        <button class="clubcal-btn clubcal-btn-secondary" data-action="closePopup">
                             Close
                         </button>
                     </div>
@@ -3516,7 +3784,7 @@
         document.body.insertAdjacentHTML('beforeend', popupHtml);
 
         // Fetch registrants and photo info (MEMBERS ONLY)
-        if (CONFIG.memberLevel) {
+        if (CONFIG.memberLevel !== 'public') {
             fetchEventRegistrants(event.id);
             checkEventPhotos(event.id);
         }
@@ -3695,6 +3963,12 @@
      * Shows both registered events and waitlist positions.
      */
     async function findMyEvents() {
+        // Security: Only allow My Events lookup for logged-in members
+        if (CONFIG.memberLevel === 'public') {
+            console.warn('ClubCalendar: My Events requires login');
+            return;
+        }
+
         const emailInput = document.getElementById('clubcal-member-email');
         const pastMonthsSelect = document.getElementById('clubcal-my-events-past');
         const pastMonths = parseInt(pastMonthsSelect?.value || '3', 10);
@@ -3788,8 +4062,8 @@
 
         if (events.length === 0) {
             resultsContainer.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #666;">
-                    <h3 style="margin-bottom: 8px; color: #333;">No events found</h3>
+                <div style="text-align: center; padding: 40px; color: var(--clubcal-text-muted);">
+                    <h3 style="margin-bottom: 8px; color: var(--clubcal-text);">No events found</h3>
                     <p>We couldn't find any upcoming event registrations for ${escapeHtml(email)}</p>
                     <p style="font-size: 13px; margin-top: 15px;">
                         Make sure you're using the email address associated with your club membership.
@@ -3808,7 +4082,7 @@
 
         // Summary
         html += `
-            <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+            <div style="margin-bottom: 20px; padding: 15px; background: var(--clubcal-info-bg); border-radius: 8px;">
                 <strong>Found ${events.length} event${events.length !== 1 ? 's' : ''}</strong>
                 ${registered.length > 0 ? ` - ${registered.length} registered` : ''}
                 ${waitlist.length > 0 ? ` - ${waitlist.length} on waitlist` : ''}
@@ -3818,7 +4092,7 @@
 
         // Registered events
         if (registered.length > 0) {
-            html += '<h4 style="color: #1565c0; margin: 20px 0 12px;">Registered</h4>';
+            html += '<h4 style="color: var(--clubcal-info-dark); margin: 20px 0 12px;">Registered</h4>';
             html += '<div class="clubcal-event-list">';
             registered.forEach(event => {
                 html += renderEventCard(event, 'registered');
@@ -3876,7 +4150,7 @@
         }
 
         return `
-            <div class="${cardClass}" onclick="window.open('https://sbnewcomers.org/event-${event.id}', '_blank')">
+            <div class="${cardClass}" data-action="openEvent" data-event-id="${event.id}">
                 <div class="clubcal-event-card-date">
                     <span class="month">${month}</span>
                     <span class="day">${day}</span>

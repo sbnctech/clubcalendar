@@ -435,7 +435,14 @@ window.CLUBCALENDAR_CONFIG = {
                     return null;
                 }
 
-                const data = await response.json();
+                // Safe JSON parsing
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    log('API', `/accounts returned non-JSON: ${contentType}`);
+                    return null;
+                }
+                const text = await response.text();
+                const data = JSON.parse(text);
 
                 // Handle array response
                 if (Array.isArray(data) && data.length > 0) {
@@ -473,7 +480,14 @@ window.CLUBCALENDAR_CONFIG = {
                 const response = await fetch('/sys/api/publicview/v1/contacts/me', { headers });
 
                 if (response.ok) {
-                    const data = await response.json();
+                    // Safe JSON parsing
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        log('API', `/contacts/me returned non-JSON: ${contentType}`);
+                        return null;
+                    }
+                    const text = await response.text();
+                    const data = JSON.parse(text);
                     // Check if response contains account reference
                     if (data && data.Url) {
                         const match = data.Url.match(/accounts\/(\d+)/);
@@ -503,7 +517,29 @@ window.CLUBCALENDAR_CONFIG = {
                     throw new Error(`WA API error: ${response.status} ${response.statusText}`);
                 }
 
-                const data = await response.json();
+                // Defensive JSON parsing - handle non-JSON responses gracefully
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    const text = await response.text();
+                    log('API', `❌ Non-JSON response (${elapsed}ms): ${endpoint}`, {
+                        contentType,
+                        bodyPreview: text.substring(0, 200)
+                    });
+                    throw new Error(`WA returned non-JSON response (${contentType || 'no content-type'})`);
+                }
+
+                // Get text first, then parse - better error handling for Safari
+                const text = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    log('API', `❌ JSON parse failed (${elapsed}ms): ${endpoint}`, {
+                        bodyPreview: text.substring(0, 200)
+                    });
+                    throw new Error(`Invalid JSON from WA API: ${parseError.message}`);
+                }
+
                 log('API', `✓ Success (${elapsed}ms): ${endpoint}`, {
                     responseType: Array.isArray(data) ? `Array[${data.length}]` : typeof data,
                     keys: Object.keys(data).slice(0, 10)

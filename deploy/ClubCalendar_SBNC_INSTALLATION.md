@@ -1,17 +1,18 @@
-# SBNC Inline-Only Install Guide
+# SBNC ClubCalendar Installation Guide
 
-This document is the canonical reference for embedding ClubCalendar in Wild Apricot using the inline-only method.
+**Version:** 1.02
+**Date:** January 1, 2026
+
+This document is the canonical reference for embedding ClubCalendar in Wild Apricot.
 
 ---
 
-> **NO EXTERNAL DEPENDENCIES**
+> **DEPLOYMENT OPTIONS**
 >
-> - No `mail.sbnewcomers.org` required
-> - No external server hosting required
-> - No `<script src="...">` loading required
-> - Runs entirely within Wild Apricot
+> - **WA-Only Mode:** Runs entirely within Wild Apricot, no external server
+> - **External Server Mode:** Fetches events.json from sync server, supports public calendars
 >
-> Use the canonical snippet: `docs/INSTALL/SBNC_INLINE_SNIPPET.html`
+> Use the pre-built file: `deploy/ClubCalendar_SBNC_EVENTS_PAGE.html`
 
 ---
 
@@ -19,14 +20,15 @@ This document is the canonical reference for embedding ClubCalendar in Wild Apri
 
 | Property | Value |
 |----------|-------|
-| **Canonical Snippet** | `docs/INSTALL/SBNC_INLINE_SNIPPET.html` (SBNC-specific) |
-| **Generic Template** | `widget/clubcalendar-wa-inline.html` (for other orgs) |
-| **Lightweight Engine** | `widget/clubcalendar-inline-engine.html` (minimal, no FullCalendar) |
-| **DOM Mount Point** | `<div id="clubcalendar-root"></div>` (engine) or `<div id="clubcalendar"></div>` (full) |
+| **SBNC Events Page** | `deploy/ClubCalendar_SBNC_EVENTS_PAGE.html` |
+| **SBNC Config Page** | `deploy/ClubCalendar_SBNC_CONFIG_PAGE.html` |
+| **Generic Template** | `widget/clubcalendar-wa-inline.html` |
+| **Builder Tool** | `deploy/builder/index.html` |
+| **DOM Mount Point** | `<div id="clubcalendar"></div>` |
 | **Config Mechanism** | `window.CLUBCALENDAR_CONFIG` (inline object) |
-| **External Dependencies** | None (all code inlined) |
+| **External Dependencies** | FullCalendar (CDN), with fallback on failure |
 | **Authentication** | WA session cookie (auto-detected) |
-| **SBNC Account ID** | `176353` (pre-configured in snippet) |
+| **SBNC Account ID** | `176353` (pre-configured) |
 
 ---
 
@@ -67,20 +69,22 @@ window.CLUBCALENDAR_CONFIG = {
 
 ---
 
-## Canonical SBNC Install Snippet
+## SBNC Pre-Built Files
 
-**Use this file:** `docs/INSTALL/SBNC_INLINE_SNIPPET.html`
+**Use this file:** `deploy/ClubCalendar_SBNC_EVENTS_PAGE.html`
 
 This file contains the complete, ready-to-paste widget with:
 
 - SBNC branding ("SBNC Events" header)
 - SBNC Account ID pre-configured (`176353`)
-- All 18 SBNC activity committee auto-tagging rules
-- Full widget code (no assembly required)
+- All SBNC activity committee auto-tagging rules
+- Full widget code including CSS and JavaScript
+- Add to Calendar icons (Google, Outlook, Yahoo, Apple)
+- Automatic fallback to WA widget on error
 
 **To install:**
 
-1. Open `docs/INSTALL/SBNC_INLINE_SNIPPET.html` in a text editor
+1. Open `deploy/ClubCalendar_SBNC_EVENTS_PAGE.html` in a text editor
 2. Select All (Cmd+A) and Copy (Cmd+C)
 3. Paste into a Wild Apricot Custom HTML gadget
 4. Save and view the page
@@ -89,8 +93,8 @@ This file contains the complete, ready-to-paste widget with:
 
 ## Installation Steps
 
-1. **Get the snippet file**
-   - Open `docs/INSTALL/SBNC_INLINE_SNIPPET.html` in a text editor
+1. **Get the widget file**
+   - Open `deploy/ClubCalendar_SBNC_EVENTS_PAGE.html` in a text editor
    - Select All (Cmd+A) and Copy (Cmd+C)
 
 2. **Open Wild Apricot Admin**
@@ -100,11 +104,12 @@ This file contains the complete, ready-to-paste widget with:
 3. **Add Custom HTML Gadget**
    - Insert a new gadget
    - Select "Custom HTML"
-   - Paste the entire snippet (Cmd+V)
+   - Paste the entire content (Cmd+V)
 
 4. **Save and Test**
    - Save the page
    - View as a logged-in member to verify events load
+   - Test as public visitor to verify fallback behavior
 
 ---
 
@@ -125,29 +130,24 @@ This file contains the complete, ready-to-paste widget with:
 
 | File | Purpose | Use When |
 |------|---------|----------|
-| `docs/INSTALL/SBNC_INLINE_SNIPPET.html` | **SBNC canonical snippet** (ready to paste) | Installing on SBNC site |
-| `widget/clubcalendar-wa-inline.html` | Generic template (for other orgs) | Customizing for other clubs |
-| `widget/wa-embed-example.html` | External JS example | Using hosted JS approach |
+| `deploy/ClubCalendar_SBNC_EVENTS_PAGE.html` | **SBNC events calendar** (ready to paste) | Installing on SBNC site |
+| `deploy/ClubCalendar_SBNC_CONFIG_PAGE.html` | SBNC configuration page | Admin/config pages |
+| `deploy/builder/index.html` | Builder tool for custom configs | Creating new configurations |
+| `widget/clubcalendar-wa-inline.html` | Generic template | Customizing for other clubs |
 
-### Configuration Documentation
+### Documentation
 
 | File | Purpose | Audience |
 |------|---------|----------|
-| `docs/INSTALL/CONFIG_QUICK_REFERENCE.md` | Simple editing guide | Non-technical admins |
-| `docs/INSTALL/CONFIG_CONTRACT.md` | Complete field reference | Technical admins |
-| `docs/INSTALL/SBNC_CONFIG_EXAMPLE.json` | Working example config | Reference/testing |
-| `docs/INSTALL/config-validator.js` | Validation function | Widget integration |
-
-### Deprecated (Archived)
-
-Server-hosted deployment docs have been archived to `_quarantine/server-hosted/`.
-SBNC uses inline-only deployment - no external server required.
+| `deploy/CONFIG_CONTRACT.md` | Complete field reference | Technical admins |
+| `docs/CSS_CUSTOMIZATION_GUIDE.md` | CSS variable reference | Theme designers |
+| `docs/BUILDER_EXECUTIVE_OVERVIEW.md` | Builder architecture | Technical overview |
+| `docs/FEATURE_COMPATIBILITY_CHART.md` | Feature comparison by mode | Decision makers |
 
 ---
 
 ## Version
 
-- **Widget Version:** 2.0.0 (WA Native Edition)
-- **Install Pack:** v1.0.0 (Inline Only)
-- **Last Updated:** December 2024
+- **Widget Version:** 1.02
+- **Last Updated:** January 1, 2026
 - **Maintainer:** ClubCalendar / SBNC Tech

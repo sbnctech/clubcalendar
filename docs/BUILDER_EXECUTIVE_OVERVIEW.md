@@ -2,7 +2,31 @@
 
 ## Purpose
 
-The ClubCalendar Builder generates custom, self-contained calendar widgets for organizations using Wild Apricot (WA). Each generated widget is a single HTML file that embeds directly into WA's Custom HTML gadget system—no server infrastructure, no ongoing maintenance burden, no external dependencies at runtime.
+The ClubCalendar Builder generates custom calendar widgets for organizations using Wild Apricot (WA). Each generated widget is a single HTML file that embeds directly into WA's Custom HTML gadget system.
+
+---
+
+## Deployment Modes
+
+The Builder can generate widgets for different deployment scenarios:
+
+| Mode | How It Works | Server Required? | Best For |
+|------|--------------|------------------|----------|
+| **WA-Only** | Direct WA API calls, runs entirely on WA | No | Simple deployments, logged-in members only |
+| **External Server** | Fetches events.json from external server | Yes | Public calendars, real-time sync |
+
+### Separate Public vs. Member Calendars
+
+Organizations can deploy different widget configurations:
+
+- **Public calendar** — Shows only public events, limited filters, no member features
+- **Member calendar** — Full filtering, My Events, registrant lists, availability details
+
+Both can be generated from the same Builder with different settings.
+
+### Fallback to WA Widget
+
+If ClubCalendar fails for any reason (API error, JavaScript error, network issue), it automatically falls back to the native WA calendar widget. This ensures members always have access to events even if ClubCalendar has problems.
 
 ---
 
@@ -17,7 +41,7 @@ We chose a **build-time code generation** approach over runtime configuration:
 | **Runtime config** | Single codebase, instant updates | External config dependency, runtime failures, CORS complexity |
 | **Build-time generation** | Zero runtime dependencies, works offline, no config fetch failures | Requires rebuild for changes |
 
-**Decision rationale:** Wild Apricot's Custom HTML gadgets run in constrained iframes. External fetch calls introduce failure modes (network, CORS, hosting). A self-contained HTML file eliminates these risks entirely.
+**Decision rationale:** Wild Apricot's Custom HTML gadgets run in constrained iframes. For WA-Only mode, a self-contained HTML file eliminates external dependencies entirely. External Server mode trades this simplicity for additional capabilities (public calendar support, real-time sync).
 
 ### Single-File Output
 
@@ -28,7 +52,7 @@ Each generated widget is one HTML file containing:
 - Embedded configuration (no runtime config fetch)
 - Fallback behavior (graceful degradation if CDN fails)
 
-**Trade-off acknowledged:** Larger file size (~450KB) vs. zero external dependencies. For a calendar widget loaded once per page view, this is acceptable.
+**Trade-off acknowledged:** Larger file size (~450KB) vs. minimal external dependencies. For a calendar widget loaded once per page view, this is acceptable.
 
 ### Client-Side Build Tool
 
@@ -49,9 +73,11 @@ The Web Builder runs entirely in the browser:
 
 | Test Type | Count | Purpose |
 |-----------|-------|---------|
-| Unit tests | 855+ | Core logic, configuration validation, edge cases |
-| E2E tests | 16 | Browser-based workflow verification |
+| Unit tests | 855 | Core logic, configuration validation, edge cases |
+| E2E tests | 30 | Browser-based workflow verification |
 | Certification tests | Per-build | Verify specific build meets requirements |
+
+*Test counts as of v1.02 (January 2026)*
 
 ### Certification Test System
 
@@ -140,9 +166,11 @@ Changes to widget behavior don't require changes to the builder, and vice versa.
 
 ### Generated Widget Security
 
-- Widgets communicate only with Wild Apricot's API (same-origin in WA context)
+- **WA-Only mode:** Widgets communicate only with Wild Apricot's API (same-origin in WA context)
+- **External Server mode:** Widgets also fetch from configured events.json endpoint
 - No external data exfiltration possible
 - Member-only events filtered client-side (defense in depth—WA API is authoritative)
+- Privacy guards prevent non-members from accessing member data
 
 ### Supply Chain
 
@@ -170,7 +198,8 @@ External dependencies in generated widgets:
 
 - Builder is used once per configuration change
 - Generated HTML is copied into Wild Apricot
-- No ongoing infrastructure to maintain
+- **WA-Only mode:** No ongoing infrastructure to maintain
+- **External Server mode:** Requires maintaining sync server and events.json endpoint
 
 ### Update Process
 
@@ -200,6 +229,8 @@ Generated widgets include:
 | CDN dependency | FullCalendar loaded from Cloudflare cdnjs | Fallback UI on failure |
 | No hot updates | Config changes require rebuild | Save/load config reduces friction |
 | File size (~450KB) | Slower initial load | Single load per page, cached by browser |
+| External Server mode | Requires server infrastructure | Automatic fallback to WA widget if server fails |
+| WA-Only mode | No public calendar support | Use External Server mode for public calendars |
 
 ---
 
