@@ -601,7 +601,7 @@ This includes:
 
 - [WA_EVENTS_PAGE_INLINE.md](./WA_EVENTS_PAGE_INLINE.md) - Events Page installation
 - [CONFIG_CONTRACT.md](./CONFIG_CONTRACT.md) - Full config field reference
-- [CONFIG_QUICK_REFERENCE.md](./CONFIG_QUICK_REFERENCE.md) - Simple editing guide
+- [ClubCalendar_SBNC_INSTALLATION.md](./ClubCalendar_SBNC_INSTALLATION.md) - SBNC installation guide
 
 ---
 

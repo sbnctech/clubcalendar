@@ -305,8 +305,7 @@ This file contains:
 
 - [WA_CONFIG_PAGE_INLINE.md](./WA_CONFIG_PAGE_INLINE.md) - Config Page installation
 - [CONFIG_CONTRACT.md](./CONFIG_CONTRACT.md) - Full config field reference
-- [CONFIG_QUICK_REFERENCE.md](./CONFIG_QUICK_REFERENCE.md) - Simple editing guide
-- [SBNC_INLINE_ONLY_INSTALL.md](./SBNC_INLINE_ONLY_INSTALL.md) - SBNC-specific overview
+- [ClubCalendar_SBNC_INSTALLATION.md](./ClubCalendar_SBNC_INSTALLATION.md) - SBNC installation guide
 
 ---
 
