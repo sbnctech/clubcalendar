@@ -146,6 +146,69 @@ This document compares feature availability between ClubCalendar's two deploymen
 
 ---
 
+## Privacy & Visibility Controls
+
+ClubCalendar automatically adapts what it shows based on login status. This protects member privacy while still enticing public visitors with a taste of club activities.
+
+### What Public Visitors See
+
+| Feature | Shown to Public | Notes |
+|---------|:---------------:|-------|
+| **Events** | Public events only | Member-only events are hidden |
+| **Event details** | Yes | Title, date, time, location, description |
+| **Cost category** | Yes | "Free", "Under $25", etc. |
+| **Add to Calendar** | Yes | Google, Outlook, Yahoo, Apple |
+| **Calendar views** | Yes | Month, week, list |
+| **Filters** | Most | Weekend, Openings, Interest, Cost |
+
+### What Only Members See
+
+| Feature | Members Only | Notes |
+|---------|:------------:|-------|
+| **Member-only events** | Yes | Hidden from public |
+| **My Events tab** | Yes | Personal registration list |
+| **Registrant list** | Yes | "Who's Registered" section |
+| **Photo gallery** | Yes | Event photos link |
+| **"Public" quick filter** | Yes | Redundant for public visitors |
+| **Detailed availability** | Yes | "3 spots left" vs. just "Sold Out" |
+
+### Privacy Guards (Hardcoded)
+
+These protections are built into the widget code and cannot be bypassed by configuration:
+
+- **Member-only events** are always filtered out for non-logged-in users
+- **Registrant list** only renders when `memberLevel !== 'public'`
+- **Photo gallery** only renders when `memberLevel !== 'public'`
+- **My Events** requires login (prevents arbitrary email lookup)
+
+### Configuration Options
+
+The Builder allows clubs to customize what appears for each audience:
+
+```javascript
+publicConfig: {
+    showMyEvents: false,           // Hide My Events tab
+    quickFilters: { public: false } // Hide "Public" filter
+},
+memberConfig: {
+    showMyEvents: true             // Show My Events tab
+}
+```
+
+### Alternative: WA Widget for Public Pages
+
+For clubs that want maximum simplicity on public-facing pages, Wild Apricot's built-in event widget is a viable option:
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **ClubCalendar (public mode)** | Rich filtering, Add to Calendar, consistent UX | Requires configuration |
+| **WA Widget (public pages)** | Zero maintenance, native WA | Limited features, different UX |
+| **ClubCalendar (member pages)** | Full features, real-time data | Members only |
+
+A hybrid approach—WA Widget for public pages, ClubCalendar for member pages—is a reasonable choice for clubs prioritizing simplicity.
+
+---
+
 ## Failover & Reliability
 
 | Feature | WA Native | External Server | Notes |

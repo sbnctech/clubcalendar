@@ -24,6 +24,49 @@ Organizations can deploy different widget configurations:
 
 Both can be generated from the same Builder with different settings.
 
+### Adaptive UI (Single Widget)
+
+A single ClubCalendar widget automatically adapts based on login status:
+
+| Visitor Type | Events Shown | Features Available |
+|--------------|--------------|-------------------|
+| **Public** | Public events only | Calendar, filters, Add to Calendar |
+| **Member** | All events | + My Events, registrants, photos, detailed availability |
+
+This means clubs don't need separate public and member widgets—one widget serves both audiences appropriately.
+
+### Builder Configuration for Audiences
+
+The Builder offers `publicConfig` and `memberConfig` sections to customize each experience:
+
+```javascript
+publicConfig: {
+    showMyEvents: false,           // Hide My Events tab (requires login anyway)
+    quickFilters: { public: false } // Hide "Public" filter (redundant for public)
+},
+memberConfig: {
+    showMyEvents: true             // Enable My Events tab
+}
+```
+
+**Privacy guards are hardcoded** and cannot be overridden by configuration:
+
+- Member-only events are always hidden from non-logged-in users
+- Registrant list only appears for logged-in members
+- Photo gallery only appears for logged-in members
+
+### Alternative: WA Widget for Public Pages
+
+For clubs prioritizing simplicity, Wild Apricot's native event widget can serve public pages:
+
+| Page Type | Recommended Widget | Rationale |
+|-----------|-------------------|-----------|
+| Public-facing | WA Widget or ClubCalendar | WA Widget = zero config; ClubCalendar = richer UX |
+| Member-only | ClubCalendar | Full features, My Events, real-time data |
+| Mixed audience | ClubCalendar (adaptive) | Single widget adapts to visitor type |
+
+This hybrid approach—WA Widget for public, ClubCalendar for members—is valid for clubs that want minimal public-facing configuration.
+
 ### Fallback to WA Widget
 
 If ClubCalendar fails for any reason (API error, JavaScript error, network issue), it automatically falls back to the native WA calendar widget. This ensures members always have access to events even if ClubCalendar has problems.
