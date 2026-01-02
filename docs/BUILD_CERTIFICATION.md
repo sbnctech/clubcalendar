@@ -1,8 +1,8 @@
 # ClubCalendar Build Certification
 
-**Version:** 1.01
+**Version:** 1.02
 
-**Date:** December 31, 2025
+**Date:** January 1, 2026
 
 This document describes the build certification framework for ClubCalendar. Any build can be certified by running the certification test suite.
 
