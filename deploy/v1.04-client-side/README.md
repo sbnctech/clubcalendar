@@ -51,6 +51,17 @@ ClubCalendar automatically inherits colors from your Wild Apricot theme:
 
 No configuration needed for basic theming. For custom colors, see `THEME_DESIGNER_GUIDE.md`.
 
+## Key Features
+
+- **My Events**: Click the "My Events" button to filter to events you're registered for
+  - Automatically detects your registrations (no email input needed)
+  - Registered events show a ✓ checkmark badge in the calendar
+  - Works because you're already logged into Wild Apricot
+
+- **Smart Filters**: Filter by time of day, availability, weekend events, and more
+- **Quick Filter Dots**: Visual indicators show event attributes at a glance
+- **Auto Theme Detection**: Inherits colors from your WA site automatically
+
 ## Quick Start
 
 1. Get WA API credentials (Account ID and Client ID)

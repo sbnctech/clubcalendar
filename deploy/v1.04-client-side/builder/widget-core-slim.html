@@ -818,6 +818,7 @@
     --clubcal-dot-weekend: #9c27b0;
     --clubcal-dot-free: #ffc107;
     --clubcal-dot-afterhours: #5c6bc0;
+    --clubcal-dot-myevents: #e91e63;  /* Pink for user's registered events */
 
     /* Availability colors */
     --clubcal-avail-public: #4caf50;
@@ -1508,6 +1509,26 @@ a.fc-event.clubcal-event-allday {
 .clubcal-filter-dot.public { background: var(--clubcal-dot-public); }
 .clubcal-filter-dot.justopened { background: var(--clubcal-dot-justopened); }
 .clubcal-filter-dot.openingsoon { background: var(--clubcal-dot-openingsoon); }
+.clubcal-filter-dot.myevents { background: var(--clubcal-dot-myevents); }
+
+/* Registered event indicator - checkmark badge */
+.clubcal-registered-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--clubcal-dot-myevents);
+    color: white;
+    font-size: 10px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-left: 4px;
+    font-weight: bold;
+}
+.clubcal-badge.registered {
+    background: var(--clubcal-dot-myevents);
+    color: white;
+}
 
 /* Event display - custom content with time+dots on first line */
 .clubcalendar-widget .fc-daygrid-event {
@@ -2341,6 +2362,12 @@ a.fc-event.clubcal-event-allday {
     /** @type {Date|null} Earliest date for which we have events loaded */
     let earliestLoadedDate = null;
 
+    /** @type {Set} IDs of events the user is registered for */
+    let myRegistrations = new Set();
+
+    /** @type {boolean} Whether My Events filter is active */
+    let myEventsFilterActive = false;
+
 
     /**
      * Fetches events from the configured source.
@@ -2475,6 +2502,55 @@ a.fc-event.clubcal-event-allday {
     }
 
 
+    /**
+     * Fetches the logged-in user's event registrations from the WA Member API.
+     * Uses /contacts/me/eventregistrations endpoint - no email input needed.
+     * @returns {Promise<Set>} Set of event IDs the user is registered for
+     */
+    async function fetchMyRegistrations() {
+        const accountId = CONFIG.waAccountId;
+        const clientId = CONFIG.waClientId;
+
+        if (!accountId || !clientId) {
+            console.log('ClubCalendar: Cannot fetch registrations - missing API credentials');
+            return new Set();
+        }
+
+        try {
+            const url = `/sys/api/publicview/v1/accounts/${accountId}/contacts/me/eventregistrations`;
+            const response = await fetch(url, {
+                headers: { 'clientId': clientId }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('ClubCalendar: User not logged in, cannot fetch registrations');
+                    return new Set();
+                }
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const registrations = data.EventRegistrations || data || [];
+
+            // Extract event IDs from registrations
+            const eventIds = new Set();
+            registrations.forEach(reg => {
+                // WA API may return Event.Id or EventId depending on endpoint
+                const eventId = reg.Event?.Id || reg.EventId || reg.Id;
+                if (eventId) {
+                    eventIds.add(eventId);
+                }
+            });
+
+            console.log(`ClubCalendar: User is registered for ${eventIds.size} events`);
+            return eventIds;
+
+        } catch (error) {
+            console.error('ClubCalendar: Failed to fetch user registrations:', error);
+            return new Set();
+        }
+    }
 
 
     /**
@@ -3072,6 +3148,8 @@ a.fc-event.clubcal-event-allday {
         // Filter row - all on one line
         html += `
             <div class="clubcal-filter-row">
+                <button class="clubcal-action-btn clubcal-myevents-btn" data-filter="myevents"><span class="clubcal-filter-dot myevents"></span> My Events</button>
+                <span style="color:#ccc; margin: 0 4px;">|</span>
                 <button class="clubcal-action-btn" data-filter="justopened"><span class="clubcal-filter-dot justopened"></span> Just Opened</button>
                 <button class="clubcal-action-btn" data-filter="openingsoon"><span class="clubcal-filter-dot openingsoon"></span> Opening Soon</button>
                 <button class="clubcal-action-btn" data-filter="openings"><span class="clubcal-filter-dot openings"></span> Openings for Any Member</button>
@@ -3175,14 +3253,20 @@ a.fc-event.clubcal-event-allday {
                 const isActive = btn.classList.contains('active');
 
                 if (filterVal) {
-                    // Quick filters (weekend, openings, free, afterhours)
-                    if (!currentFilters.quickFilters) currentFilters.quickFilters = [];
-                    if (isActive) {
-                        if (!currentFilters.quickFilters.includes(filterVal)) {
-                            currentFilters.quickFilters.push(filterVal);
-                        }
+                    // Special handling for "My Events" filter
+                    if (filterVal === 'myevents') {
+                        myEventsFilterActive = isActive;
+                        console.log('ClubCalendar: My Events filter', isActive ? 'ON' : 'OFF');
                     } else {
-                        currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filterVal);
+                        // Quick filters (weekend, openings, free, afterhours)
+                        if (!currentFilters.quickFilters) currentFilters.quickFilters = [];
+                        if (isActive) {
+                            if (!currentFilters.quickFilters.includes(filterVal)) {
+                                currentFilters.quickFilters.push(filterVal);
+                            }
+                        } else {
+                            currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filterVal);
+                        }
                     }
                 } else if (timeVal) {
                     // Time of day filters
@@ -3390,6 +3474,9 @@ a.fc-event.clubcal-event-allday {
             pastMonths: currentFilters.pastMonths  // Keep past months selection
         };
 
+        // Reset My Events filter
+        myEventsFilterActive = false;
+
         filterAndRender();
     }
 
@@ -3450,6 +3537,11 @@ a.fc-event.clubcal-event-allday {
             tags.push(`<span class="clubcal-active-filter-tag">${availLabels[a] || a}</span>`);
         });
 
+        // My Events filter
+        if (myEventsFilterActive) {
+            tags.push(`<span class="clubcal-active-filter-tag" style="background:var(--clubcal-dot-myevents);color:white;">My Events</span>`);
+        }
+
         // Show count if filters active
         if (tags.length > 0) {
             tags.unshift(`<span class="clubcal-filter-count">${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''}</span>`);
@@ -3483,6 +3575,11 @@ a.fc-event.clubcal-event-allday {
             const timeOfDay = deriveTimeOfDay(event.startDate, event.endDate);
             const isFree = event.isFree === 1 || event.minPrice === 0;
             const dayOfWeek = eventDate.getDay();
+
+            // My Events filter - only show events user is registered for
+            if (myEventsFilterActive) {
+                if (!myRegistrations.has(event.id)) return false;
+            }
 
             // NOTE: For external server version, show ALL events to public
             // but with limited info on click (location, registrants hidden)
@@ -3678,6 +3775,12 @@ a.fc-event.clubcal-event-allday {
                     dots.push('<span class="clubcal-filter-dot openingsoon" title="Opening Soon"></span>');
                 }
 
+                // Registered (checkmark) - user is registered for this event
+                const isRegistered = myRegistrations.has(originalEvent.id);
+                if (isRegistered) {
+                    dots.push('<span class="clubcal-registered-badge" title="You\'re Registered">✓</span>');
+                }
+
                 // Shorten title - remove "(Registration Opens...)" and similar
                 let shortTitle = arg.event.title
                     .replace(/\s*\(Registration Opens[^)]*\)/gi, '')
@@ -3721,6 +3824,9 @@ a.fc-event.clubcal-event-allday {
                     }
                     if (isOpeningSoon) {
                         badges.push('<span class="clubcal-badge openingsoon">Opening Soon</span>');
+                    }
+                    if (isRegistered) {
+                        badges.push('<span class="clubcal-badge registered">✓ Registered</span>');
                     }
                     const badgesHtml = badges.length > 0
                         ? `<span class="clubcal-badges-container">${badges.join('')}</span>`
@@ -4265,7 +4371,7 @@ a.fc-event.clubcal-event-allday {
     }
 
 
-    // My Events functionality removed in v1.04 slim - link to WA registrations page
+    // My Events functionality restored in v1.04 - uses /contacts/me/eventregistrations API
 
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -4299,7 +4405,26 @@ a.fc-event.clubcal-event-allday {
         /** Clear all filters */
         clearFilters: clearFilters,
 
-        // findMyEvents removed in v1.04 slim - link to WA registrations page
+        /** Toggle My Events filter - shows only events user is registered for */
+        toggleMyEvents: function() {
+            myEventsFilterActive = !myEventsFilterActive;
+            const btn = document.querySelector('.clubcal-myevents-btn');
+            if (btn) {
+                btn.classList.toggle('active', myEventsFilterActive);
+            }
+            filterAndRender();
+            console.log('ClubCalendar: My Events filter', myEventsFilterActive ? 'ON' : 'OFF');
+        },
+
+        /** Get user's registered event IDs */
+        getMyRegistrations: function() {
+            return [...myRegistrations];
+        },
+
+        /** Check if user is registered for a specific event */
+        isRegistered: function(eventId) {
+            return myRegistrations.has(eventId);
+        },
 
         /** Switch between tabs */
         switchTab: switchTab,
@@ -4467,6 +4592,9 @@ a.fc-event.clubcal-event-allday {
                 if (!buildWidget()) {
                     return;
                 }
+
+                // Fetch user's registrations (for My Events feature)
+                myRegistrations = await fetchMyRegistrations();
 
                 // Fetch events (start with current only, user can select past months)
                 allEvents = await fetchEvents(0);

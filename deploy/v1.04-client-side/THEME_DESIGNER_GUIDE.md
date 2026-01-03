@@ -115,6 +115,7 @@ Small colored dots appear next to filter buttons to help users identify them qui
 | `--clubcal-dot-newbie` | `#00bcd4` (cyan) | Newbie-Friendly | ● |
 | `--clubcal-dot-justopened` | `#e91e63` (pink) | Just Opened | ● |
 | `--clubcal-dot-openingsoon` | `#009688` (teal) | Opening Soon | ● |
+| `--clubcal-dot-myevents` | `#e91e63` (pink) | My Events (Registered) | ● |
 
 ---
 
