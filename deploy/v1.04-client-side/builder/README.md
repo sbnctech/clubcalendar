@@ -36,11 +36,11 @@ Open `index.html` in a web browser. No server required - it runs entirely in you
 
 1. Log in to Wild Apricot as admin
 2. Go to **Settings → Security → Authorized applications**
-3. Click **Add application**
-4. Set:
-   - Application name: `ClubCalendar`
-   - Application type: **JavaScript application**
-5. Save and copy the **Client ID**
+3. Click **Authorize application**
+4. Select **User authorization** → Click **Continue**
+5. Enter application name: `ClubCalendar`
+6. Click **Authorize**
+7. Copy the **Client ID**
 
 ### Step 4: Customize Appearance (Optional)
 

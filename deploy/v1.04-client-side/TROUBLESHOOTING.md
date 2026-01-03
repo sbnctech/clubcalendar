@@ -118,13 +118,16 @@ The Client ID in the widget config doesn't match an authorized application.
 
 ### Cause 2: Wrong Application Type
 
-The API application was created as "Server application" instead of "JavaScript application".
+The API application was created as "Server application" instead of "User authorization".
 
 **Solution:**
 
 1. Go to **Settings → Security → Authorized applications**
 2. Delete the existing ClubCalendar application
-3. Create a new one with type: **JavaScript application**
+3. Create a new one:
+   - Select **User authorization**
+   - Click **Continue**
+   - Name it `ClubCalendar`
 4. Update the widget with the new Client ID
 
 ### Cause 3: Wrong Account ID

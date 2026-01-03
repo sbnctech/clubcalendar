@@ -42,10 +42,11 @@ For SBNC: **176353**
 
 1. Go to **Settings → Security → Authorized applications**
 2. Click **Authorize application**
-3. Enter a name: `ClubCalendar`
-4. Set application type to **JavaScript application**
-5. Click **Authorize**
-6. Copy the **Client ID** that's generated
+3. Select **User authorization**
+4. Click **Continue**
+5. Enter application name: `ClubCalendar`
+6. Click **Authorize**
+7. Copy the **Client ID** that's generated
 
 ---
 
