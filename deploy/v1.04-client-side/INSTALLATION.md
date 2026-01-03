@@ -11,47 +11,86 @@ ClubCalendar v1.04 runs entirely client-side on Wild Apricot, using WA's Member 
 ## Prerequisites
 
 1. Wild Apricot administrator access
-2. API Application credentials (Account ID and Client ID)
+2. Paid WA plan (trial accounts cannot whitelist external scripts)
 
-## Step 1: Get Your API Credentials
+---
+
+## Step 1: Whitelist the CDN
+
+ClubCalendar loads the FullCalendar library from a CDN. You must whitelist this domain first.
+
+1. Log into Wild Apricot as admin
+2. Go to **Settings → Security → JavaScript whitelist**
+3. Add this domain: `cdnjs.cloudflare.com`
+4. Click **Save**
+
+**Why?** Wild Apricot blocks external JavaScript by default. Without this step, the calendar will not load.
+
+---
+
+## Step 2: Get Your API Credentials
 
 ### Account ID
 
-1. Log into Wild Apricot as admin
-2. Look at the URL when viewing your admin dashboard
-3. The Account ID is the number in URLs like: `https://sbnewcomers.wildapricot.org/admin/settings`
-4. Or check Settings > Account > Account ID
+1. Look at the URL when viewing your admin dashboard
+2. The Account ID is the number in URLs like: `https://sbnewcomers.wildapricot.org/admin/settings`
+3. Or check **Settings → Account → Account ID**
 
 For SBNC: **176353**
 
 ### Client ID (API Application)
 
-1. Go to **Settings > Security > Authorized applications**
-2. Click **Add application**
-3. Enter a name like "ClubCalendar Widget"
-4. Set application type to **Installed Application** (not Server Application)
-5. Copy the **Client ID** that's generated
-6. Save
+1. Go to **Settings → Security → Authorized applications**
+2. Click **Authorize application**
+3. Enter a name: `ClubCalendar`
+4. Set application type to **JavaScript application**
+5. Click **Authorize**
+6. Copy the **Client ID** that's generated
 
-## Step 2: Add CSS Variables to WA Custom CSS
+---
 
-1. Go to **Settings > Site > Custom CSS**
+## Step 3: Add CSS Variables (Optional)
+
+ClubCalendar auto-detects colors from your WA theme. Skip this step unless you want custom colors.
+
+1. Go to **Website → CSS**
 2. Scroll to the bottom of existing CSS
 3. Paste the contents of `CSS_VARIABLES.txt`
 4. Modify colors to match your brand if needed
-5. Save
+5. Click **Save**
 
-## Step 3: Create a Members-Only Page
+See `THEME_DESIGNER_GUIDE.md` for all available CSS variables.
 
-1. Go to **Pages > Add page**
-2. Set page title (e.g., "Club Calendar" or "Member Events")
-3. Under **Access**, select **Restricted to certain membership levels**
-4. Check all member levels that should see the calendar
-5. Save
+---
 
-## Step 4: Add the Widget
+## Step 4: Create a Members-Only Page
 
-1. Edit your new members-only page
+1. Go to **Website → Site pages**
+2. Click **Add page**
+3. Set page title (e.g., "Club Calendar" or "Member Events")
+4. Under **Access**, select **Restricted to certain membership levels**
+5. Check all member levels that should see the calendar
+6. Click **Save**
+
+---
+
+## Step 5: Add the Widget
+
+**Option A: Use the Builder (Recommended)**
+
+1. Open `builder/index.html` in your browser
+2. Fill in your Account ID and Client ID
+3. Configure options as desired
+4. Click **Generate Widget**
+5. Click **Copy to Clipboard**
+6. Edit your members-only page
+7. Add a **Custom HTML** gadget
+8. Paste the widget code
+9. Save the gadget and page
+
+**Option B: Manual Configuration**
+
+1. Edit your members-only page
 2. Add a **Custom HTML** gadget
 3. Paste the entire contents of `widget-member.html`
 4. Update the configuration at the top:
@@ -59,16 +98,17 @@ For SBNC: **176353**
 ```javascript
 window.CLUBCALENDAR_CONFIG = {
     waAccountId: '176353',         // Your Account ID
-    waClientId: 'YOUR_CLIENT_ID',  // From Step 1
+    waClientId: 'YOUR_CLIENT_ID',  // From Step 2
     headerTitle: 'Club Events',
     // ... rest of config
 };
 ```
 
-5. Save the gadget
-6. Save the page
+5. Save the gadget and page
 
-## Step 5: Test
+---
+
+## Step 6: Test
 
 1. Log in as a regular member (not admin)
 2. Navigate to your calendar page
@@ -134,34 +174,15 @@ Automatically tag events based on name patterns:
 
 ## Troubleshooting
 
-### "Login Required" Error
+See `TROUBLESHOOTING.md` for detailed solutions. Quick fixes:
 
-The widget only works for logged-in members. If you see a login prompt:
-
-- Verify the page is set to members-only access
-- Check that the user is logged in
-- Try logging out and back in
-
-### Events Don't Load
-
-1. Check browser console for errors (F12 > Console)
-2. Verify Account ID and Client ID are correct
-3. Ensure the API Application is set to "Installed Application" type
-4. Check that the user has permission to view events
-
-### Styling Issues
-
-1. Verify CSS variables are added to WA Custom CSS
-2. Check that CSS was saved (not just in editor)
-3. Hard refresh the page (Ctrl+Shift+R or Cmd+Shift+R)
-
-### My Events Tab Not Working
-
-The My Events feature requires the `/contacts/me/eventregistrations` endpoint. If it fails:
-
-1. User may not have any registrations
-2. API permissions may be restricted
-3. Check console for specific error messages
+| Problem | Quick Fix |
+|---------|-----------|
+| Calendar blank/won't load | Verify `cdnjs.cloudflare.com` is whitelisted |
+| "Login Required" message | Page must be members-only AND user logged in |
+| No events showing | Check Account ID and Client ID are correct |
+| Console shows CSP error | CDN not whitelisted (Step 1) |
+| Styling looks wrong | Hard refresh (Ctrl+Shift+R) |
 
 ## Updating the Widget
 

@@ -25,10 +25,11 @@ This version eliminates the external server dependency by using Wild Apricot's M
 ```
 v1.04-client-side/
 ├── README.md                  # This file
-├── ARCHITECTURE.md            # Technical architecture documentation
 ├── INSTALLATION.md            # Step-by-step installation guide
-├── MODIFICATIONS.md           # Changes from v1.03 (for developers)
+├── TROUBLESHOOTING.md         # Problem diagnosis and fixes
 ├── THEME_DESIGNER_GUIDE.md    # For graphic designers customizing colors
+├── ARCHITECTURE.md            # Technical architecture documentation
+├── MODIFICATIONS.md           # Changes from v1.03 (for developers)
 ├── CSS_VARIABLES.txt          # Pasteable CSS for WA Custom CSS
 ├── widget-member.html         # Complete widget (paste into WA)
 ├── builder/                   # Interactive widget builder
