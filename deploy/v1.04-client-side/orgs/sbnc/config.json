@@ -46,9 +46,9 @@
     { "type": "name-prefix", "pattern": "Afternoon Book:", "tag": "committee:book-clubs" },
     { "type": "name-prefix", "pattern": "Evening Book:", "tag": "committee:book-clubs" }
   ],
-  "notes": {
-    "deployment": "Members-only page on WA",
-    "publicEvents": "Use WA native widget for public pages",
-    "cssVariables": "Add CSS_VARIABLES.txt to WA Custom CSS"
+  "deployment": {
+    "testPage": "https://sbnewcomers.org/cc-test-2026/",
+    "productionPage": null,
+    "notes": "Members-only page on WA. Use WA native widget for public pages."
   }
 }
