@@ -3190,6 +3190,12 @@ a.fc-event.clubcal-event-allday {
         if (CONFIG.showMyEvents) {
             html += `
             <div id="clubcal-tab-my-events" class="clubcal-tab-content">
+                <div style="padding: 12px 0; border-bottom: 1px solid var(--clubcal-border, #ddd); margin-bottom: 12px;">
+                    <label style="display: inline-flex; align-items: center; cursor: pointer; font-size: 14px; color: var(--clubcal-text-muted);">
+                        <input type="checkbox" id="clubcal-show-past-registrations" style="margin-right: 8px; cursor: pointer;">
+                        Show past events
+                    </label>
+                </div>
                 <div id="clubcal-my-events-list" class="clubcal-my-events-list">
                     <div class="clubcal-loading">Loading your registrations...</div>
                 </div>
@@ -3260,6 +3266,14 @@ a.fc-event.clubcal-event-allday {
         });
 
         // My Events email input removed in v1.04 slim
+
+        // My Events "Show past events" checkbox
+        const showPastCheckbox = document.getElementById('clubcal-show-past-registrations');
+        if (showPastCheckbox) {
+            showPastCheckbox.addEventListener('change', () => {
+                renderMyEventsList();
+            });
+        }
 
         // Action buttons (multiple can be active - AND logic)
         container.querySelectorAll('.clubcal-action-btn').forEach(btn => {
@@ -3419,16 +3433,32 @@ a.fc-event.clubcal-event-allday {
         const container = document.getElementById('clubcal-my-events-list');
         if (!container) return;
 
+        const now = new Date();
+        const showPastCheckbox = document.getElementById('clubcal-show-past-registrations');
+        const showPast = showPastCheckbox && showPastCheckbox.checked;
+
         // Filter events to only those the user is registered for
-        const myEvents = allEvents.filter(event => myRegistrations.has(event.id));
+        let myEvents = allEvents.filter(event => myRegistrations.has(event.id));
+
+        // Separate into upcoming and past
+        const upcomingEvents = myEvents.filter(event => new Date(event.startDate) >= now);
+        const pastEvents = myEvents.filter(event => new Date(event.startDate) < now);
+
+        // Apply past filter
+        if (!showPast) {
+            myEvents = upcomingEvents;
+        }
 
         if (myEvents.length === 0) {
+            const message = showPast
+                ? "You haven't registered for any events yet."
+                : "You haven't registered for any upcoming events yet.";
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px 20px;">
                     <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
-                    <h3 style="margin: 0 0 12px 0; color: var(--clubcal-text);">No Upcoming Registrations</h3>
+                    <h3 style="margin: 0 0 12px 0; color: var(--clubcal-text);">No ${showPast ? '' : 'Upcoming '}Registrations</h3>
                     <p style="font-size: 14px; color: var(--clubcal-text-muted); margin-bottom: 24px;">
-                        You haven't registered for any upcoming events yet.
+                        ${message}
                     </p>
                     <button onclick="ClubCalendar.switchTab('find-events')" class="clubcal-btn clubcal-btn-primary"
                             style="padding: 12px 24px; font-size: 15px; cursor: pointer;">
@@ -3443,12 +3473,21 @@ a.fc-event.clubcal-event-allday {
         myEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
         let html = `<div style="padding: 16px 0;">`;
-        html += `<p style="font-size: 14px; color: var(--clubcal-text-muted); margin: 0 0 16px 0;">
-            You're registered for ${myEvents.length} upcoming event${myEvents.length !== 1 ? 's' : ''}.
-        </p>`;
+
+        // Summary message
+        if (showPast) {
+            html += `<p style="font-size: 14px; color: var(--clubcal-text-muted); margin: 0 0 16px 0;">
+                ${upcomingEvents.length} upcoming, ${pastEvents.length} past event${pastEvents.length !== 1 ? 's' : ''}.
+            </p>`;
+        } else {
+            html += `<p style="font-size: 14px; color: var(--clubcal-text-muted); margin: 0 0 16px 0;">
+                You're registered for ${myEvents.length} upcoming event${myEvents.length !== 1 ? 's' : ''}.
+            </p>`;
+        }
 
         myEvents.forEach(event => {
             const eventDate = new Date(event.startDate);
+            const isPast = eventDate < now;
             const dateStr = eventDate.toLocaleDateString('en-US', {
                 weekday: 'short',
                 month: 'short',
@@ -3460,10 +3499,17 @@ a.fc-event.clubcal-event-allday {
                 hour12: true
             });
 
+            const cardStyle = isPast
+                ? 'background: var(--clubcal-bg-light, #f8f9fa); border: 1px solid var(--clubcal-border, #ddd); opacity: 0.7;'
+                : 'background: var(--clubcal-bg-light, #f8f9fa); border: 1px solid var(--clubcal-border, #ddd);';
+
+            const badge = isPast
+                ? '<span class="clubcal-badge" style="flex-shrink: 0; background: #9e9e9e; color: white;">Past</span>'
+                : '<span class="clubcal-badge registered" style="flex-shrink: 0;">✓ Registered</span>';
+
             html += `
                 <div class="clubcal-my-event-card" style="
-                    background: var(--clubcal-bg-light, #f8f9fa);
-                    border: 1px solid var(--clubcal-border, #ddd);
+                    ${cardStyle}
                     border-radius: 8px;
                     padding: 16px;
                     margin-bottom: 12px;
@@ -3481,7 +3527,7 @@ a.fc-event.clubcal-event-allday {
                                 📍 ${escapeHtml(event.location)}
                             </div>` : ''}
                         </div>
-                        <span class="clubcal-badge registered" style="flex-shrink: 0;">✓ Registered</span>
+                        ${badge}
                     </div>
                 </div>
             `;
