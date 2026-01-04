@@ -2409,9 +2409,10 @@ a.fc-event.clubcal-event-allday {
         }
 
         // Build API URL with OData filter
+        // WA API uses simple date format: YYYY-MM-DD (no datetime wrapper)
         const dateStr = startDate.toISOString().split('T')[0];
         const url = `/sys/api/publicview/v1/accounts/${accountId}/events` +
-            `?$filter=StartDate ge datetime'${dateStr}'` +
+            `?$filter=StartDate ge ${dateStr}` +
             `&$orderby=StartDate`;
 
         try {

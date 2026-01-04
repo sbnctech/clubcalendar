@@ -15,6 +15,7 @@ Open your browser's developer console (F12 or Cmd+Option+I) and look for errors.
 | `403 Forbidden` | Wrong Account ID or not logged in | [Verify credentials](#api-authentication-errors) |
 | `Failed to fetch` | Network or CORS issue | [Check network](#network-errors) |
 | No errors but blank | JavaScript blocked | [Whitelist the CDN](#calendar-wont-load--blank-screen) |
+| Page shows "ACCESS DENIED" | Session glitch or page access | [Fix access issue](#access-denied-403-error) |
 
 ---
 
@@ -260,6 +261,47 @@ Company firewall blocking WA API endpoints.
 
 - Try from a different network
 - Contact IT to whitelist Wild Apricot domains
+
+---
+
+## Access Denied (403) Error
+
+**Symptom:** Page shows "ACCESS DENIED" or "This information is only available to current SBNC Members" even though you're logged in.
+
+### Cause 1: Session Glitch After View Switching
+
+Wild Apricot's session can get confused when switching between Admin view and Public view.
+
+**Solution:**
+
+1. Click **Log out** (top right)
+2. Log back in
+3. Navigate to the page again
+
+If that doesn't work:
+- Clear cookies for your WA domain
+- Or try in an incognito/private browser window
+
+### Cause 2: Page Access Restrictions
+
+The page's access settings don't include your membership level.
+
+**Solution:**
+
+1. Switch to **Admin view**
+2. Edit the page
+3. Under **Access Level**, select **Restricted**
+4. Check all membership levels that should have access
+5. Save the page
+
+### Cause 3: Membership Level Issue
+
+Your account may not have an active membership level assigned.
+
+**Solution:**
+
+- Check your membership status in WA admin
+- Verify you have an active (not expired) membership level
 
 ---
 

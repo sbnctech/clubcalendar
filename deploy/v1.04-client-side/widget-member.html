@@ -47,7 +47,7 @@
 <script>
 window.CLUBCALENDAR_CONFIG = {
     waAccountId: '176353',
-    waClientId: 'YOUR_CLIENT_ID',       // Get from WA > Settings > Security > Authorized Applications
+    waClientId: 'ww52eduzrh',            // SBNC API Client ID
     useClientSideApi: true,             // Use WA Member API directly (no external server)
     headerTitle: 'Club Events',
     primaryColor: '#2c5aa0',
@@ -2452,9 +2452,10 @@ a.fc-event.clubcal-event-allday {
         }
 
         // Build API URL with OData filter
+        // WA API uses simple date format: YYYY-MM-DD (no datetime wrapper)
         const dateStr = startDate.toISOString().split('T')[0];
         const url = `/sys/api/publicview/v1/accounts/${accountId}/events` +
-            `?$filter=StartDate ge datetime'${dateStr}'` +
+            `?$filter=StartDate ge ${dateStr}` +
             `&$orderby=StartDate`;
 
         try {
