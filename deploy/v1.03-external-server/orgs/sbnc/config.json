@@ -1,0 +1,94 @@
+{
+  "version": "1.03",
+  "lastUpdated": "2026-01-02",
+  "status": "deprecated",
+  "deprecationNote": "Use v1.04 client-side edition instead. v1.03 requires external server.",
+  "organization": {
+    "waAccountId": "176353",
+    "name": "Santa Barbara Newcomers Club",
+    "domain": "sbnewcomers.org"
+  },
+  "server": {
+    "baseUrl": "https://mail.sbnewcomers.org",
+    "eventsUrl": "https://mail.sbnewcomers.org/api/calendar/events",
+    "memberEventsUrl": "https://mail.sbnewcomers.org/api/calendar/events/member",
+    "eventDetailUrl": "https://mail.sbnewcomers.org/api/calendar/event"
+  },
+  "publicConfig": {
+    "headerTitle": "SBNC Public Events",
+    "audience": "public",
+    "serverMode": true,
+    "showMyEvents": false,
+    "showFilters": true,
+    "sidePanel": true,
+    "publicEventClick": "sidePanel",
+    "publicShowDate": true,
+    "publicShowTime": true,
+    "publicShowDescription": true,
+    "publicDescriptionLength": 200,
+    "hoverTooltip": true,
+    "hoverTooltipStyle": "enhanced",
+    "publicHoverShowTitle": true,
+    "publicHoverShowDate": true,
+    "publicHoverShowTime": true,
+    "publicHoverShowAvailability": false,
+    "quickFilters": {
+      "weekend": true,
+      "openings": false,
+      "afterhours": false,
+      "public": false
+    }
+  },
+  "memberConfig": {
+    "headerTitle": "Club Events",
+    "audience": "member",
+    "serverMode": true,
+    "showMyEvents": true,
+    "showFilters": true,
+    "sidePanel": false,
+    "eventClickBehavior": "popup",
+    "hoverTooltip": true,
+    "hoverTooltipStyle": "enhanced",
+    "memberHoverShowTitle": true,
+    "memberHoverShowDate": true,
+    "memberHoverShowTime": true,
+    "memberHoverShowAvailability": true,
+    "quickFilters": {
+      "weekend": true,
+      "openings": true,
+      "afterhours": true,
+      "public": true
+    }
+  },
+  "autoTagRules": [
+    { "type": "name-prefix", "pattern": "Games!:", "tag": "committee:games" },
+    { "type": "name-prefix", "pattern": "Wellness:", "tag": "committee:wellness" },
+    { "type": "name-prefix", "pattern": "Arts:", "tag": "committee:arts" },
+    { "type": "name-prefix", "pattern": "SB Arts:", "tag": "committee:arts" },
+    { "type": "name-prefix", "pattern": "Visual Arts:", "tag": "committee:arts" },
+    { "type": "name-prefix", "pattern": "Local Heritage:", "tag": "committee:local-heritage" },
+    { "type": "name-prefix", "pattern": "Wine Appreciation:", "tag": "committee:wine" },
+    { "type": "name-prefix", "pattern": "Pop-Up:", "tag": "committee:popup" },
+    { "type": "name-prefix", "pattern": "Pop Up:", "tag": "committee:popup" },
+    { "type": "name-prefix", "pattern": "Happy Hikers:", "tag": "committee:hikers" },
+    { "type": "name-prefix", "pattern": "Garden:", "tag": "committee:garden" },
+    { "type": "name-prefix", "pattern": "Volunteers in Action:", "tag": "committee:volunteers" },
+    { "type": "name-prefix", "pattern": "Epicurious:", "tag": "committee:epicurious" },
+    { "type": "name-prefix", "pattern": "Current Events:", "tag": "committee:current-events" },
+    { "type": "name-prefix", "pattern": "Foreign Policy:", "tag": "committee:current-events" },
+    { "type": "name-prefix", "pattern": "Afternoon Book:", "tag": "committee:books" },
+    { "type": "name-prefix", "pattern": "Evening Book:", "tag": "committee:books" },
+    { "type": "name-prefix", "pattern": "Books and Bites:", "tag": "committee:books" },
+    { "type": "name-prefix", "pattern": "TGIF:", "tag": "committee:tgif" },
+    { "type": "name-prefix", "pattern": "Performing Arts:", "tag": "committee:performing-arts" },
+    { "type": "name-prefix", "pattern": "Theater Lovers:", "tag": "committee:performing-arts" },
+    { "type": "name-prefix", "pattern": "Golf:", "tag": "committee:golf" },
+    { "type": "name-prefix", "pattern": "Cycling:", "tag": "committee:cycling" },
+    { "type": "name-prefix", "pattern": "Beer Lovers:", "tag": "committee:beer" },
+    { "type": "name-prefix", "pattern": "Out to Lunch:", "tag": "committee:out-to-lunch" }
+  ],
+  "theme": {
+    "primaryColor": "#2c5aa0",
+    "accentColor": "#d4a800"
+  }
+}

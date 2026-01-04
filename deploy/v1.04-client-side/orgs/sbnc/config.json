@@ -1,0 +1,54 @@
+{
+  "version": "1.04",
+  "lastUpdated": "2026-01-03",
+  "organization": {
+    "name": "Santa Barbara Newcomers Club",
+    "waAccountId": "176353",
+    "waClientId": "ww52eduzrh",
+    "website": "https://sbnewcomers.org"
+  },
+  "widget": {
+    "useClientSideApi": true,
+    "headerTitle": "Club Events",
+    "primaryColor": "#2c5aa0",
+    "accentColor": "#d4a800"
+  },
+  "features": {
+    "showMyEvents": true,
+    "showRegistrantCount": true,
+    "showWaitlist": true,
+    "showAddToCalendar": true
+  },
+  "quickFilters": {
+    "weekend": true,
+    "openings": true,
+    "afterhours": true,
+    "free": false,
+    "public": true
+  },
+  "autoTagRules": [
+    { "type": "name-prefix", "pattern": "Happy Hikers:", "tag": "committee:happy-hikers" },
+    { "type": "name-prefix", "pattern": "Games!:", "tag": "committee:games" },
+    { "type": "name-prefix", "pattern": "Wine Appreciation:", "tag": "committee:wine" },
+    { "type": "name-prefix", "pattern": "Epicurious:", "tag": "committee:epicurious" },
+    { "type": "name-prefix", "pattern": "TGIF:", "tag": "committee:tgif" },
+    { "type": "name-prefix", "pattern": "Cycling:", "tag": "committee:cycling" },
+    { "type": "name-prefix", "pattern": "Golf:", "tag": "committee:golf" },
+    { "type": "name-prefix", "pattern": "Performing Arts:", "tag": "committee:performing-arts" },
+    { "type": "name-prefix", "pattern": "Local Heritage:", "tag": "committee:local-heritage" },
+    { "type": "name-prefix", "pattern": "Wellness:", "tag": "committee:wellness" },
+    { "type": "name-prefix", "pattern": "Garden:", "tag": "committee:garden" },
+    { "type": "name-prefix", "pattern": "Arts:", "tag": "committee:arts" },
+    { "type": "name-prefix", "pattern": "Current Events:", "tag": "committee:current-events" },
+    { "type": "name-prefix", "pattern": "Pop-Up:", "tag": "committee:popup" },
+    { "type": "name-prefix", "pattern": "Beer Lovers:", "tag": "committee:beer" },
+    { "type": "name-prefix", "pattern": "Out to Lunch:", "tag": "committee:out-to-lunch" },
+    { "type": "name-prefix", "pattern": "Afternoon Book:", "tag": "committee:book-clubs" },
+    { "type": "name-prefix", "pattern": "Evening Book:", "tag": "committee:book-clubs" }
+  ],
+  "notes": {
+    "deployment": "Members-only page on WA",
+    "publicEvents": "Use WA native widget for public pages",
+    "cssVariables": "Add CSS_VARIABLES.txt to WA Custom CSS"
+  }
+}

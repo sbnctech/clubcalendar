@@ -1,0 +1,156 @@
+<!--
+  ClubCalendar SIMPLE TEST Widget
+  Wild Apricot Custom HTML Gadget
+
+  VERSION: 1.03-test
+  PURPOSE: Quick test using mail.sbnewcomers.org JSONP endpoint
+
+  INSTALLATION:
+  1. Create a hidden WA page
+  2. Add a Custom HTML gadget
+  3. Paste this code
+  4. Save and preview
+-->
+
+<style>
+#clubcalendar-test {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+#clubcalendar-test h2 {
+  color: #2c5aa0;
+  border-bottom: 2px solid #d4a800;
+  padding-bottom: 10px;
+}
+#clubcalendar-test .status {
+  background: #f0f0f0;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+#clubcalendar-test .status.success { background: #d4edda; color: #155724; }
+#clubcalendar-test .status.error { background: #f8d7da; color: #721c24; }
+#clubcalendar-test .event-list {
+  list-style: none;
+  padding: 0;
+}
+#clubcalendar-test .event-item {
+  background: white;
+  border: 1px solid #ddd;
+  border-left: 4px solid #2c5aa0;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+#clubcalendar-test .event-name {
+  font-weight: bold;
+  color: #2c5aa0;
+  font-size: 1.1em;
+}
+#clubcalendar-test .event-date {
+  color: #666;
+  margin-top: 5px;
+}
+#clubcalendar-test .event-location {
+  color: #888;
+  font-size: 0.9em;
+  margin-top: 5px;
+}
+#clubcalendar-test .event-spots {
+  display: inline-block;
+  background: #e8f4e8;
+  color: #2d6a2d;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  margin-top: 8px;
+}
+#clubcalendar-test .event-spots.full {
+  background: #fce4e4;
+  color: #c33;
+}
+</style>
+
+<div id="clubcalendar-test">
+  <h2>🗓️ ClubCalendar Test (External Server)</h2>
+  <div id="cc-status" class="status">Loading events from mail.sbnewcomers.org...</div>
+  <ul id="cc-events" class="event-list"></ul>
+</div>
+
+<script>
+// ClubCalendar Test Widget - Uses JSONP to load events from external server
+(function() {
+  'use strict';
+
+  const SERVER_URL = 'https://mail.sbnewcomers.org/api/events.js';
+
+  // Format date nicely
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  }
+
+  // Calculate spots remaining
+  function getSpots(event) {
+    if (!event.limit) return { text: 'Open registration', full: false };
+    const remaining = event.limit - (event.confirmed || 0);
+    if (remaining <= 0) return { text: 'FULL', full: true };
+    return { text: `${remaining} spots left`, full: false };
+  }
+
+  // Callback for JSONP response
+  window.efLoadEventsCallback = function(events) {
+    const statusEl = document.getElementById('cc-status');
+    const listEl = document.getElementById('cc-events');
+
+    if (!events || events.length === 0) {
+      statusEl.className = 'status error';
+      statusEl.textContent = 'No events found';
+      return;
+    }
+
+    statusEl.className = 'status success';
+    statusEl.textContent = `✅ Loaded ${events.length} events from external server (mail.sbnewcomers.org)`;
+
+    // Render events
+    listEl.innerHTML = events.slice(0, 20).map(event => {
+      const spots = getSpots(event);
+      return `
+        <li class="event-item">
+          <div class="event-name">${event.name}</div>
+          <div class="event-date">📅 ${formatDate(event.startDate)}</div>
+          ${event.location ? `<div class="event-location">📍 ${event.location}</div>` : ''}
+          <span class="event-spots ${spots.full ? 'full' : ''}">${spots.text}</span>
+        </li>
+      `;
+    }).join('');
+  };
+
+  // Load events via JSONP (bypasses CORS)
+  function loadEvents() {
+    const script = document.createElement('script');
+    script.src = SERVER_URL + '?callback=efLoadEventsCallback&t=' + Date.now();
+    script.onerror = function() {
+      const statusEl = document.getElementById('cc-status');
+      statusEl.className = 'status error';
+      statusEl.textContent = '❌ Failed to load events from server. Check console for details.';
+    };
+    document.head.appendChild(script);
+  }
+
+  // Initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadEvents);
+  } else {
+    loadEvents();
+  }
+})();
+</script>

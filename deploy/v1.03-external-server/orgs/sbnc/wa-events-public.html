@@ -1,0 +1,163 @@
+<!--
+  ClubCalendar PUBLIC Events Page Widget
+  Wild Apricot Custom HTML Gadget
+
+  VERSION: 1.03 (External Server Edition)
+  AUDIENCE: Public (non-members)
+  CREATED: January 2, 2026
+
+  INSTALLATION:
+  1. Create a new WA page at /events-public (or similar)
+  2. Set page access to "Everyone" (public)
+  3. Add a Custom HTML gadget
+  4. Paste this entire snippet
+  5. Save and publish
+
+  FEATURES FOR PUBLIC:
+  - Shows only public events (AccessLevel = 'Public')
+  - Side panel for event details (no navigation to member pages)
+  - NO location shown (member-only info)
+  - NO availability status (member-only info)
+  - Brief description only (200 chars max)
+  - No "My Events" tab
+-->
+
+<div id="clubcalendar"></div>
+
+<!-- Fallback for when external server is unavailable -->
+<div id="wa-fallback" style="display: none;">
+  <!-- WA's built-in events widget can be placed here -->
+  <p style="text-align: center; padding: 40px; color: #666;">
+    <a href="/events" style="color: #2c5aa0;">View Events</a>
+  </p>
+</div>
+
+<script>
+// ClubCalendar v1.03 - Public Calendar Configuration
+// Loads settings from /clubcalendar-config page
+(function() {
+    'use strict';
+
+    const CONFIG_PAGE_URL = '/clubcalendar-config';
+    const WIDGET_SCRIPT_URL = 'https://mail.sbnewcomers.org/static/clubcalendar-widget.js';
+
+    // Load widget script
+    function loadWidgetScript() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = WIDGET_SCRIPT_URL;
+            script.onload = resolve;
+            script.onerror = () => {
+                console.error('[ClubCalendar] Failed to load widget script');
+                reject(new Error('Widget script failed to load'));
+            };
+            document.head.appendChild(script);
+        });
+    }
+
+    // Fetch and parse config from WA config page
+    async function loadConfig() {
+        try {
+            const response = await fetch(CONFIG_PAGE_URL);
+            if (!response.ok) throw new Error('Config page not found');
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const configScript = doc.getElementById('clubcalendar-config');
+
+            if (!configScript) throw new Error('Config not found on page');
+
+            return JSON.parse(configScript.textContent);
+        } catch (error) {
+            console.error('[ClubCalendar] Config load failed:', error);
+            return null;
+        }
+    }
+
+    // Build widget config from remote config (PUBLIC version)
+    function buildWidgetConfig(remoteConfig) {
+        const pub = remoteConfig.publicConfig || {};
+        const server = remoteConfig.server || {};
+        const theme = remoteConfig.theme || {};
+
+        return {
+            container: '#clubcalendar',
+            // Server mode
+            serverMode: true,
+            serverEventsUrl: server.eventsUrl || '',
+            serverMemberEventsUrl: server.memberEventsUrl || '',
+            serverEventDetailUrl: server.eventDetailUrl || '',
+            // Public audience
+            audience: 'public',
+            memberLevel: 'public',
+            headerTitle: pub.headerTitle || 'Public Events',
+            showMyEvents: false,
+            showFilters: pub.showFilters !== false,
+            // Side panel for public
+            sidePanel: pub.sidePanel !== false,
+            publicEventClick: pub.publicEventClick || 'sidePanel',
+            publicShowDate: pub.publicShowDate !== false,
+            publicShowTime: pub.publicShowTime !== false,
+            publicShowDescription: pub.publicShowDescription !== false,
+            publicDescriptionLength: pub.publicDescriptionLength || 200,
+            // Hover tooltip
+            hoverTooltip: pub.hoverTooltip !== false,
+            hoverTooltipStyle: pub.hoverTooltipStyle || 'enhanced',
+            publicHoverShowTitle: pub.publicHoverShowTitle !== false,
+            publicHoverShowDate: pub.publicHoverShowDate !== false,
+            publicHoverShowTime: pub.publicHoverShowTime !== false,
+            publicHoverShowAvailability: false, // NEVER for public
+            // Theme
+            primaryColor: theme.primaryColor || '#2c5aa0',
+            accentColor: theme.accentColor || '#d4a800',
+            // Fallback
+            fallbackContainerId: 'wa-fallback',
+            fallbackEventsUrl: '/events'
+        };
+    }
+
+    // Show error state
+    function showError(message) {
+        const container = document.getElementById('clubcalendar');
+        const fallback = document.getElementById('wa-fallback');
+        if (container) {
+            container.innerHTML = '';
+        }
+        if (fallback) {
+            fallback.style.display = 'block';
+        }
+        console.error('[ClubCalendar] ' + message);
+    }
+
+    // Initialize
+    async function init() {
+        try {
+            // Load config first
+            const config = await loadConfig();
+            if (!config) {
+                showError('Could not load configuration');
+                return;
+            }
+
+            // Set global config before loading widget
+            window.CLUBCALENDAR_CONFIG = buildWidgetConfig(config);
+
+            // Load and run widget script
+            await loadWidgetScript();
+
+            // Widget auto-initializes when loaded
+            console.log('[ClubCalendar] Public calendar initialized');
+        } catch (error) {
+            showError(error.message);
+        }
+    }
+
+    // Wait for DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>

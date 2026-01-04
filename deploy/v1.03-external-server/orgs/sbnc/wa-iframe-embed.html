@@ -1,0 +1,48 @@
+<!--
+  ClubCalendar IFRAME Embed
+  Wild Apricot Custom HTML Gadget
+
+  VERSION: 1.03
+  PURPOSE: Embeds calendar from mail.sbnewcomers.org via iframe
+           (Bypasses WA's Content Security Policy)
+
+  INSTALLATION:
+  1. Add Custom HTML gadget to WA page
+  2. Paste this code
+  3. Save and publish
+-->
+
+<style>
+.clubcalendar-iframe-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fff;
+}
+.clubcalendar-iframe-container iframe {
+  width: 100%;
+  height: 800px;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.clubcalendar-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+</style>
+
+<div class="clubcalendar-iframe-container">
+  <div class="clubcalendar-loading" id="cc-loading">Loading calendar...</div>
+  <iframe
+    id="clubcalendar-frame"
+    src="https://mail.sbnewcomers.org/calendar/"
+    style="display: none;"
+    onload="document.getElementById('cc-loading').style.display='none'; this.style.display='block';"
+    onerror="document.getElementById('cc-loading').innerHTML='Calendar temporarily unavailable. <a href=/events>View events →</a>';"
+    title="Club Events Calendar"
+    loading="lazy"
+  ></iframe>
+</div>
