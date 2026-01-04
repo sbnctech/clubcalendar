@@ -3066,11 +3066,21 @@ a.fc-event.clubcal-event-allday {
             `;
         }
 
-        // My Events tab removed in v1.04 slim - link to WA's native registrations page instead
+        // Tabs (if My Events is enabled AND user is logged in)
         const isLoggedIn = CONFIG.memberLevel && CONFIG.memberLevel !== 'public';
+        const showMyEventsTab = CONFIG.showMyEvents && isLoggedIn;
+        if (showMyEventsTab) {
+            html += `
+                <div class="clubcal-tabs">
+                    <button class="clubcal-tab-btn active" data-tab="find-events">Find Events</button>
+                    <button class="clubcal-tab-btn" data-tab="my-events">My Events</button>
+                </div>
+            `;
+        }
 
-        // Find Events content (no tab wrapper needed without My Events)
-        html += `<div id="clubcal-tab-find-events">`;
+        // Find Events Tab Content
+        const tabClass = showMyEventsTab ? 'clubcal-tab-content active' : '';
+        html += `<div id="clubcal-tab-find-events" class="${tabClass}">`;
 
         // Filter bar
         if (CONFIG.showFilters) {
@@ -3176,7 +3186,16 @@ a.fc-event.clubcal-event-allday {
             </div>
         </div>`; // End Find Events tab content
 
-        // My Events tab removed in v1.04 slim
+        // My Events Tab Content - Shows user's registered events
+        if (CONFIG.showMyEvents) {
+            html += `
+            <div id="clubcal-tab-my-events" class="clubcal-tab-content">
+                <div id="clubcal-my-events-list" class="clubcal-my-events-list">
+                    <div class="clubcal-loading">Loading your registrations...</div>
+                </div>
+            </div>
+            `;
+        }
 
         html += '</div>'; // End widget container
 
@@ -3386,6 +3405,90 @@ a.fc-event.clubcal-event-allday {
         });
         const activeTabContent = document.getElementById(`clubcal-tab-${tab}`);
         if (activeTabContent) activeTabContent.classList.add('active');
+
+        // Render My Events list when switching to that tab
+        if (tab === 'my-events') {
+            renderMyEventsList();
+        }
+    }
+
+    /**
+     * Renders the My Events list showing user's registered events.
+     */
+    function renderMyEventsList() {
+        const container = document.getElementById('clubcal-my-events-list');
+        if (!container) return;
+
+        // Filter events to only those the user is registered for
+        const myEvents = allEvents.filter(event => myRegistrations.has(event.id));
+
+        if (myEvents.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+                    <h3 style="margin: 0 0 12px 0; color: var(--clubcal-text);">No Upcoming Registrations</h3>
+                    <p style="font-size: 14px; color: var(--clubcal-text-muted); margin-bottom: 24px;">
+                        You haven't registered for any upcoming events yet.
+                    </p>
+                    <button onclick="ClubCalendar.switchTab('find-events')" class="clubcal-btn clubcal-btn-primary"
+                            style="padding: 12px 24px; font-size: 15px; cursor: pointer;">
+                        Browse Events →
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        // Sort by date
+        myEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+        let html = `<div style="padding: 16px 0;">`;
+        html += `<p style="font-size: 14px; color: var(--clubcal-text-muted); margin: 0 0 16px 0;">
+            You're registered for ${myEvents.length} upcoming event${myEvents.length !== 1 ? 's' : ''}.
+        </p>`;
+
+        myEvents.forEach(event => {
+            const eventDate = new Date(event.startDate);
+            const dateStr = eventDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+            });
+            const timeStr = eventDate.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            html += `
+                <div class="clubcal-my-event-card" style="
+                    background: var(--clubcal-bg-light, #f8f9fa);
+                    border: 1px solid var(--clubcal-border, #ddd);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                    cursor: pointer;
+                " onclick="window.open('${escapeHtml(event.eventUrl)}', '_blank')">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--clubcal-text); margin-bottom: 4px;">
+                                ${escapeHtml(event.name)}
+                            </div>
+                            <div style="font-size: 13px; color: var(--clubcal-text-muted);">
+                                ${dateStr} • ${timeStr}
+                            </div>
+                            ${event.location ? `<div style="font-size: 13px; color: var(--clubcal-text-muted); margin-top: 4px;">
+                                📍 ${escapeHtml(event.location)}
+                            </div>` : ''}
+                        </div>
+                        <span class="clubcal-badge registered" style="flex-shrink: 0;">✓ Registered</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        container.innerHTML = html;
     }
 
     /**

@@ -2380,6 +2380,62 @@ a.fc-event.clubcal-event-allday {
     /** @type {Date|null} Earliest date for which we have events loaded */
     let earliestLoadedDate = null;
 
+    /** @type {Set} IDs of events the user is registered for */
+    let myRegistrations = new Set();
+
+    /** @type {boolean} Whether My Events filter is active */
+    let myEventsFilterActive = false;
+
+    /**
+     * Fetches the logged-in user's event registrations from the WA Member API.
+     * Uses /contacts/me/eventregistrations endpoint - no email input needed.
+     * @returns {Promise<Set>} Set of event IDs the user is registered for
+     */
+    async function fetchMyRegistrations() {
+        const accountId = CONFIG.waAccountId;
+        const clientId = CONFIG.waClientId;
+
+        if (!accountId || !clientId) {
+            console.log('ClubCalendar: Cannot fetch registrations - missing API credentials');
+            return new Set();
+        }
+
+        try {
+            const url = `/sys/api/publicview/v1/accounts/${accountId}/contacts/me/eventregistrations`;
+            const response = await fetch(url, {
+                headers: { 'clientId': clientId }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.log('ClubCalendar: User not logged in, cannot fetch registrations');
+                    return new Set();
+                }
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const registrations = data.EventRegistrations || data || [];
+
+            // Extract event IDs from registrations
+            const eventIds = new Set();
+            registrations.forEach(reg => {
+                // WA API may return Event.Id or EventId depending on endpoint
+                const eventId = reg.Event?.Id || reg.EventId || reg.Id;
+                if (eventId) {
+                    eventIds.add(eventId);
+                }
+            });
+
+            console.log(`ClubCalendar: User is registered for ${eventIds.size} events`);
+            return eventIds;
+
+        } catch (error) {
+            console.error('ClubCalendar: Failed to fetch user registrations:', error);
+            return new Set();
+        }
+    }
+
     /**
      * Detects API base URL from the script's src attribute or page location.
      *
@@ -3418,22 +3474,12 @@ a.fc-event.clubcal-event-allday {
             </div>
         </div>`; // End Find Events tab content
 
-        // My Events Tab Content - Links to WA's native registrations page
+        // My Events Tab Content - Shows user's registered events
         if (CONFIG.showMyEvents) {
             html += `
             <div id="clubcal-tab-my-events" class="clubcal-tab-content">
-                <div style="text-align: center; padding: 40px 20px;">
-                    <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
-                    <h3 style="margin: 0 0 12px 0; color: var(--clubcal-text);">My Event Registrations</h3>
-                    <p style="font-size: 14px; color: var(--clubcal-text-muted); margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">
-                        View your upcoming event registrations, waitlist positions, and past attendance on the club website.
-                    </p>
-                    <a href="https://sbnewcomers.org/Sys/Profile/EventRegistrations"
-                       target="_blank"
-                       class="clubcal-btn clubcal-btn-primary"
-                       style="display: inline-block; padding: 12px 24px; font-size: 15px; text-decoration: none;">
-                        View My Registrations →
-                    </a>
+                <div id="clubcal-my-events-list" class="clubcal-my-events-list">
+                    <div class="clubcal-loading">Loading your registrations...</div>
                 </div>
             </div>
             `;
@@ -3658,6 +3704,90 @@ a.fc-event.clubcal-event-allday {
         });
         const activeTabContent = document.getElementById(`clubcal-tab-${tab}`);
         if (activeTabContent) activeTabContent.classList.add('active');
+
+        // Render My Events list when switching to that tab
+        if (tab === 'my-events') {
+            renderMyEventsList();
+        }
+    }
+
+    /**
+     * Renders the My Events list showing user's registered events.
+     */
+    function renderMyEventsList() {
+        const container = document.getElementById('clubcal-my-events-list');
+        if (!container) return;
+
+        // Filter events to only those the user is registered for
+        const myEvents = allEvents.filter(event => myRegistrations.has(event.id));
+
+        if (myEvents.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+                    <h3 style="margin: 0 0 12px 0; color: var(--clubcal-text);">No Upcoming Registrations</h3>
+                    <p style="font-size: 14px; color: var(--clubcal-text-muted); margin-bottom: 24px;">
+                        You haven't registered for any upcoming events yet.
+                    </p>
+                    <button onclick="ClubCalendar.switchTab('find-events')" class="clubcal-btn clubcal-btn-primary"
+                            style="padding: 12px 24px; font-size: 15px; cursor: pointer;">
+                        Browse Events →
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        // Sort by date
+        myEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+        let html = `<div style="padding: 16px 0;">`;
+        html += `<p style="font-size: 14px; color: var(--clubcal-text-muted); margin: 0 0 16px 0;">
+            You're registered for ${myEvents.length} upcoming event${myEvents.length !== 1 ? 's' : ''}.
+        </p>`;
+
+        myEvents.forEach(event => {
+            const eventDate = new Date(event.startDate);
+            const dateStr = eventDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+            });
+            const timeStr = eventDate.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            html += `
+                <div class="clubcal-my-event-card" style="
+                    background: var(--clubcal-bg-light, #f8f9fa);
+                    border: 1px solid var(--clubcal-border, #ddd);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                    cursor: pointer;
+                " onclick="window.open('${escapeHtml(event.eventUrl)}', '_blank')">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--clubcal-text); margin-bottom: 4px;">
+                                ${escapeHtml(event.name)}
+                            </div>
+                            <div style="font-size: 13px; color: var(--clubcal-text-muted);">
+                                ${dateStr} • ${timeStr}
+                            </div>
+                            ${event.location ? `<div style="font-size: 13px; color: var(--clubcal-text-muted); margin-top: 4px;">
+                                📍 ${escapeHtml(event.location)}
+                            </div>` : ''}
+                        </div>
+                        <span class="clubcal-badge registered" style="flex-shrink: 0;">✓ Registered</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        container.innerHTML = html;
     }
 
     /**
@@ -5129,6 +5259,9 @@ a.fc-event.clubcal-event-allday {
                 if (!buildWidget()) {
                     return;
                 }
+
+                // Fetch user's registrations (for My Events feature)
+                myRegistrations = await fetchMyRegistrations();
 
                 // Fetch events (start with current only, user can select past months)
                 allEvents = await fetchEvents(0);
