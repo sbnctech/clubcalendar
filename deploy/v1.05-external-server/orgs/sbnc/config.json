@@ -1,0 +1,70 @@
+{
+  "version": "1.33",
+  "lastUpdated": "2026-01-05",
+  "organization": {
+    "name": "Santa Barbara Newcomers Club",
+    "waAccountId": "176353",
+    "website": "https://sbnewcomers.org"
+  },
+  "server": {
+    "apiBase": "https://mail.sbnewcomers.org",
+    "eventsUrl": "https://mail.sbnewcomers.org/api/calendar/test/events",
+    "eventDetailUrl": "https://mail.sbnewcomers.org/api/calendar/test/event/{id}",
+    "authUrl": "https://mail.sbnewcomers.org/api/calendar/test/auth",
+    "myEventsUrl": "https://mail.sbnewcomers.org/api/calendar/test/my-events",
+    "preComputedFields": ["timeOfDay", "costCategory", "isFree", "committee"]
+  },
+  "widget": {
+    "headerTitle": "Club Events",
+    "primaryColor": "#2c5aa0",
+    "accentColor": "#d4a800"
+  },
+  "features": {
+    "showMyEvents": true,
+    "showRegistrantCount": true,
+    "showWaitlist": true,
+    "showAddToCalendar": false,
+    "realTimeDescriptionFetch": true
+  },
+  "quickFilters": {
+    "weekend": true,
+    "openings": true,
+    "afterhours": true,
+    "free": true,
+    "public": true
+  },
+  "autoTagRules": [
+    { "type": "name-prefix", "pattern": "Happy Hikers:", "tag": "committee:happy-hikers" },
+    { "type": "name-prefix", "pattern": "Games!:", "tag": "committee:games" },
+    { "type": "name-prefix", "pattern": "Wine Appreciation:", "tag": "committee:wine" },
+    { "type": "name-prefix", "pattern": "Epicurious:", "tag": "committee:epicurious" },
+    { "type": "name-prefix", "pattern": "TGIF:", "tag": "committee:tgif" },
+    { "type": "name-prefix", "pattern": "Cycling:", "tag": "committee:cycling" },
+    { "type": "name-prefix", "pattern": "Golf:", "tag": "committee:golf" },
+    { "type": "name-prefix", "pattern": "Performing Arts:", "tag": "committee:performing-arts" },
+    { "type": "name-prefix", "pattern": "Local Heritage:", "tag": "committee:local-heritage" },
+    { "type": "name-prefix", "pattern": "Wellness:", "tag": "committee:wellness" },
+    { "type": "name-prefix", "pattern": "Garden:", "tag": "committee:garden" },
+    { "type": "name-prefix", "pattern": "Arts:", "tag": "committee:arts" },
+    { "type": "name-prefix", "pattern": "Current Events:", "tag": "committee:current-events" },
+    { "type": "name-prefix", "pattern": "Pop-Up:", "tag": "committee:popup" },
+    { "type": "name-prefix", "pattern": "Pop Up:", "tag": "committee:popup" },
+    { "type": "name-prefix", "pattern": "Beer Lovers:", "tag": "committee:beer" },
+    { "type": "name-prefix", "pattern": "Out to Lunch:", "tag": "committee:out-to-lunch" },
+    { "type": "name-prefix", "pattern": "Afternoon Book:", "tag": "committee:book-clubs" },
+    { "type": "name-prefix", "pattern": "Evening Book:", "tag": "committee:book-clubs" }
+  ],
+  "deployment": {
+    "widgetFile": "ClubCalendar_SBNC_EVENTS_PAGE.html",
+    "testPage": "https://sbnewcomers.org/cc-test-2026/",
+    "productionPage": "https://sbnewcomers.org/events",
+    "serverLocation": "mail.sbnewcomers.org:/var/www/chatbot/backend/app.py"
+  },
+  "changelog": {
+    "1.33": "Remove Add to Calendar, add real-time description fetch, server pre-computation",
+    "1.32": "Fix view toggle, remove list underlines, add calendar icons",
+    "1.31": "Remove hover tooltip for public view",
+    "1.30": "Fix cost filter for all levels, add computeCostCategory",
+    "1.29": "Cost filter consistency with Free button"
+  }
+}
