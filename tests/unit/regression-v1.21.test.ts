@@ -377,3 +377,49 @@ describe('BUG: Free filter consistency across widget', () => {
     expect(matches.length).toBeGreaterThanOrEqual(4);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Member Popup Requirements
+// Added in v1.26
+//
+// The member popup must include:
+// - Location display
+// - View & Register button (link to WA event page)
+// - Add to Calendar button (ICS download)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Member popup requirements', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('showEventPopup must be a separate function from showPublicEventPopup', () => {
+    // Member popup should NOT just call showPublicEventPopup
+    expect(widgetContent).not.toMatch(/function showEventPopup.*\{[\s\S]*?showPublicEventPopup\(event\);[\s\S]*?\}/);
+  });
+
+  it('member popup must include location display', () => {
+    // Should have location in the popup meta
+    expect(widgetContent).toMatch(/locationHtml.*=.*location.*\?/);
+    expect(widgetContent).toMatch(/📍/);
+  });
+
+  it('member popup must include View & Register button', () => {
+    expect(widgetContent).toMatch(/View.*&.*Register|Register.*&.*View/i);
+    expect(widgetContent).toMatch(/waEventUrl.*=.*sbnewcomers\.org\/event-/);
+  });
+
+  it('member popup must include Add to Calendar button', () => {
+    expect(widgetContent).toMatch(/Add to Calendar/i);
+    expect(widgetContent).toMatch(/icsUrl.*=.*CONFIG\.icsBaseUrl/);
+  });
+
+  it('closeEventPopup must remove hover tooltip', () => {
+    expect(widgetContent).toMatch(/closeEventPopup[\s\S]*?clubcal-hover-tooltip[\s\S]*?remove\(\)/);
+  });
+});

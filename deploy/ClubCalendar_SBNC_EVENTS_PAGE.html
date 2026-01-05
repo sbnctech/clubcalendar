@@ -375,7 +375,7 @@ window.CLUBCALENDAR_CONFIG = {
  * │                                                                         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * @version 1.25
+ * @version 1.26
  * @author ClubCalendar
  */
 
@@ -4333,12 +4333,117 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
-     * Shows event details popup - simple version for historical archive.
-     * Just shows: category, title, date, time, scrollable description, close button.
+     * Shows event details popup for members.
+     * Includes: category, title, date, time, location, scrollable description,
+     * register button, add to calendar button, close button.
      */
     function showEventPopup(event) {
-        // For historical archive, use the same simple popup as public view
-        showPublicEventPopup(event);
+        // Remove existing popup
+        closeEventPopup();
+
+        const startDate = new Date(event.start);
+        const dateStr = startDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        const timeStr = startDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+
+        // Get original event data
+        const originalEvent = allEvents.find(e => String(e.id) === String(event.id));
+        const rawDesc = originalEvent?.Description || originalEvent?.description || '';
+        const location = event.location || originalEvent?.location || '';
+
+        // Clean description for display
+        let descriptionHtml = '';
+        if (rawDesc) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = rawDesc;
+            const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+            if (plainText) {
+                descriptionHtml = `
+                    <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 150px !important; overflow-y: scroll !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch;">
+                        ${escapeHtml(plainText)}
+                    </div>
+                `;
+            }
+        }
+
+        // Get category/committee tag if available
+        const tags = Array.isArray(originalEvent?.tags) ? originalEvent.tags : (event.tags || []);
+        const category = tags.find(t => t && t.startsWith && t.startsWith('committee:'));
+        const categoryName = category ? category.replace('committee:', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
+        const categoryHtml = categoryName ? `<span class="clubcal-event-popup-category" style="background: #2c5aa0; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${escapeHtml(categoryName)}</span>` : '';
+
+        // Location HTML
+        const locationHtml = location ? `
+            <div class="clubcal-event-popup-meta-item">
+                <span>📍</span>
+                <strong>${escapeHtml(location)}</strong>
+            </div>
+        ` : '';
+
+        // Build WA event URL for registration
+        const waEventUrl = `https://sbnewcomers.org/event-${event.id}`;
+
+        // Build ICS URL for add to calendar
+        const icsUrl = CONFIG.icsBaseUrl ? `${CONFIG.icsBaseUrl}?id=${event.id}` : null;
+
+        // Action buttons
+        let actionButtons = `
+            <a href="${waEventUrl}" target="_blank" class="clubcal-btn clubcal-btn-primary" style="text-decoration: none; text-align: center;">
+                View & Register
+            </a>
+        `;
+
+        if (icsUrl && CONFIG.showAddToCalendar) {
+            actionButtons += `
+                <a href="${icsUrl}" download class="clubcal-btn clubcal-btn-calendar" style="text-decoration: none; text-align: center;">
+                    📅 Add to Calendar
+                </a>
+            `;
+        }
+
+        actionButtons += `
+            <button class="clubcal-btn clubcal-btn-secondary" data-action="closePopup">
+                Close
+            </button>
+        `;
+
+        const popupHtml = `
+            <div class="clubcal-popup-overlay" data-action="closePopup"></div>
+            <div class="clubcal-event-popup">
+                <div class="clubcal-event-popup-header">
+                    ${categoryHtml}
+                    <h3>${escapeHtml(event.title)}</h3>
+                </div>
+                <div class="clubcal-event-popup-body">
+                    <div class="clubcal-event-popup-meta">
+                        <div class="clubcal-event-popup-meta-item">
+                            <span>📅</span>
+                            <strong>${dateStr}</strong>
+                        </div>
+                        <div class="clubcal-event-popup-meta-item">
+                            <span>🕐</span>
+                            <strong>${timeStr}</strong>
+                        </div>
+                        ${locationHtml}
+                    </div>
+
+                    ${descriptionHtml}
+
+                    <div class="clubcal-event-popup-actions">
+                        ${actionButtons}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', popupHtml);
     }
 
     /**
