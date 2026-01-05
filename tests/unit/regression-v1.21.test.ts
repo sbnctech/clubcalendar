@@ -364,9 +364,10 @@ describe('BUG: Free filter consistency across widget', () => {
     expect(widgetContent).toMatch(/const isFree.*=.*event\.isFree.*\|\|.*minPrice.*\|\|.*!event\.registrationEnabled/);
   });
 
-  it('should use isFreeCost variable in cost dropdown filter', () => {
-    // Line ~3864: cost dropdown should use isFreeCost (price-based), not isFree
-    expect(widgetContent).toMatch(/cost.*===.*'free'[\s\S]*?!isFreeCost/);
+  it('should use isFree in cost dropdown filter (same logic as Free button)', () => {
+    // Line ~3860: cost dropdown uses isFree (includes !registrationEnabled)
+    // because events without registration are free to attend
+    expect(widgetContent).toMatch(/cost.*===.*'free'.*!isFree/);
   });
 
   it('all isFree calculations should include registrationEnabled (count check)', () => {
@@ -448,18 +449,16 @@ describe('Public popup requirements', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BUG #8: Cost dropdown filter must use price-based free, not !registrationEnabled
-// Fixed in v1.28
+// Cost Filter Consistency (v1.29)
 //
-// The cost dropdown (free, under25, under50, etc.) was incorrectly using
-// the same isFree logic as the Free quick filter button. But the Free button
-// includes !registrationEnabled (open events without registration = free to attend).
-// For COST filtering, we need strict price-based determination:
-// - isFreeCost = isFree flag OR minPrice === 0 OR costCategory === 'Free'
-// - NOT including !registrationEnabled (events might cost $ at the door)
+// Both the Free quick filter button AND cost dropdown should use same logic:
+// isFree = event.isFree === 1 || minPrice === 0 || !registrationEnabled
+//
+// Events without registration ARE treated as free because they're open to
+// attend without payment. This is consistent behavior across all filter types.
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('BUG: Cost filter uses price-based free', () => {
+describe('Cost filter consistency with Free button', () => {
   let widgetContent: string;
 
   beforeAll(() => {
@@ -469,19 +468,147 @@ describe('BUG: Cost filter uses price-based free', () => {
     widgetContent = fs.readFileSync(widgetPath, 'utf-8');
   });
 
-  it('cost filter should define isFreeCost separately from isFree', () => {
-    // Cost filter should have its own isFreeCost variable
-    expect(widgetContent).toMatch(/isFreeCost.*=.*event\.isFree.*===.*1.*\|\|.*minPrice.*===.*0/);
+  it('cost filter should use isFree variable (not a separate isFreeCost)', () => {
+    // Cost filter should NOT have a separate isFreeCost variable
+    expect(widgetContent).not.toMatch(/isFreeCost\s*=/);
   });
 
-  it('cost filter isFreeCost should NOT include !registrationEnabled', () => {
-    // The isFreeCost line should NOT contain registrationEnabled
-    const costFilterSection = widgetContent.match(/const isFreeCost.*=.*[^;]+;/);
-    expect(costFilterSection).not.toBeNull();
-    expect(costFilterSection![0]).not.toMatch(/registrationEnabled/);
+  it('cost filter free option should reference isFree', () => {
+    // The cost 'free' option should use !isFree
+    expect(widgetContent).toMatch(/cost.*===.*'free'.*!isFree/);
   });
 
-  it('cost filter free option should use isFreeCost', () => {
-    expect(widgetContent).toMatch(/cost.*===.*'free'[\s\S]*?!isFreeCost/);
+  it('isFree includes !registrationEnabled for open events', () => {
+    // The isFree calculation should include !registrationEnabled
+    expect(widgetContent).toMatch(/const isFree.*!event\.registrationEnabled/);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v1.33 Regression Tests
+//
+// 1. Add to Calendar button removed (showAddToCalendar: false)
+// 2. Real-time description fetch from server
+// 3. Cost category computed at transform time
+// 4. View toggle fix with preventDefault/stopPropagation
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('v1.33: Add to Calendar button disabled', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('showAddToCalendar should be false in config', () => {
+    expect(widgetContent).toMatch(/showAddToCalendar:\s*false/);
+  });
+
+  it('should still have conditional for showAddToCalendar (for future re-enabling)', () => {
+    // The conditional should exist so feature can be re-enabled via config
+    expect(widgetContent).toMatch(/CONFIG\.showAddToCalendar/);
+  });
+});
+
+describe('v1.33: Real-time description fetch', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('popup should have description container with id', () => {
+    expect(widgetContent).toMatch(/id="clubcal-popup-desc-container"/);
+  });
+
+  it('should fetch from /event/{id} endpoint when description is empty', () => {
+    expect(widgetContent).toMatch(/eventsUrl\.replace.*\/events.*\/event\//);
+  });
+
+  it('should show loading indicator while fetching', () => {
+    expect(widgetContent).toMatch(/Loading details\.\.\./);
+  });
+
+  it('should cache description after fetch', () => {
+    expect(widgetContent).toMatch(/originalEvent\.description\s*=\s*desc/);
+  });
+
+  it('showEventPopup should be async function', () => {
+    expect(widgetContent).toMatch(/async function showEventPopup/);
+  });
+});
+
+describe('v1.33: Cost category computed at transform time', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('should have computeCostCategory helper function', () => {
+    expect(widgetContent).toMatch(/function computeCostCategory\(minPrice, isFree, registrationEnabled\)/);
+  });
+
+  it('mapApiEventToInternal should call computeCostCategory', () => {
+    expect(widgetContent).toMatch(/costCategory:\s*computeCostCategory\(minPrice, isFree, registrationEnabled\)/);
+  });
+
+  it('mapJsonEventToInternal should set costCategory', () => {
+    expect(widgetContent).toMatch(/costCategory:\s*costCategory/);
+  });
+});
+
+describe('v1.33: View toggle fix', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('view toggle should use preventDefault', () => {
+    expect(widgetContent).toMatch(/clubcal-view-btn[\s\S]*?e\.preventDefault\(\)/);
+  });
+
+  it('view toggle should use stopPropagation', () => {
+    expect(widgetContent).toMatch(/clubcal-view-btn[\s\S]*?e\.stopPropagation\(\)/);
+  });
+
+  it('view toggle should have try-catch error handling', () => {
+    expect(widgetContent).toMatch(/changeView[\s\S]*?catch\s*\(err\)/);
+  });
+});
+
+describe('v1.33: List view CSS fixes', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('list view links should have no underlines', () => {
+    expect(widgetContent).toMatch(/fc-list-event-title a[\s\S]*?text-decoration:\s*none/);
+  });
+
+  it('popup actions should have flex-wrap', () => {
+    expect(widgetContent).toMatch(/clubcal-event-popup-actions[\s\S]*?flex-wrap:\s*wrap/);
+  });
+
+  it('popup buttons should have min-width', () => {
+    expect(widgetContent).toMatch(/clubcal-event-popup-actions .clubcal-btn[\s\S]*?min-width:/);
   });
 });

@@ -19,8 +19,8 @@
   ║  - CDN: FullCalendar library from cdnjs.cloudflare.com                     ║
   ║  - No additional server setup required for WA administrators               ║
   ║                                                                            ║
-  ║  Version: 1.28                                                             ║
-  ║  Updated: 2026-01-04                                                       ║
+  ║  Version: 1.33                                                             ║
+  ║  Updated: 2026-01-05                                                       ║
   ║                                                                            ║
   ╚════════════════════════════════════════════════════════════════════════════╝
 -->
@@ -479,7 +479,7 @@ window.CLUBCALENDAR_CONFIG = {
         memberLevel: 'public',                 // Member level: 'Newbie', 'NewcomerMember', 'Alumni', 'Guest', or 'public' for anonymous
         waContactId: null,                     // WA contact ID for logged-in member (enables My Events on calendar)
         useLiveApi: false,                     // Use live WA API instead of SQLite-cached data
-        showAddToCalendar: true,               // Show "Add to Calendar" button in event popup
+        showAddToCalendar: false,              // Show "Add to Calendar" button in event popup (disabled)
         icsBaseUrl: 'https://mail.sbnewcomers.org/ics/event.php',  // ICS generator endpoint URL
         // Failover configuration
         fallbackContainerId: 'wa-fallback',    // ID of hidden WA calendar container to show on error
@@ -1301,6 +1301,16 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcalendar-widget .fc-list-event-title {
     cursor: pointer;
 }
+/* Remove underlines from list view links */
+.clubcalendar-widget .fc-list-event-title a,
+.clubcalendar-widget .fc-list-event a,
+.clubcalendar-widget .fc-list a {
+    text-decoration: none !important;
+}
+.clubcalendar-widget .fc-list-event-title a:hover,
+.clubcalendar-widget .fc-list-event a:hover {
+    text-decoration: none !important;
+}
 .clubcalendar-widget .fc-list-event .clubcal-event-content {
     display: inline-flex;
     flex-direction: row;
@@ -1326,6 +1336,23 @@ window.CLUBCALENDAR_CONFIG = {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+}
+.clubcal-list-cal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    background: var(--clubcal-success);
+    border-radius: 4px;
+    text-decoration: none !important;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: auto;
+    transition: transform 0.15s, background 0.15s;
+}
+.clubcal-list-cal-btn:hover {
+    transform: scale(1.1);
+    background: var(--clubcal-success-dark);
 }
 .clubcal-badges-container {
     display: inline-flex;
@@ -1729,19 +1756,24 @@ window.CLUBCALENDAR_CONFIG = {
 }
 .clubcal-event-popup-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     padding-top: 15px;
     border-top: 1px solid #eee;
+    margin-top: auto;
 }
 .clubcal-event-popup-actions .clubcal-btn {
-    flex: 1;
-    padding: 10px 16px;
+    flex: 1 1 auto;
+    min-width: 120px;
+    padding: 12px 16px;
     border: none;
     border-radius: 6px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
     text-align: center;
     text-decoration: none;
+    box-sizing: border-box;
 }
 .clubcal-btn-primary {
     background: var(--clubcal-primary);
@@ -2244,6 +2276,12 @@ window.CLUBCALENDAR_CONFIG = {
         max-height: 90vh;
         overflow-y: auto;
     }
+    .clubcal-event-popup-actions {
+        flex-direction: column;
+    }
+    .clubcal-event-popup-actions .clubcal-btn {
+        min-width: 100%;
+    }
     .clubcal-event-card {
         flex-direction: column;
     }
@@ -2464,6 +2502,21 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
+     * Computes cost category from price for filtering.
+     * Categories: 'Free', 'Under $25', '$25-50', '$50-100', 'Over $100'
+     */
+    function computeCostCategory(minPrice, isFree, registrationEnabled) {
+        // Free if: marked free, zero price, or no registration required
+        if (isFree || minPrice === 0 || minPrice === null || !registrationEnabled) {
+            return 'Free';
+        }
+        if (minPrice < 25) return 'Under $25';
+        if (minPrice < 50) return '$25-50';
+        if (minPrice < 100) return '$50-100';
+        return 'Over $100';
+    }
+
+    /**
      * Maps API response format (Pascal case) to internal event format.
      * API schema: { Id, Name, StartDate, EndDate, Location, Tags,
      *               RegistrationEnabled, RegistrationsLimit, ConfirmedRegistrationsCount }
@@ -2472,6 +2525,9 @@ window.CLUBCALENDAR_CONFIG = {
         const limit = event.RegistrationsLimit;
         const confirmed = event.ConfirmedRegistrationsCount || 0;
         const isFull = limit !== null && confirmed >= limit;
+        const minPrice = event.MinPrice || null;
+        const isFree = event.IsFree ? true : false;
+        const registrationEnabled = event.RegistrationEnabled !== false;
 
         return {
             id: event.Id,
@@ -2484,12 +2540,13 @@ window.CLUBCALENDAR_CONFIG = {
             confirmed: confirmed,
             tags: event.Tags || '[]',
             status: isFull ? 'Full' : 'Open',
-            minPrice: event.MinPrice || null,
+            minPrice: minPrice,
             maxPrice: event.MaxPrice || null,
-            isFree: event.IsFree ? 1 : 0,
+            isFree: isFree ? 1 : 0,
             hasGuestTickets: event.HasGuestTickets ? 1 : 0,
             registrationOpenDate: event.RegistrationOpenDate || null,
-            registrationEnabled: event.RegistrationEnabled
+            registrationEnabled: registrationEnabled,
+            costCategory: computeCostCategory(minPrice, isFree, registrationEnabled)
         };
     }
 
@@ -2500,7 +2557,10 @@ window.CLUBCALENDAR_CONFIG = {
      *                confirmed_count, cost_category, good_for_newbies, tags, is_public }
      */
     function mapJsonEventToInternal(event) {
-        const isFree = event.cost_category === 'Free';
+        // Use server-provided cost_category, or 'Free' if no registration URL (open event)
+        const hasRegistration = !!event.registration_url;
+        const costCategory = event.cost_category || (hasRegistration ? 'Unknown' : 'Free');
+        const isFree = costCategory === 'Free' || !hasRegistration;
 
         return {
             id: event.id,
@@ -2519,8 +2579,9 @@ window.CLUBCALENDAR_CONFIG = {
             hasGuestTickets: event.is_public ? 1 : 0,
             registrationOpenDate: event.registration_open_date || null,
             registrationUrl: event.registration_url,
+            registrationEnabled: hasRegistration,
             committee: event.committee,
-            costCategory: event.cost_category,
+            costCategory: costCategory,
             goodForNewbies: event.good_for_newbies,
             spotsAvailable: event.spots_available,
             isFull: event.is_full
@@ -3382,12 +3443,21 @@ window.CLUBCALENDAR_CONFIG = {
 
         // View toggle buttons
         container.querySelectorAll('.clubcal-view-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                container.querySelectorAll('.clubcal-view-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const view = btn.dataset.view;
                 if (calendarInstance) {
-                    calendarInstance.changeView(view);
+                    try {
+                        calendarInstance.changeView(view);
+                        // Sync button state after successful view change
+                        container.querySelectorAll('.clubcal-view-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    } catch (err) {
+                        console.error('ClubCalendar: Failed to change view:', err);
+                    }
+                } else {
+                    console.warn('ClubCalendar: Calendar instance not ready');
                 }
             });
         });
@@ -3853,29 +3923,15 @@ window.CLUBCALENDAR_CONFIG = {
                 if (!currentFilters.memberAvailability.includes(memberAvail.status)) return false;
             }
 
-            // Cost filter - using category strings
-            // NOTE: For cost dropdown, use strict price-based free (not !registrationEnabled)
-            // because events without registration might still cost money at the door
+            // Cost filter - using category strings, with fallback to isFree
+            // isFree includes !registrationEnabled because open events are free to attend
             if (currentFilters.cost) {
                 const category = event.costCategory || '';
-                const isFreeCost = event.isFree === 1 || event.minPrice === 0 || category === 'Free';
-
-                if (currentFilters.cost === 'free') {
-                    // Free = $0 price OR marked as free
-                    if (!isFreeCost) return false;
-                }
-                if (currentFilters.cost === 'under25') {
-                    if (!isFreeCost && !['Under $25'].includes(category)) return false;
-                }
-                if (currentFilters.cost === 'under50') {
-                    if (!isFreeCost && !['Under $25', '$25-50'].includes(category)) return false;
-                }
-                if (currentFilters.cost === 'under100') {
-                    if (!isFreeCost && !['Under $25', '$25-50', '$50-100'].includes(category)) return false;
-                }
-                if (currentFilters.cost === 'over100') {
-                    if (category !== 'Over $100') return false;
-                }
+                if (currentFilters.cost === 'free' && !isFree && category !== 'Free') return false;
+                if (currentFilters.cost === 'under25' && !isFree && !['Free', 'Under $25'].includes(category)) return false;
+                if (currentFilters.cost === 'under50' && !isFree && !['Free', 'Under $25', '$25-50'].includes(category)) return false;
+                if (currentFilters.cost === 'under100' && !isFree && !['Free', 'Under $25', '$25-50', '$50-100'].includes(category)) return false;
+                if (currentFilters.cost === 'over100' && category !== 'Over $100') return false;
             }
 
             // Committee filter (based on event name prefix)
@@ -4048,8 +4104,16 @@ window.CLUBCALENDAR_CONFIG = {
                     // Include time in list view - use a badge style for readability
                     const listTimeStr = `<span class="clubcal-badge" style="background:rgba(0,0,0,0.15);color:inherit;font-weight:600;">${timeStr}</span>`;
 
+                    // Calendar icons for members (not public)
+                    let calIconsHtml = '';
+                    if (CONFIG.memberLevel !== 'public' && CONFIG.icsBaseUrl && CONFIG.showAddToCalendar) {
+                        const eventId = originalEvent?.id || arg.event.id;
+                        const icsUrl = `${CONFIG.icsBaseUrl}?id=${eventId}`;
+                        calIconsHtml = `<a href="${icsUrl}" download class="clubcal-list-cal-btn" title="Add to Calendar" onclick="event.stopPropagation();">📅</a>`;
+                    }
+
                     return {
-                        html: `<span class="clubcal-event-content-list">${listTimeStr}${shortTitle}${badgesHtml}</span>`
+                        html: `<span class="clubcal-event-content-list">${listTimeStr}${shortTitle}${badgesHtml}${calIconsHtml}</span>`
                     };
                 }
 
@@ -4084,54 +4148,9 @@ window.CLUBCALENDAR_CONFIG = {
                     }
                 }
 
-                // Public view: show styled hover tooltip (now clickable for join popup)
+                // Public view: clickable events (no hover tooltip)
                 if (CONFIG.memberLevel === 'public') {
                     info.el.style.cursor = 'pointer';
-
-                    info.el.addEventListener('mouseenter', function(e) {
-                        // Remove any existing tooltip
-                        const existing = document.querySelector('.clubcal-hover-tooltip');
-                        if (existing) existing.remove();
-
-                        // Format time
-                        const startDate = new Date(originalEvent.startDate);
-                        const timeStr = startDate.toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit'
-                        });
-                        const dateStr = startDate.toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric'
-                        });
-
-                        const tooltip = document.createElement('div');
-                        tooltip.className = 'clubcal-hover-tooltip';
-                        // Get description from Description, Details, or description field, strip HTML
-                        let rawDesc = originalEvent.Description || originalEvent.Details || originalEvent.description || '';
-                        // Strip HTML tags and decode entities
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = rawDesc;
-                        const description = (tempDiv.textContent || tempDiv.innerText || '').trim();
-                        // Truncate to ~200 chars for tooltip
-                        const shortDesc = description.length > 200 ? description.substring(0, 200) + '...' : description;
-                        tooltip.innerHTML = `
-                            <div class="clubcal-hover-tooltip-title">${escapeHtml(info.event.title)}</div>
-                            <div class="clubcal-hover-tooltip-time">${dateStr} at ${timeStr}</div>
-                            ${shortDesc ? `<div class="clubcal-hover-tooltip-desc">${escapeHtml(shortDesc)}</div>` : ''}
-                        `;
-                        document.body.appendChild(tooltip);
-
-                        // Position near cursor
-                        const rect = info.el.getBoundingClientRect();
-                        tooltip.style.left = (rect.left + 10) + 'px';
-                        tooltip.style.top = (rect.bottom + 5) + 'px';
-                    });
-
-                    info.el.addEventListener('mouseleave', function() {
-                        const tooltip = document.querySelector('.clubcal-hover-tooltip');
-                        if (tooltip) tooltip.remove();
-                    });
                 } else {
                     // Member view: native tooltip with description
                     let rawDesc = originalEvent.Description || originalEvent.Details || originalEvent.description || '';
@@ -4352,9 +4371,10 @@ window.CLUBCALENDAR_CONFIG = {
     /**
      * Shows event details popup for members.
      * Includes: category, title, date, time, location, scrollable description,
-     * register button, add to calendar button, close button.
+     * register button, close button.
+     * Fetches real-time description from server if not available in cache.
      */
-    function showEventPopup(event) {
+    async function showEventPopup(event) {
         // Remove existing popup
         closeEventPopup();
 
@@ -4372,23 +4392,8 @@ window.CLUBCALENDAR_CONFIG = {
 
         // Get original event data
         const originalEvent = allEvents.find(e => String(e.id) === String(event.id));
-        const rawDesc = originalEvent?.Description || originalEvent?.description || '';
+        let rawDesc = originalEvent?.Description || originalEvent?.description || '';
         const location = event.location || originalEvent?.location || '';
-
-        // Clean description for display
-        let descriptionHtml = '';
-        if (rawDesc) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = rawDesc;
-            const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
-            if (plainText) {
-                descriptionHtml = `
-                    <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 150px !important; overflow-y: scroll !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch;">
-                        ${escapeHtml(plainText)}
-                    </div>
-                `;
-            }
-        }
 
         // Get category/committee tag if available
         const tags = Array.isArray(originalEvent?.tags) ? originalEvent.tags : (event.tags || []);
@@ -4407,29 +4412,33 @@ window.CLUBCALENDAR_CONFIG = {
         // Build WA event URL for registration
         const waEventUrl = `https://sbnewcomers.org/event-${event.id}`;
 
-        // Build ICS URL for add to calendar
-        const icsUrl = CONFIG.icsBaseUrl ? `${CONFIG.icsBaseUrl}?id=${event.id}` : null;
-
-        // Action buttons
-        let actionButtons = `
+        // Action buttons (no Add to Calendar)
+        const actionButtons = `
             <a href="${waEventUrl}" target="_blank" class="clubcal-btn clubcal-btn-primary" style="text-decoration: none; text-align: center;">
                 View & Register
             </a>
-        `;
-
-        if (icsUrl && CONFIG.showAddToCalendar) {
-            actionButtons += `
-                <a href="${icsUrl}" download class="clubcal-btn clubcal-btn-calendar" style="text-decoration: none; text-align: center;">
-                    📅 Add to Calendar
-                </a>
-            `;
-        }
-
-        actionButtons += `
             <button class="clubcal-btn clubcal-btn-secondary" data-action="closePopup">
                 Close
             </button>
         `;
+
+        // Initial description placeholder - will be updated after fetch
+        const descriptionPlaceholder = rawDesc ? '' : '<div id="clubcal-desc-loading" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #888; text-align: center;">Loading details...</div>';
+
+        // Build initial description HTML
+        let descriptionHtml = '';
+        if (rawDesc) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = rawDesc;
+            const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+            if (plainText) {
+                descriptionHtml = `
+                    <div class="clubcal-event-description" id="clubcal-popup-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 200px !important; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch;">
+                        ${escapeHtml(plainText)}
+                    </div>
+                `;
+            }
+        }
 
         const popupHtml = `
             <div class="clubcal-popup-overlay" data-action="closePopup"></div>
@@ -4451,7 +4460,9 @@ window.CLUBCALENDAR_CONFIG = {
                         ${locationHtml}
                     </div>
 
-                    ${descriptionHtml}
+                    <div id="clubcal-popup-desc-container">
+                        ${descriptionHtml || descriptionPlaceholder}
+                    </div>
 
                     <div class="clubcal-event-popup-actions">
                         ${actionButtons}
@@ -4461,6 +4472,48 @@ window.CLUBCALENDAR_CONFIG = {
         `;
 
         document.body.insertAdjacentHTML('beforeend', popupHtml);
+
+        // Fetch real-time event details for description if not cached
+        if (!rawDesc && CONFIG.eventsUrl) {
+            try {
+                const detailUrl = CONFIG.eventsUrl.replace('/events', `/event/${event.id}`);
+                const response = await fetch(detailUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    const desc = data.event?.Description || '';
+                    const descContainer = document.getElementById('clubcal-popup-desc-container');
+                    if (descContainer && desc) {
+                        // Parse HTML description to plain text
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = desc;
+                        const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+                        if (plainText) {
+                            descContainer.innerHTML = `
+                                <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 200px !important; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch;">
+                                    ${escapeHtml(plainText)}
+                                </div>
+                            `;
+                            // Cache the description for future use
+                            if (originalEvent) {
+                                originalEvent.description = desc;
+                            }
+                        } else {
+                            descContainer.innerHTML = '';
+                        }
+                    } else if (descContainer) {
+                        descContainer.innerHTML = '';
+                    }
+                } else {
+                    // Remove loading indicator on error
+                    const descContainer = document.getElementById('clubcal-popup-desc-container');
+                    if (descContainer) descContainer.innerHTML = '';
+                }
+            } catch (err) {
+                console.warn('ClubCalendar: Failed to fetch event details:', err);
+                const descContainer = document.getElementById('clubcal-popup-desc-container');
+                if (descContainer) descContainer.innerHTML = '';
+            }
+        }
     }
 
     /**
