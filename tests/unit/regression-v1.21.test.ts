@@ -324,3 +324,56 @@ describe('BUG: Free filter includes no-registration events', () => {
     expect(isFree(event)).toBe(true);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUG #7b: Free filter logic must be consistent across ALL locations
+// Fixed in v1.24
+//
+// The isFree calculation existed in 5 different places in the widget.
+// In v1.23, only 2 were updated. The quick filter (the one that actually
+// runs when you click Free) still had the old logic.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('BUG: Free filter consistency across widget', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('should have registrationEnabled check in evaluateFilters context', () => {
+    // Line ~764: isFree in evaluateFilters context
+    expect(widgetContent).toMatch(/isFree:.*event\.isFree.*\|\|.*minPrice.*\|\|.*!event\.registrationEnabled/);
+  });
+
+  it('should have registrationEnabled check in transformEventsForCalendar', () => {
+    // Line ~2667: isFree in extendedProps
+    expect(widgetContent).toMatch(/isFree:.*event\.isFree.*\|\|.*minPrice.*\|\|.*!event\.registrationEnabled/);
+  });
+
+  it('should have registrationEnabled check in formatPrice', () => {
+    // Line ~2966: isFree check for display
+    expect(widgetContent).toMatch(/if.*event\.isFree.*\|\|.*minPrice.*\|\|.*!event\.registrationEnabled/);
+  });
+
+  it('should have registrationEnabled check in quick filter logic', () => {
+    // Line ~3766: const isFree = ... (the actual filter!)
+    expect(widgetContent).toMatch(/const isFree.*=.*event\.isFree.*\|\|.*minPrice.*\|\|.*!event\.registrationEnabled/);
+  });
+
+  it('should use isFree variable in cost dropdown filter', () => {
+    // Line ~3854: cost dropdown should use isFree, not just category
+    expect(widgetContent).toMatch(/cost.*===.*'free'.*&&.*!isFree/);
+  });
+
+  it('all isFree calculations should include registrationEnabled (count check)', () => {
+    // Count occurrences of the pattern to ensure we have all 5
+    const pattern = /isFree.*===.*1.*\|\|.*minPrice.*===.*0.*\|\|.*!.*registrationEnabled/g;
+    const matches = widgetContent.match(pattern) || [];
+    // Should have at least 4 occurrences (evaluateFilters, transform, formatPrice, quickFilter)
+    expect(matches.length).toBeGreaterThanOrEqual(4);
+  });
+});
