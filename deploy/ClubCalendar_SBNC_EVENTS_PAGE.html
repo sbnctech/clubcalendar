@@ -375,7 +375,7 @@ window.CLUBCALENDAR_CONFIG = {
  * │                                                                         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * @version 1.02
+ * @version 1.23
  * @author ClubCalendar
  */
 
@@ -760,7 +760,8 @@ window.CLUBCALENDAR_CONFIG = {
             eventHour: eventDate.getHours(),
             tags: parseTags(event.tags),
             availability: getAvailability(event),
-            isFree: event.isFree === 1 || event.minPrice === 0
+            // Free = no cost OR no registration required (open events like TGIF, Happy Hikers)
+            isFree: event.isFree === 1 || event.minPrice === 0 || !event.registrationEnabled
         };
 
         const matches = {};
@@ -1695,8 +1696,14 @@ window.CLUBCALENDAR_CONFIG = {
 }
 .clubcal-event-popup-body {
     padding: 20px;
-    max-height: 60vh;
-    overflow-y: auto;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+.clubcal-event-description {
+    max-height: 200px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
 }
 .clubcal-event-popup-meta {
     display: flex;
@@ -2656,7 +2663,8 @@ window.CLUBCALENDAR_CONFIG = {
                     location: event.location,
                     availability: availability,
                     memberAvailability: memberAvailability,
-                    isFree: event.isFree === 1 || event.minPrice === 0,
+                    // Free = no cost OR no registration required (open events like TGIF, Happy Hikers)
+                    isFree: event.isFree === 1 || event.minPrice === 0 || !event.registrationEnabled,
                     price: formatPrice(event),
                     tags: parseTags(event.tags)
                 }
@@ -4269,7 +4277,7 @@ window.CLUBCALENDAR_CONFIG = {
             const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
             if (plainText) {
                 descriptionHtml = `
-                    <div style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 200px; overflow-y: auto;">
+                    <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 200px !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch;">
                         ${escapeHtml(plainText)}
                     </div>
                 `;

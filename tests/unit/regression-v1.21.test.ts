@@ -281,3 +281,46 @@ describe('BUG: Popup body must be scrollable', () => {
     expect(REQUIRED_POPUP_BODY_STYLES['overflow-y']).toBe('auto');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUG #7: Free filter must include events without registration requirement
+// Fixed in v1.23
+//
+// "Free" was only checking isFree flag and minPrice === 0.
+// But events without registration enabled (like TGIF, Happy Hikers meetups)
+// are also free - no ticket price, just show up.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('BUG: Free filter includes no-registration events', () => {
+  // Helper that mirrors the fixed isFree logic
+  function isFree(event: { isFree?: number; minPrice?: number; registrationEnabled?: boolean }): boolean {
+    return event.isFree === 1 || event.minPrice === 0 || !event.registrationEnabled;
+  }
+
+  it('should mark event as free when isFree flag is set', () => {
+    const event = { isFree: 1, minPrice: 10, registrationEnabled: true };
+    expect(isFree(event)).toBe(true);
+  });
+
+  it('should mark event as free when minPrice is 0', () => {
+    const event = { isFree: 0, minPrice: 0, registrationEnabled: true };
+    expect(isFree(event)).toBe(true);
+  });
+
+  it('should mark event as free when registration is not enabled', () => {
+    // This is the bug fix - open events like TGIF, Happy Hikers
+    const event = { isFree: 0, minPrice: undefined, registrationEnabled: false };
+    expect(isFree(event)).toBe(true);
+  });
+
+  it('should NOT mark event as free when it has a price and requires registration', () => {
+    const event = { isFree: 0, minPrice: 25, registrationEnabled: true };
+    expect(isFree(event)).toBe(false);
+  });
+
+  it('should mark event as free when registrationEnabled is undefined (legacy data)', () => {
+    // Undefined registration means it's likely an open event
+    const event = { isFree: 0, minPrice: undefined };
+    expect(isFree(event)).toBe(true);
+  });
+});
