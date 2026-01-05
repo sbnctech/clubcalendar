@@ -375,7 +375,7 @@ window.CLUBCALENDAR_CONFIG = {
  * │                                                                         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * @version 1.23
+ * @version 1.24
  * @author ClubCalendar
  */
 
@@ -2962,7 +2962,8 @@ window.CLUBCALENDAR_CONFIG = {
             return event.costCategory;
         }
         // Fallback for legacy data with numeric prices
-        if (event.isFree === 1 || event.minPrice === 0) {
+        // Free = no cost OR no registration required
+        if (event.isFree === 1 || event.minPrice === 0 || !event.registrationEnabled) {
             return 'Free';
         }
         if (event.minPrice !== null && event.minPrice !== undefined) {
@@ -3762,7 +3763,8 @@ window.CLUBCALENDAR_CONFIG = {
             const availability = getAvailability(event);
             const memberAvail = getMemberAvailability(event);
             const timeOfDay = deriveTimeOfDay(event.startDate, event.endDate);
-            const isFree = event.isFree === 1 || event.minPrice === 0;
+            // Free = no cost OR no registration required (open events like TGIF, Happy Hikers)
+            const isFree = event.isFree === 1 || event.minPrice === 0 || !event.registrationEnabled;
             const dayOfWeek = eventDate.getDay();
 
             // CRITICAL: Always hide member-only events from non-members
@@ -3845,13 +3847,14 @@ window.CLUBCALENDAR_CONFIG = {
                 if (!currentFilters.memberAvailability.includes(memberAvail.status)) return false;
             }
 
-            // Cost filter - using category strings directly (cleaner than fake numeric midpoints)
+            // Cost filter - using category strings, with fallback to isFree for events without category
             if (currentFilters.cost) {
                 const category = event.costCategory || '';
-                if (currentFilters.cost === 'free' && category !== 'Free') return false;
-                if (currentFilters.cost === 'under25' && !['Free', 'Under $25'].includes(category)) return false;
-                if (currentFilters.cost === 'under50' && !['Free', 'Under $25', '$25-50'].includes(category)) return false;
-                if (currentFilters.cost === 'under100' && !['Free', 'Under $25', '$25-50', '$50-100'].includes(category)) return false;
+                // For 'free' filter, use same logic as quick filter: isFree OR no registration
+                if (currentFilters.cost === 'free' && !isFree && category !== 'Free') return false;
+                if (currentFilters.cost === 'under25' && !isFree && !['Free', 'Under $25'].includes(category)) return false;
+                if (currentFilters.cost === 'under50' && !isFree && !['Free', 'Under $25', '$25-50'].includes(category)) return false;
+                if (currentFilters.cost === 'under100' && !isFree && !['Free', 'Under $25', '$25-50', '$50-100'].includes(category)) return false;
                 if (currentFilters.cost === 'over100' && category !== 'Over $100') return false;
             }
 
