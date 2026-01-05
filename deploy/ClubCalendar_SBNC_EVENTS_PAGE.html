@@ -19,7 +19,7 @@
   ║  - No script src loading required                                          ║
   ║  - Runs entirely within Wild Apricot                                       ║
   ║                                                                            ║
-  ║  Version: 1.20                                                             ║
+  ║  Version: 1.21                                                             ║
   ║  Generated: 2026-01-04                                                     ║
   ║                                                                            ║
   ╚════════════════════════════════════════════════════════════════════════════╝
@@ -2429,11 +2429,13 @@ window.CLUBCALENDAR_CONFIG = {
             // Detect format: API uses Pascal case (Id), JSON file uses snake_case (id)
             const isApiFormat = events.length > 0 && events[0].Id !== undefined;
 
-            // Filter past events based on selected months
+            // Filter past events - always include at least 1 month back for calendar navigation
+            // Calendar shows days from previous month in the first row, so we need those events
             const now = new Date();
-            const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            if (pastMonths > 0) {
-                cutoff.setMonth(cutoff.getMonth() - pastMonths);
+            // Start from the beginning of the PREVIOUS month to ensure calendar can display all visible dates
+            const cutoff = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            if (pastMonths > 1) {
+                cutoff.setMonth(cutoff.getMonth() - (pastMonths - 1));
             }
 
             const dateField = isApiFormat ? 'StartDate' : 'start_date';
