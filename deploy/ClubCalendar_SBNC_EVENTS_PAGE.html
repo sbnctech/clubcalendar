@@ -19,7 +19,7 @@
   ║  - No script src loading required                                          ║
   ║  - Runs entirely within Wild Apricot                                       ║
   ║                                                                            ║
-  ║  Version: 1.21                                                             ║
+  ║  Version: 1.22                                                             ║
   ║  Generated: 2026-01-04                                                     ║
   ║                                                                            ║
   ╚════════════════════════════════════════════════════════════════════════════╝
@@ -1695,6 +1695,8 @@ window.CLUBCALENDAR_CONFIG = {
 }
 .clubcal-event-popup-body {
     padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
 }
 .clubcal-event-popup-meta {
     display: flex;

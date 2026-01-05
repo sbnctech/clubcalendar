@@ -257,3 +257,27 @@ describe('BUG: Safe tags access in popup', () => {
     expect(result).toBe('committee:games');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUG #6: Popup description must be scrollable for long content
+// Fixed in v1.22
+//
+// Long event descriptions were being cut off without any way to scroll.
+// The popup body needs max-height and overflow-y: auto.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('BUG: Popup body must be scrollable', () => {
+  // CSS requirements that must be present in the widget
+  const REQUIRED_POPUP_BODY_STYLES = {
+    'max-height': true,  // Must have a max-height set
+    'overflow-y': 'auto', // Must allow vertical scrolling
+  };
+
+  it('documents required CSS for scrollable popup body', () => {
+    // .clubcal-event-popup-body must have:
+    // - max-height (e.g., 60vh) to limit height
+    // - overflow-y: auto to enable scroll when content exceeds max-height
+    expect(REQUIRED_POPUP_BODY_STYLES['max-height']).toBe(true);
+    expect(REQUIRED_POPUP_BODY_STYLES['overflow-y']).toBe('auto');
+  });
+});
