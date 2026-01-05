@@ -1,32 +1,142 @@
 <!--
   ╔════════════════════════════════════════════════════════════════════════════╗
-  ║  SBNC ClubCalendar Widget - INLINE ONLY Edition                                      ║
-  ║  Santa Barbara Newcomers Club                                                  ║
+  ║  SBNC ClubCalendar Widget - INLINE ONLY Edition                            ║
+  ║  Santa Barbara Newcomers Club                                              ║
   ╠════════════════════════════════════════════════════════════════════════════╣
-  ║                                                                             ║
-  ║  INSTALLATION:                                                              ║
-  ║  1. Copy this ENTIRE file                                                   ║
-  ║  2. Paste into a Wild Apricot Custom HTML gadget                           ║
-  ║  3. Save and view the page while logged in                                 ║
-  ║                                                                             ║
-  ║  NO EXTERNAL DEPENDENCIES:                                                  ║
-  ║  - No external server hosting required                                      ║
+  ║                                                                            ║
+  ║  INSTALLATION:                                                             ║
+  ║  1. Copy this ENTIRE file into a Wild Apricot Custom HTML gadget          ║
+  ║  2. Save and view the page                                                 ║
+  ║                                                                            ║
+  ║  MEMBER REGISTRATION TRACKING (for "My Events" feature):                   ║
+  ║  Configure the menu link to the events page as:                            ║
+  ║    /events?contactId={Contact.Id}                                          ║
+  ║  This passes the logged-in member's contact ID to the calendar.            ║
+  ║  For public pages, use the regular link without the parameter.             ║
+  ║                                                                            ║
+  ║  NO EXTERNAL DEPENDENCIES:                                                 ║
+  ║  - No external server hosting required                                     ║
   ║  - No script src loading required                                          ║
   ║  - Runs entirely within Wild Apricot                                       ║
-  ║                                                                             ║
-  ║  Version: 1.02                                                              ║
-  ║  Generated: 2026-01-01                                                      ║
-  ║                                                                             ║
+  ║                                                                            ║
+  ║  Version: 1.20                                                             ║
+  ║  Generated: 2026-01-04                                                     ║
+  ║                                                                            ║
   ╚════════════════════════════════════════════════════════════════════════════╝
 -->
 
 <div id="clubcalendar"></div>
 <script>
+// Detect WA logged-in user and get contact ID
+// Uses currentUser detection via "Log out" text presence (alternative to WA.user API)
+// SIMPLE LOGIC:
+// 1. If URL has ?contactId=X, use that (member view)
+// 2. Otherwise, check if "Log out" text exists on page (member view, no contact ID)
+// 3. Otherwise, public view
+(function() {
+    window._waContactId = null;
+    window._waMemberLevel = 'public';
+    window._waContactIdPromise = null;
+
+    // Method 1: URL parameter (most reliable)
+    var urlParams = new URLSearchParams(window.location.search);
+    var contactParam = urlParams.get('contact') || urlParams.get('contactId');
+
+    if (contactParam && parseInt(contactParam, 10) > 0) {
+        window._waContactId = parseInt(contactParam, 10);
+        window._waMemberLevel = 'member';
+        console.log('ClubCalendar: Contact ID from URL:', window._waContactId);
+        window._waContactIdPromise = Promise.resolve(window._waContactId);
+    } else {
+        // Method 2: Try WA JavaScript API, then fall back to login link detection
+        window._waContactIdPromise = new Promise(function(resolve) {
+            var resolved = false;
+
+            function tryWaApi() {
+                // Try Wild Apricot's JavaScript API to get contact ID
+                if (window.WA && window.WA.CurrentContactId) {
+                    window._waContactId = parseInt(window.WA.CurrentContactId, 10);
+                    window._waMemberLevel = 'member';
+                    console.log('ClubCalendar: Contact ID from WA API:', window._waContactId);
+                    if (!resolved) { resolved = true; resolve(window._waContactId); }
+                    return true;
+                }
+                // Also try WA.user if available
+                if (window.WA && window.WA.user && window.WA.user.id) {
+                    window._waContactId = parseInt(window.WA.user.id, 10);
+                    window._waMemberLevel = 'member';
+                    console.log('ClubCalendar: Contact ID from WA.user:', window._waContactId);
+                    if (!resolved) { resolved = true; resolve(window._waContactId); }
+                    return true;
+                }
+                return false;
+            }
+
+            function checkLoginStatus() {
+                // First try WA API
+                if (tryWaApi()) return;
+
+                // Look for actual login/logout links, not just text anywhere on page
+                // WA shows "Log in" link when logged out, "Log out" link when logged in
+                var loginLinks = document.querySelectorAll('a[href*="login"], a[href*="Login"], a[href*="signin"], a[href*="SignIn"]');
+                var logoutLinks = document.querySelectorAll('a[href*="logout"], a[href*="Logout"], a[href*="signout"], a[href*="SignOut"]');
+
+                // Also check for links with specific text
+                var allLinks = document.querySelectorAll('a');
+                var hasLogoutLink = false;
+                var hasLoginLink = false;
+
+                for (var i = 0; i < allLinks.length; i++) {
+                    var linkText = allLinks[i].textContent.trim().toLowerCase();
+                    if (linkText === 'log out' || linkText === 'logout' || linkText === 'sign out') {
+                        hasLogoutLink = true;
+                        break;
+                    }
+                    if (linkText === 'log in' || linkText === 'login' || linkText === 'sign in') {
+                        hasLoginLink = true;
+                    }
+                }
+
+                // User is logged in if we find a logout link (or logout href) and NO login link
+                var isLoggedIn = (hasLogoutLink || logoutLinks.length > 0) && !hasLoginLink && loginLinks.length === 0;
+
+                if (isLoggedIn) {
+                    window._waMemberLevel = 'member';
+                    console.log('ClubCalendar: User logged in (detected logout link), no contact ID from URL or WA API');
+                    // Try WA API one more time after a delay (it may load async)
+                    setTimeout(function() {
+                        if (!resolved && tryWaApi()) {
+                            // Contact ID found, trigger a re-render of filter buttons
+                            if (window.CLUBCALENDAR_CONFIG) {
+                                window.CLUBCALENDAR_CONFIG.waContactId = window._waContactId;
+                            }
+                        }
+                    }, 1000);
+                } else {
+                    window._waMemberLevel = 'public';
+                    console.log('ClubCalendar: Public view (login link present or no logout link found)');
+                }
+                if (!resolved) { resolved = true; resolve(null); }
+            }
+
+            // Wait for DOM
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                checkLoginStatus();
+            } else {
+                document.addEventListener('DOMContentLoaded', checkLoginStatus);
+            }
+        });
+    }
+})();
+
 window.CLUBCALENDAR_CONFIG = {
     waAccountId: '176353',
+    waContactId: window._waContactId,
+    memberLevel: window._waMemberLevel,
     headerTitle: 'SBNC Events',
     primaryColor: '#2c5aa0',
     accentColor: '#d4a800',
+    eventsUrl: 'https://mail.sbnewcomers.org/api/calendar/test/events',
     autoTagRules: [
         {
             type: 'name-prefix',
@@ -353,7 +463,7 @@ window.CLUBCALENDAR_CONFIG = {
         showActivityFilter: true,              // Show activity group filter
         showTimeFilter: true,                  // Show time period filter
         showAvailabilityFilter: true,          // Show availability filter
-        showMyEvents: true,                    // Show "My Events" tab
+        showMyEvents: false,                   // Disabled - registration borders shown instead
         pastEventsVisible: false,              // Show past events
         pastEventsDays: 14,                    // Days of past events to show in calendar view
         pastEventsMonthsList: 6,               // Months of past events to show in list view
@@ -367,6 +477,7 @@ window.CLUBCALENDAR_CONFIG = {
         cacheDuration: 300,                    // Seconds to cache events
         refreshInterval: 0,                    // Auto-refresh interval (0 = disabled)
         memberLevel: 'public',                 // Member level: 'Newbie', 'NewcomerMember', 'Alumni', 'Guest', or 'public' for anonymous
+        waContactId: null,                     // WA contact ID for logged-in member (enables My Events on calendar)
         useLiveApi: false,                     // Use live WA API instead of SQLite-cached data
         showAddToCalendar: true,               // Show "Add to Calendar" button in event popup
         icsBaseUrl: 'https://mail.sbnewcomers.org/ics/event.php',  // ICS generator endpoint URL
@@ -783,6 +894,20 @@ window.CLUBCALENDAR_CONFIG = {
     box-sizing: border-box;
 }
 
+/* --- Loading Spinner --- */
+.clubcal-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--clubcal-border-light, #eee);
+    border-top-color: var(--clubcal-primary, #2c5aa0);
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: clubcal-spin 1s linear infinite;
+}
+@keyframes clubcal-spin {
+    to { transform: rotate(360deg); }
+}
+
 /* --- Header Styling --- */
 .clubcalendar-header {
     padding: 15px 0;
@@ -1097,11 +1222,23 @@ window.CLUBCALENDAR_CONFIG = {
     background-color: #1e3d6b;
     border-color: #1e3d6b;
 }
-.clubcalendar-widget .fc-daygrid-day-number {
-    color: var(--clubcal-text);
+.clubcalendar-widget .fc-daygrid-day-number,
+.clubcalendar-widget .fc-daygrid-day-number:link,
+.clubcalendar-widget .fc-daygrid-day-number:visited,
+.clubcalendar-widget .fc-daygrid-day-number:hover,
+.clubcalendar-widget .fc-daygrid-day-number:active {
+    color: var(--clubcal-text) !important;
+    text-decoration: none !important;
+    cursor: default;
 }
-.clubcalendar-widget .fc-col-header-cell-cushion {
-    color: var(--clubcal-text-muted);
+.clubcalendar-widget .fc-col-header-cell-cushion,
+.clubcalendar-widget .fc-col-header-cell-cushion:link,
+.clubcalendar-widget .fc-col-header-cell-cushion:visited,
+.clubcalendar-widget .fc-col-header-cell-cushion:hover,
+.clubcalendar-widget .fc-col-header-cell-cushion:active {
+    color: var(--clubcal-text-muted) !important;
+    text-decoration: none !important;
+    cursor: default;
 }
 
 /* --- Event Styling --- */
@@ -1112,6 +1249,45 @@ window.CLUBCALENDAR_CONFIG = {
 }
 .clubcalendar-widget .fc-event:hover {
     opacity: 0.9;
+}
+
+/* Registered/Waitlist event indicators - BOLD borders to show "My Events" */
+.clubcalendar-widget .fc-event.clubcal-registered-morning,
+.clubcalendar-widget .fc-event.clubcal-registered-afternoon,
+.clubcalendar-widget .fc-event.clubcal-registered-evening,
+.clubcalendar-widget .fc-event.clubcal-registered-allday {
+    box-shadow: 0 0 0 4px #22c55e !important;  /* Green ring - MY EVENT */
+    position: relative;
+    z-index: 1;
+}
+/* Waitlist events have dashed border appearance via pseudo-element */
+.clubcalendar-widget .fc-event.clubcal-waitlist-morning,
+.clubcalendar-widget .fc-event.clubcal-waitlist-afternoon,
+.clubcalendar-widget .fc-event.clubcal-waitlist-evening,
+.clubcalendar-widget .fc-event.clubcal-waitlist-allday {
+    position: relative;
+}
+.clubcalendar-widget .fc-event.clubcal-waitlist-morning::after,
+.clubcalendar-widget .fc-event.clubcal-waitlist-afternoon::after,
+.clubcalendar-widget .fc-event.clubcal-waitlist-evening::after,
+.clubcalendar-widget .fc-event.clubcal-waitlist-allday::after {
+    content: '';
+    position: absolute;
+    top: -2px; right: -2px; bottom: -2px; left: -2px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+.clubcalendar-widget .fc-event.clubcal-waitlist-morning::after {
+    border: 2px dashed var(--clubcal-morning);
+}
+.clubcalendar-widget .fc-event.clubcal-waitlist-afternoon::after {
+    border: 2px dashed var(--clubcal-afternoon);
+}
+.clubcalendar-widget .fc-event.clubcal-waitlist-evening::after {
+    border: 2px dashed var(--clubcal-evening);
+}
+.clubcalendar-widget .fc-event.clubcal-waitlist-allday::after {
+    border: 2px dashed var(--clubcal-accent);
 }
 
 /* List view specific styles */
@@ -1350,6 +1526,32 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcal-filter-dot.public { background: var(--clubcal-dot-public); }
 .clubcal-filter-dot.justopened { background: var(--clubcal-dot-justopened); }
 .clubcal-filter-dot.openingsoon { background: var(--clubcal-dot-openingsoon); }
+.clubcal-filter-dot.myevents { background: linear-gradient(135deg, var(--clubcal-morning), var(--clubcal-afternoon), var(--clubcal-evening)); }
+
+/* Registration indicator for filter buttons */
+.clubcal-reg-indicator {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.clubcal-reg-indicator.registered {
+    background: white;
+    box-shadow: 0 0 0 3px #22c55e;  /* Green solid border - matches registered events */
+}
+.clubcal-reg-indicator.waitlisted {
+    background: white;
+    border: 2px dashed #f59e0b;  /* Orange dashed border - matches waitlisted events */
+}
+
+/* My Events button styling */
+.clubcal-my-events-btn.active {
+    background: var(--clubcal-primary) !important;
+    color: white !important;
+    border-color: var(--clubcal-primary) !important;
+}
 
 /* Event display - custom content with time+dots on first line */
 .clubcalendar-widget .fc-daygrid-event {
@@ -1481,6 +1683,7 @@ window.CLUBCALENDAR_CONFIG = {
 .clubcal-event-popup-header h3 {
     margin: 0 0 8px;
     font-size: 18px;
+    color: white !important;
 }
 .clubcal-event-popup-category {
     display: inline-block;
@@ -1727,6 +1930,41 @@ window.CLUBCALENDAR_CONFIG = {
     bottom: 0;
     background: rgba(0,0,0,0.5);
     z-index: 9999;
+}
+
+/* --- Hover Tooltip (Public View) --- */
+.clubcal-hover-tooltip {
+    position: fixed;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 12px 16px;
+    max-width: 400px;
+    z-index: 10001;
+    pointer-events: none;
+    font-family: inherit;
+}
+.clubcal-hover-tooltip-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 6px;
+}
+.clubcal-hover-tooltip-time {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+.clubcal-hover-tooltip-desc {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    max-height: 150px;
+    overflow-y: auto;
 }
 
 /* --- Loading State --- */
@@ -2096,7 +2334,8 @@ window.CLUBCALENDAR_CONFIG = {
         quickFilters: [],        // ['weekend', 'openings', 'free', 'afterhours', 'newbie']
         cost: null,              // 'free', 'under25', 'under50', 'under100', 'over100'
         showPast: false,         // Show past events
-        pastMonths: 0            // Number of months back to show (0 = current only)
+        pastMonths: 0,           // Number of months back to show (0 = current only)
+        myEvents: false          // Show only events user is registered/waitlisted for
     };
 
     /** @type {Object|null} FullCalendar instance */
@@ -2110,6 +2349,14 @@ window.CLUBCALENDAR_CONFIG = {
 
     /** @type {Date|null} Earliest date for which we have events loaded */
     let earliestLoadedDate = null;
+
+    /** @type {Object} User's event registrations (for My Events feature) */
+    let userRegistrations = {
+        token: null,          // Auth token for API calls
+        events: {},           // Map of eventId -> { registered: true, onWaitlist: false }
+        loaded: false,        // Has registration data been loaded?
+        error: null           // Any error loading registrations
+    };
 
     /**
      * Detects API base URL from the script's src attribute or page location.
@@ -2156,15 +2403,22 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
-     * Fetch events from a JSON file (events.json)
-     * This is the preferred, most portable approach.
+     * Fetch events from a JSON endpoint or file.
+     * Supports both API format (Pascal case: Id, Name, StartDate) and
+     * JSON file format (snake_case: id, name, start_date).
      *
      * @param {number} pastMonths - Number of months back to include (0 = current only)
      * @returns {Promise<Array>} Array of event objects
      */
     async function fetchEventsFromJson(pastMonths = 0) {
         try {
-            const response = await fetch(CONFIG.eventsUrl);
+            // Build URL with months_back parameter if needed
+            let url = CONFIG.eventsUrl;
+            if (pastMonths > 0) {
+                const separator = url.includes('?') ? '&' : '?';
+                url = `${url}${separator}months_back=${pastMonths}`;
+            }
+            const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -2172,21 +2426,54 @@ window.CLUBCALENDAR_CONFIG = {
             const data = await response.json();
             const events = data.events || [];
 
+            // Detect format: API uses Pascal case (Id), JSON file uses snake_case (id)
+            const isApiFormat = events.length > 0 && events[0].Id !== undefined;
+
             // Filter past events based on selected months
-            // Use start of day to include all events for today
             const now = new Date();
-            const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today (midnight)
+            const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             if (pastMonths > 0) {
                 cutoff.setMonth(cutoff.getMonth() - pastMonths);
             }
 
+            const dateField = isApiFormat ? 'StartDate' : 'start_date';
             return events
-                .filter(event => new Date(event.start_date) >= cutoff)
-                .map(event => mapJsonEventToInternal(event));
+                .filter(event => new Date(event[dateField]) >= cutoff)
+                .map(event => isApiFormat ? mapApiEventToInternal(event) : mapJsonEventToInternal(event));
         } catch (error) {
             console.error('ClubCalendar: Failed to fetch events from JSON:', error);
             throw error;
         }
+    }
+
+    /**
+     * Maps API response format (Pascal case) to internal event format.
+     * API schema: { Id, Name, StartDate, EndDate, Location, Tags,
+     *               RegistrationEnabled, RegistrationsLimit, ConfirmedRegistrationsCount }
+     */
+    function mapApiEventToInternal(event) {
+        const limit = event.RegistrationsLimit;
+        const confirmed = event.ConfirmedRegistrationsCount || 0;
+        const isFull = limit !== null && confirmed >= limit;
+
+        return {
+            id: event.Id,
+            name: event.Name,
+            startDate: event.StartDate,
+            endDate: event.EndDate,
+            location: event.Location || '',
+            description: event.Description || '',
+            limit: limit,
+            confirmed: confirmed,
+            tags: event.Tags || '[]',
+            status: isFull ? 'Full' : 'Open',
+            minPrice: event.MinPrice || null,
+            maxPrice: event.MaxPrice || null,
+            isFree: event.IsFree ? 1 : 0,
+            hasGuestTickets: event.HasGuestTickets ? 1 : 0,
+            registrationOpenDate: event.RegistrationOpenDate || null,
+            registrationEnabled: event.RegistrationEnabled
+        };
     }
 
     /**
@@ -2234,7 +2521,7 @@ window.CLUBCALENDAR_CONFIG = {
             : "date(StartDate) >= date('now')";
 
         const sql = `SELECT
-            Id, Name, StartDate, EndDate, Location,
+            Id, Name, StartDate, EndDate, Location, Description,
             RegistrationsLimit, ConfirmedRegistrationsCount,
             Tags, Status, MinPrice, MaxPrice, IsFree,
             HasGuestTickets, RegistrationOpenDate
@@ -2269,15 +2556,16 @@ window.CLUBCALENDAR_CONFIG = {
                     startDate: row[2],
                     endDate: row[3],
                     location: row[4],
-                    limit: row[5],
-                    confirmed: row[6],
-                    tags: row[7],
-                    status: row[8],
-                    minPrice: row[9],
-                    maxPrice: row[10],
-                    isFree: row[11],
-                    hasGuestTickets: row[12],
-                    registrationOpenDate: row[13]
+                    description: row[5],
+                    limit: row[6],
+                    confirmed: row[7],
+                    tags: row[8],
+                    status: row[9],
+                    minPrice: row[10],
+                    maxPrice: row[11],
+                    isFree: row[12],
+                    hasGuestTickets: row[13],
+                    registrationOpenDate: row[14]
                 }));
             }
 
@@ -2427,11 +2715,18 @@ window.CLUBCALENDAR_CONFIG = {
      * Gets clean event title without committee prefix.
      */
     function getCleanTitle(name) {
-        const colonIdx = name.indexOf(':');
+        let title = name;
+
+        // Remove committee prefix (e.g., "Wellness: Event Name")
+        const colonIdx = title.indexOf(':');
         if (colonIdx > 0 && colonIdx < 30) {
-            return name.substring(colonIdx + 1).trim();
+            title = title.substring(colonIdx + 1).trim();
         }
-        return name;
+
+        // Remove parenthetical info like "(Registration Opens...)" or "(SOLD OUT)"
+        title = title.replace(/\s*\([^)]*(?:registration|sold out|waitlist|cancelled|full)[^)]*\)\s*/gi, ' ').trim();
+
+        return title;
     }
 
     /**
@@ -2574,8 +2869,8 @@ window.CLUBCALENDAR_CONFIG = {
      * Opens Google Calendar with pre-filled event details.
      */
     function generateGoogleCalendarUrl(event) {
-        const startDate = new Date(event.startDate);
-        const endDate = new Date(event.endDate || event.startDate);
+        const startDate = new Date(event.start || event.startDate);
+        const endDate = new Date(event.end || event.endDate || event.start || event.startDate);
 
         // Google Calendar uses YYYYMMDDTHHmmssZ format
         const formatGoogleDate = (date) => {
@@ -2599,8 +2894,8 @@ window.CLUBCALENDAR_CONFIG = {
      * Opens Outlook web calendar with pre-filled event details.
      */
     function generateOutlookUrl(event) {
-        const startDate = new Date(event.startDate);
-        const endDate = new Date(event.endDate || event.startDate);
+        const startDate = new Date(event.start || event.startDate);
+        const endDate = new Date(event.end || event.endDate || event.start || event.startDate);
 
         const params = new URLSearchParams({
             path: '/calendar/action/compose',
@@ -2619,8 +2914,8 @@ window.CLUBCALENDAR_CONFIG = {
      * Generates a Yahoo Calendar URL for an event.
      */
     function generateYahooUrl(event) {
-        const startDate = new Date(event.startDate);
-        const endDate = new Date(event.endDate || event.startDate);
+        const startDate = new Date(event.start || event.startDate);
+        const endDate = new Date(event.end || event.endDate || event.start || event.startDate);
 
         // Yahoo uses YYYYMMDDTHHmmss format (no Z)
         const formatYahooDate = (date) => {
@@ -2668,12 +2963,15 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
-     * Parses tags JSON string.
+     * Parses tags - handles both JSON strings and arrays.
      */
-    function parseTags(tagsStr) {
-        if (!tagsStr || tagsStr === '[]') return [];
+    function parseTags(tags) {
+        if (!tags) return [];
+        if (Array.isArray(tags)) return tags;
+        if (tags === '[]') return [];
         try {
-            return JSON.parse(tagsStr);
+            const parsed = JSON.parse(tags);
+            return Array.isArray(parsed) ? parsed : [];
         } catch {
             return [];
         }
@@ -2949,8 +3247,24 @@ window.CLUBCALENDAR_CONFIG = {
         }
 
         // Filter row - all on one line
+        // Add "Show My Registrations" button for members without contact ID
+        const showMyRegsButton = (CONFIG.memberLevel === 'member' && !CONFIG.waContactId)
+            ? '<button class="clubcal-action-btn clubcal-my-regs-btn" data-action="showMyRegs" style="background: #2c5aa0; color: white; font-weight: 600;"><span style="margin-right: 4px;">👤</span> Show My Registrations</button><span style="color:#ccc; margin: 0 4px;">|</span>'
+            : '';
+
+        // Add My Registered/Waitlisted buttons for logged-in members
+        // Show for any member (contactId from URL or will be loaded via email lookup)
+        const isMember = CONFIG.memberLevel === 'member' || CONFIG.waContactId;
+        console.log('ClubCalendar: Rendering filter buttons, isMember =', isMember, ', CONFIG.waContactId =', CONFIG.waContactId, ', CONFIG.memberLevel =', CONFIG.memberLevel);
+        const myEventsButtons = isMember ? `
+                <button class="clubcal-action-btn clubcal-my-filter" data-filter="myregistered"><span class="clubcal-reg-indicator registered"></span> My Registered</button>
+                <button class="clubcal-action-btn clubcal-my-filter" data-filter="mywaitlisted"><span class="clubcal-reg-indicator waitlisted"></span> My Waitlisted</button>
+                <span style="color:#ccc; margin: 0 4px;">|</span>
+        ` : '';
+
         html += `
             <div class="clubcal-filter-row">
+                ${myEventsButtons}
                 <button class="clubcal-action-btn" data-filter="justopened"><span class="clubcal-filter-dot justopened"></span> Just Opened</button>
                 <button class="clubcal-action-btn" data-filter="openingsoon"><span class="clubcal-filter-dot openingsoon"></span> Opening Soon</button>
                 <button class="clubcal-action-btn" data-filter="openings"><span class="clubcal-filter-dot openings"></span> Openings for Any Member</button>
@@ -3027,8 +3341,11 @@ window.CLUBCALENDAR_CONFIG = {
      * Uses vanilla JS (no jQuery dependency).
      */
     function bindFilterEvents() {
-        const container = document.querySelector('.clubcal-container');
-        if (!container) return;
+        const container = document.querySelector('.clubcalendar-widget');
+        if (!container) {
+            console.error('ClubCalendar: Container .clubcalendar-widget not found for event binding');
+            return;
+        }
 
         // Tab switching
         container.querySelectorAll('.clubcal-tab-btn').forEach(btn => {
@@ -3086,14 +3403,36 @@ window.CLUBCALENDAR_CONFIG = {
                 const isActive = btn.classList.contains('active');
 
                 if (filterVal) {
-                    // Quick filters (weekend, openings, free, afterhours)
-                    if (!currentFilters.quickFilters) currentFilters.quickFilters = [];
-                    if (isActive) {
-                        if (!currentFilters.quickFilters.includes(filterVal)) {
-                            currentFilters.quickFilters.push(filterVal);
+                    // Special handling for My Events toggle
+                    if (filterVal === 'myevents') {
+                        currentFilters.myEvents = isActive;
+                    } else if (filterVal === 'myregistered' || filterVal === 'mywaitlisted') {
+                        // My Registered/Waitlisted - check if registrations are loaded
+                        if (!userRegistrations.loaded || Object.keys(userRegistrations.events).length === 0) {
+                            // Registrations not loaded - prompt for email lookup
+                            btn.classList.remove('active');
+                            promptForMyRegistrations();
+                            return;
+                        }
+                        // Registrations loaded - apply filter
+                        if (!currentFilters.quickFilters) currentFilters.quickFilters = [];
+                        if (isActive) {
+                            if (!currentFilters.quickFilters.includes(filterVal)) {
+                                currentFilters.quickFilters.push(filterVal);
+                            }
+                        } else {
+                            currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filterVal);
                         }
                     } else {
-                        currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filterVal);
+                        // Quick filters (weekend, openings, free, afterhours)
+                        if (!currentFilters.quickFilters) currentFilters.quickFilters = [];
+                        if (isActive) {
+                            if (!currentFilters.quickFilters.includes(filterVal)) {
+                                currentFilters.quickFilters.push(filterVal);
+                            }
+                        } else {
+                            currentFilters.quickFilters = currentFilters.quickFilters.filter(f => f !== filterVal);
+                        }
                     }
                 } else if (timeVal) {
                     // Time of day filters
@@ -3173,6 +3512,9 @@ window.CLUBCALENDAR_CONFIG = {
                     break;
                 case 'findMyEvents':
                     findMyEvents();
+                    break;
+                case 'showMyRegs':
+                    promptForMyRegistrations();
                     break;
                 case 'openEvent':
                     if (eventId) {
@@ -3307,7 +3649,8 @@ window.CLUBCALENDAR_CONFIG = {
             quickFilters: [],
             cost: null,
             showPast: currentFilters.showPast,  // Keep past selection state
-            pastMonths: currentFilters.pastMonths  // Keep past months selection
+            pastMonths: currentFilters.pastMonths,  // Keep past months selection
+            myEvents: false  // Reset My Events filter
         };
 
         filterAndRender();
@@ -3352,7 +3695,8 @@ window.CLUBCALENDAR_CONFIG = {
         const quickFilterLabels = {
             'weekend': 'Weekend', 'openings': 'Openings for Any Member', 'free': 'Free',
             'afterhours': 'After Hours', 'newbie': 'Openings for Newbies',
-            'justopened': 'Just Opened', 'openingsoon': 'Opening Soon'
+            'justopened': 'Just Opened', 'openingsoon': 'Opening Soon',
+            'myregistered': 'My Registered', 'mywaitlisted': 'My Waitlisted', 'public': 'Open to Public'
         };
         (currentFilters.quickFilters || []).forEach(qf => {
             tags.push(`<span class="clubcal-active-filter-tag">${quickFilterLabels[qf] || qf}</span>`);
@@ -3369,6 +3713,11 @@ window.CLUBCALENDAR_CONFIG = {
         (currentFilters.memberAvailability || []).forEach(a => {
             tags.push(`<span class="clubcal-active-filter-tag">${availLabels[a] || a}</span>`);
         });
+
+        // My Events filter
+        if (currentFilters.myEvents) {
+            tags.push(`<span class="clubcal-active-filter-tag" style="background: linear-gradient(135deg, var(--clubcal-morning), var(--clubcal-afternoon), var(--clubcal-evening)); color: white;">My Events</span>`);
+        }
 
         // Show count if filters active
         if (tags.length > 0) {
@@ -3461,6 +3810,16 @@ window.CLUBCALENDAR_CONFIG = {
                         ) || event.hasGuestTickets === 1;
                         if (!isPublic) return false;
                     }
+                    if (qf === 'myregistered') {
+                        // Only show events user is registered for (not waitlisted)
+                        const userReg = userRegistrations.events[event.id] || userRegistrations.events[String(event.id)];
+                        if (!userReg || userReg.onWaitlist) return false;
+                    }
+                    if (qf === 'mywaitlisted') {
+                        // Only show events user is waitlisted for
+                        const userReg = userRegistrations.events[event.id] || userRegistrations.events[String(event.id)];
+                        if (!userReg || !userReg.onWaitlist) return false;
+                    }
                 }
             }
 
@@ -3492,6 +3851,12 @@ window.CLUBCALENDAR_CONFIG = {
                     event.name.toLowerCase().startsWith(prefix.toLowerCase())
                 );
                 if (!matchesCommittee) return false;
+            }
+
+            // My Events filter - only show events user is registered/waitlisted for
+            if (currentFilters.myEvents) {
+                const userReg = userRegistrations.events[event.id];
+                if (!userReg) return false;
             }
 
             return true;
@@ -3666,7 +4031,82 @@ window.CLUBCALENDAR_CONFIG = {
             eventDidMount: function(info) {
                 const props = info.event.extendedProps;
                 const memberAvail = props.memberAvailability;
-                info.el.title = `${info.event.title}\n${memberAvail.label}`;
+                const originalEvent = props.originalEvent;
+                const timeOfDay = props.timeOfDay || 'allday';
+
+                // Add registration indicator if user is registered/waitlisted
+                if (userRegistrations.loaded && originalEvent) {
+                    const eventId = originalEvent.id;
+                    // Try both number and string keys
+                    const userReg = userRegistrations.events[eventId] || userRegistrations.events[String(eventId)];
+                    if (userReg) {
+                        console.log('ClubCalendar: Adding registration border for event', eventId);
+                        if (userReg.onWaitlist) {
+                            info.el.classList.add(`clubcal-waitlist-${timeOfDay}`);
+                        } else {
+                            info.el.classList.add(`clubcal-registered-${timeOfDay}`);
+                        }
+                    }
+                }
+
+                // Public view: show styled hover tooltip (now clickable for join popup)
+                if (CONFIG.memberLevel === 'public') {
+                    info.el.style.cursor = 'pointer';
+
+                    info.el.addEventListener('mouseenter', function(e) {
+                        // Remove any existing tooltip
+                        const existing = document.querySelector('.clubcal-hover-tooltip');
+                        if (existing) existing.remove();
+
+                        // Format time
+                        const startDate = new Date(originalEvent.startDate);
+                        const timeStr = startDate.toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        });
+                        const dateStr = startDate.toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'clubcal-hover-tooltip';
+                        // Get description from Description, Details, or description field, strip HTML
+                        let rawDesc = originalEvent.Description || originalEvent.Details || originalEvent.description || '';
+                        // Strip HTML tags and decode entities
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = rawDesc;
+                        const description = (tempDiv.textContent || tempDiv.innerText || '').trim();
+                        // Truncate to ~200 chars for tooltip
+                        const shortDesc = description.length > 200 ? description.substring(0, 200) + '...' : description;
+                        tooltip.innerHTML = `
+                            <div class="clubcal-hover-tooltip-title">${escapeHtml(info.event.title)}</div>
+                            <div class="clubcal-hover-tooltip-time">${dateStr} at ${timeStr}</div>
+                            ${shortDesc ? `<div class="clubcal-hover-tooltip-desc">${escapeHtml(shortDesc)}</div>` : ''}
+                        `;
+                        document.body.appendChild(tooltip);
+
+                        // Position near cursor
+                        const rect = info.el.getBoundingClientRect();
+                        tooltip.style.left = (rect.left + 10) + 'px';
+                        tooltip.style.top = (rect.bottom + 5) + 'px';
+                    });
+
+                    info.el.addEventListener('mouseleave', function() {
+                        const tooltip = document.querySelector('.clubcal-hover-tooltip');
+                        if (tooltip) tooltip.remove();
+                    });
+                } else {
+                    // Member view: native tooltip with description
+                    let rawDesc = originalEvent.Description || originalEvent.Details || originalEvent.description || '';
+                    // Strip HTML tags
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = rawDesc;
+                    const desc = (tempDiv.textContent || tempDiv.innerText || '').trim();
+                    const shortDesc = desc.length > 150 ? desc.substring(0, 150) + '...' : desc;
+                    info.el.title = `${info.event.title}\n${memberAvail.label}${shortDesc ? '\n\n' + shortDesc : ''}`;
+                }
             },
             height: 'auto',
             moreLinkClick: 'popover'
@@ -3770,6 +4210,16 @@ window.CLUBCALENDAR_CONFIG = {
         const props = event.extendedProps;
         const originalEvent = props.originalEvent;
 
+        // Public/non-logged-in users: show "join to participate" popup
+        if (CONFIG.memberLevel === 'public') {
+            showPublicEventPopup({
+                title: event.title,
+                start: event.start,
+                id: originalEvent.id
+            });
+            return;
+        }
+
         showEventPopup({
             title: event.title,
             category: props.category,
@@ -3785,9 +4235,9 @@ window.CLUBCALENDAR_CONFIG = {
     }
 
     /**
-     * Shows event details popup with expandable sections.
+     * Shows a simple popup for historical/archive events - just details, no actions.
      */
-    function showEventPopup(event) {
+    function showPublicEventPopup(event) {
         // Remove existing popup
         closeEventPopup();
 
@@ -3803,26 +4253,36 @@ window.CLUBCALENDAR_CONFIG = {
             minute: '2-digit'
         });
 
-        let availabilityHtml = '';
-        if (event.availability.status === 'full') {
-            availabilityHtml = '<span style="color: #c00;">Sold Out / Waitlist</span>';
-        } else if (event.availability.status === 'low') {
-            availabilityHtml = `<span style="color: #f90;">Only ${event.availability.spots} spots left!</span>`;
-        } else if (event.availability.spots) {
-            availabilityHtml = `<span style="color: #090;">${event.availability.spots} spots available</span>`;
-        } else {
-            availabilityHtml = '<span style="color: #090;">Open registration</span>';
+        // Get original event data for description
+        const originalEvent = allEvents.find(e => String(e.id) === String(event.id));
+        const rawDesc = originalEvent?.Description || originalEvent?.description || '';
+
+        // Clean description for display (no truncation - scrollable)
+        let descriptionHtml = '';
+        if (rawDesc) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = rawDesc;
+            const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+            if (plainText) {
+                descriptionHtml = `
+                    <div style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 200px; overflow-y: auto;">
+                        ${escapeHtml(plainText)}
+                    </div>
+                `;
+            }
         }
 
-        const tagsHtml = event.tags.includes('public event') || event.tags.includes('public')
-            ? '<span style="background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-size:11px;">Guests Welcome</span>'
-            : '';
+        // Get category/committee tag if available
+        const tags = Array.isArray(originalEvent?.tags) ? originalEvent.tags : [];
+        const category = tags.find(t => t && t.startsWith && t.startsWith('committee:'));
+        const categoryName = category ? category.replace('committee:', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
+        const categoryHtml = categoryName ? `<span class="clubcal-event-popup-category" style="background: #2c5aa0; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${escapeHtml(categoryName)}</span>` : '';
 
         const popupHtml = `
             <div class="clubcal-popup-overlay" data-action="closePopup"></div>
             <div class="clubcal-event-popup">
                 <div class="clubcal-event-popup-header">
-                    <span class="clubcal-event-popup-category">${escapeHtml(event.category)}</span>
+                    ${categoryHtml}
                     <h3>${escapeHtml(event.title)}</h3>
                 </div>
                 <div class="clubcal-event-popup-body">
@@ -3835,86 +4295,11 @@ window.CLUBCALENDAR_CONFIG = {
                             <span>🕐</span>
                             <strong>${timeStr}</strong>
                         </div>
-                        ${event.location && CONFIG.memberLevel !== 'public' ? `
-                        <div class="clubcal-event-popup-meta-item">
-                            <span>📍</span>
-                            <strong>${escapeHtml(event.location)}</strong>
-                        </div>
-                        ` : ''}
-                        <div class="clubcal-event-popup-meta-item">
-                            <span>💰</span>
-                            <strong>${event.price || 'See event page'}</strong>
-                        </div>
-                        <div class="clubcal-event-popup-meta-item">
-                            <span>🎟️</span>
-                            ${availabilityHtml}
-                        </div>
-                        ${tagsHtml ? `
-                        <div class="clubcal-event-popup-meta-item">
-                            ${tagsHtml}
-                        </div>
-                        ` : ''}
                     </div>
 
-                    <!-- Expandable Sections (Members Only) -->
-                    ${CONFIG.memberLevel !== 'public' ? `
-                    <div class="clubcal-popup-sections">
-                        <!-- Who's Registered Section - MEMBERS ONLY -->
-                        <div class="clubcal-popup-section" id="clubcal-registrants-section">
-                            <div class="clubcal-popup-section-header" data-action="toggleSection" data-section="registrants">
-                                <span>
-                                    <span class="clubcal-section-icon">👥</span>
-                                    Who's Registered?
-                                    <span class="clubcal-registrants-count" id="clubcal-registrants-count"></span>
-                                </span>
-                                <span class="clubcal-section-arrow">▼</span>
-                            </div>
-                            <div class="clubcal-popup-section-content">
-                                <div class="clubcal-popup-section-inner" id="clubcal-registrants-list">
-                                    <div class="clubcal-registrants-loading">Loading registrants...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Photo Gallery Section - MEMBERS ONLY -->
-                        <div class="clubcal-popup-section" id="clubcal-gallery-section" style="display:none;">
-                            <div class="clubcal-popup-section-header" data-action="toggleSection" data-section="gallery">
-                                <span>
-                                    <span class="clubcal-section-icon">📷</span>
-                                    Photo Gallery
-                                    <span class="clubcal-gallery-count-badge" id="clubcal-gallery-count"></span>
-                                </span>
-                                <span class="clubcal-section-arrow">▼</span>
-                            </div>
-                            <div class="clubcal-popup-section-content">
-                                <div class="clubcal-popup-section-inner" id="clubcal-gallery-content">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
+                    ${descriptionHtml}
 
                     <div class="clubcal-event-popup-actions">
-                        <a href="https://sbnewcomers.org/event-${event.id}" target="_blank" class="clubcal-btn clubcal-btn-primary">
-                            View & Register
-                        </a>
-                        ${CONFIG.showAddToCalendar ? `
-                        <div class="clubcal-calendar-icons">
-                            <span class="clubcal-calendar-label">Add to:</span>
-                            <a href="${generateGoogleCalendarUrl(event)}" target="_blank" rel="noopener" class="clubcal-cal-btn clubcal-cal-google" title="Google Calendar">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                            </a>
-                            <a href="${generateOutlookUrl(event)}" target="_blank" rel="noopener" class="clubcal-cal-btn clubcal-cal-outlook" title="Outlook.com">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zm0-13H5V5h14v1zM7 10h5v5H7z"/></svg>
-                            </a>
-                            <a href="${generateYahooUrl(event)}" target="_blank" rel="noopener" class="clubcal-cal-btn clubcal-cal-yahoo" title="Yahoo Calendar">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M12 2L8.5 9H4l4 7v6h4v-6l4-7h-4.5L12 2z"/></svg>
-                            </a>
-                            <button data-action="downloadIcs" data-ics-url="${generateIcsUrl(event)}" data-event-id="${event.id}" class="clubcal-cal-btn clubcal-cal-apple" title="Apple Calendar / Download .ics">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                            </button>
-                        </div>
-                        ` : ''}
                         <button class="clubcal-btn clubcal-btn-secondary" data-action="closePopup">
                             Close
                         </button>
@@ -3924,12 +4309,15 @@ window.CLUBCALENDAR_CONFIG = {
         `;
 
         document.body.insertAdjacentHTML('beforeend', popupHtml);
+    }
 
-        // Fetch registrants and photo info (MEMBERS ONLY)
-        if (CONFIG.memberLevel !== 'public') {
-            fetchEventRegistrants(event.id);
-            checkEventPhotos(event.id);
-        }
+    /**
+     * Shows event details popup - simple version for historical archive.
+     * Just shows: category, title, date, time, scrollable description, close button.
+     */
+    function showEventPopup(event) {
+        // For historical archive, use the same simple popup as public view
+        showPublicEventPopup(event);
     }
 
     /**
@@ -4446,27 +4834,275 @@ window.CLUBCALENDAR_CONFIG = {
      * 4. Fetches events
      * 5. Initializes calendar
      */
+
+    /**
+     * Prompts the user to enter their email to load their registrations.
+     * Used when WA API can't provide contact ID directly.
+     */
+    async function promptForMyRegistrations() {
+        const email = prompt('Enter your SBNC member email to see your registrations:');
+        if (!email || !email.includes('@')) {
+            return;
+        }
+
+        try {
+            // Look up contact ID by email via our server API
+            const lookupUrl = CONFIG.eventsUrl.replace('/events', '/lookup-contact');
+            const lookupResponse = await fetch(lookupUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+
+            if (!lookupResponse.ok) {
+                const errData = await lookupResponse.json().catch(() => ({}));
+                alert(errData.error || 'Could not find member with that email. Please check and try again.');
+                return;
+            }
+
+            const lookupData = await lookupResponse.json();
+            if (!lookupData.contactId) {
+                alert('Could not find your member record. Please check your email and try again.');
+                return;
+            }
+
+            // Set the contact ID and load registrations
+            CONFIG.waContactId = lookupData.contactId;
+            console.log('ClubCalendar: Found contact ID from email lookup:', CONFIG.waContactId);
+
+            // Load registrations with the new contact ID
+            userRegistrations.loaded = false;
+            userRegistrations.events = {};
+            await loadUserRegistrationsWithContactId(CONFIG.waContactId);
+
+            // Refresh calendar to show registration borders
+            if (calendarInstance) {
+                applyFilters();
+            }
+
+            // Replace "Show My Registrations" button with the filter buttons
+            const btn = document.querySelector('.clubcal-my-regs-btn');
+            if (btn) {
+                // Create the filter buttons HTML
+                const filterButtonsHtml = `
+                    <button class="clubcal-action-btn" data-filter="myregistered"><span class="clubcal-reg-indicator registered"></span> My Registered</button>
+                    <button class="clubcal-action-btn" data-filter="mywaitlisted"><span class="clubcal-reg-indicator waitlisted"></span> My Waitlisted</button>
+                    <span style="color:#ccc; margin: 0 4px;">|</span>
+                `;
+
+                // Find the separator after the button and remove both
+                const separator = btn.nextElementSibling;
+                if (separator && separator.textContent === '|') {
+                    separator.remove();
+                }
+
+                // Insert filter buttons where the old button was
+                btn.insertAdjacentHTML('afterend', filterButtonsHtml);
+                btn.remove();
+
+                // Rebind click handlers for new buttons
+                document.querySelectorAll('.clubcal-filter-row .clubcal-action-btn[data-filter]').forEach(newBtn => {
+                    newBtn.onclick = function() {
+                        const filterName = this.dataset.filter;
+                        toggleQuickFilter(filterName, this);
+                    };
+                });
+            }
+
+            alert(`Found ${Object.keys(userRegistrations.events).length} registrations! Your events are now highlighted with colored borders.`);
+
+        } catch (error) {
+            console.error('ClubCalendar: Error loading registrations:', error);
+            alert('Error loading registrations. Please try again.');
+        }
+    }
+
+    /**
+     * Loads registrations for a specific contact ID.
+     */
+    async function loadUserRegistrationsWithContactId(contactId) {
+        try {
+            // Get auth token
+            const authUrl = CONFIG.eventsUrl.replace('/events', '/auth');
+            const authResponse = await fetch(authUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contactId: contactId })
+            });
+
+            if (!authResponse.ok) {
+                throw new Error('Auth failed: ' + authResponse.status);
+            }
+
+            const authData = await authResponse.json();
+            userRegistrations.token = authData.token;
+
+            // Fetch user's registrations
+            const myEventsUrl = CONFIG.eventsUrl.replace('/events', '/my-events');
+            const myEventsResponse = await fetch(`${myEventsUrl}?token=${authData.token}`);
+
+            if (!myEventsResponse.ok) {
+                throw new Error('My events failed: ' + myEventsResponse.status);
+            }
+
+            const myEventsData = await myEventsResponse.json();
+
+            // Build registration map
+            if (myEventsData.registrations && myEventsData.registrations.length > 0) {
+                for (const reg of myEventsData.registrations) {
+                    userRegistrations.events[reg.event_id] = {
+                        registered: true,
+                        onWaitlist: reg.on_waitlist || false
+                    };
+                }
+            }
+
+            userRegistrations.loaded = true;
+            console.log('ClubCalendar: Loaded ' + Object.keys(userRegistrations.events).length + ' user registrations');
+
+        } catch (error) {
+            console.warn('ClubCalendar: Could not load user registrations:', error.message);
+            userRegistrations.error = error.message;
+            userRegistrations.loaded = true;
+        }
+    }
+
+    /**
+     * Loads user's event registrations for registration border display.
+     * Waits for WA API to return contact ID if user is logged in.
+     */
+    async function loadUserRegistrations() {
+        // Skip if not a member
+        if (CONFIG.memberLevel === 'public') {
+            userRegistrations.loaded = true;
+            return;
+        }
+
+        // Wait for contact ID from WA API (set up in initialization script)
+        let contactId = CONFIG.waContactId;
+        if (!contactId && window._waContactIdPromise) {
+            try {
+                contactId = await window._waContactIdPromise;
+                if (contactId) {
+                    CONFIG.waContactId = contactId;
+                    console.log('ClubCalendar: Got contact ID from WA API:', contactId);
+                }
+            } catch (e) {
+                console.warn('ClubCalendar: Failed to get contact ID:', e.message);
+            }
+        }
+
+        if (!contactId) {
+            console.log('ClubCalendar: No contact ID available, skipping registration load');
+            userRegistrations.loaded = true;
+            return;
+        }
+
+        try {
+            // Get auth token
+            const authUrl = CONFIG.eventsUrl.replace('/events', '/auth');
+            const authResponse = await fetch(authUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contactId: contactId })
+            });
+
+            if (!authResponse.ok) {
+                throw new Error('Auth failed: ' + authResponse.status);
+            }
+
+            const authData = await authResponse.json();
+            userRegistrations.token = authData.token;
+
+            // Fetch user's registrations (with 6 months history)
+            const myEventsUrl = CONFIG.eventsUrl.replace('/events', '/my-events');
+            const myEventsResponse = await fetch(`${myEventsUrl}?token=${authData.token}`);
+
+            if (!myEventsResponse.ok) {
+                throw new Error('My events failed: ' + myEventsResponse.status);
+            }
+
+            const myEventsData = await myEventsResponse.json();
+
+            // Build registration map
+            if (myEventsData.registrations && myEventsData.registrations.length > 0) {
+                for (const reg of myEventsData.registrations) {
+                    userRegistrations.events[reg.event_id] = {
+                        registered: true,
+                        onWaitlist: reg.on_waitlist || false
+                    };
+                }
+            }
+
+            userRegistrations.loaded = true;
+            console.log('ClubCalendar: Loaded ' + Object.keys(userRegistrations.events).length + ' user registrations');
+
+        } catch (error) {
+            console.warn('ClubCalendar: Could not load user registrations:', error.message);
+            userRegistrations.error = error.message;
+            userRegistrations.loaded = true;
+        }
+    }
+
     async function init() {
         injectStyles();
 
+        // Show loading indicator immediately
+        const container = document.querySelector(CONFIG.container);
+        if (container) {
+            container.innerHTML = `
+                <div class="clubcalendar-widget" style="padding: 40px; text-align: center;">
+                    <div class="clubcal-loading-spinner"></div>
+                    <p style="color: #666; margin-top: 16px;">Loading calendar...</p>
+                </div>
+            `;
+        }
+
+        // Start fetching data immediately (in parallel with library loading)
+        const eventsPromise = fetchEvents(0).catch(err => {
+            console.error('ClubCalendar: Events fetch failed:', err);
+            return [];
+        });
+
+        // Wait for login state to be determined
+        const loginPromise = window._waContactIdPromise || Promise.resolve(null);
+
+        // Load dependencies (FullCalendar library)
         loadDependencies(async function() {
+            try {
+                // Wait for login check to complete
+                await loginPromise;
+                CONFIG.memberLevel = window._waMemberLevel;
+                CONFIG.waContactId = window._waContactId;
+                console.log('ClubCalendar: Final member level:', CONFIG.memberLevel, 'contactId:', CONFIG.waContactId);
+            } catch (e) {
+                console.warn('ClubCalendar: Login check failed, defaulting to public');
+                CONFIG.memberLevel = 'public';
+            }
+
             // Build widget HTML
             if (!buildWidget()) {
                 return;
             }
 
             try {
-                // Fetch events (start with current only, user can select past months)
-                allEvents = await fetchEvents(0);
+                // Start loading registrations (for members)
+                const registrationsPromise = loadUserRegistrations();
+
+                // Wait for events (already fetching since page load)
+                allEvents = await eventsPromise;
                 filteredEvents = [...allEvents];
                 lastRefreshTime = Date.now();
+                console.log('ClubCalendar: Loaded', allEvents.length, 'events');
+
+                // Wait for registrations to complete
+                await registrationsPromise;
 
                 // Track earliest loaded date for navigation
                 if (allEvents.length > 0) {
                     const dates = allEvents.map(e => new Date(e.startDate));
                     earliestLoadedDate = new Date(Math.min(...dates));
                 } else {
-                    // Default to start of today if no events
                     const now = new Date();
                     earliestLoadedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 }
