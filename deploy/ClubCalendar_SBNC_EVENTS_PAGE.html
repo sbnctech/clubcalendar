@@ -19,7 +19,7 @@
   ║  - CDN: FullCalendar library from cdnjs.cloudflare.com                     ║
   ║  - No additional server setup required for WA administrators               ║
   ║                                                                            ║
-  ║  Version: 1.27                                                             ║
+  ║  Version: 1.28                                                             ║
   ║  Updated: 2026-01-04                                                       ║
   ║                                                                            ║
   ╚════════════════════════════════════════════════════════════════════════════╝
@@ -375,7 +375,7 @@ window.CLUBCALENDAR_CONFIG = {
  * │                                                                         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * @version 1.27
+ * @version 1.28
  * @author ClubCalendar
  */
 
@@ -3853,15 +3853,29 @@ window.CLUBCALENDAR_CONFIG = {
                 if (!currentFilters.memberAvailability.includes(memberAvail.status)) return false;
             }
 
-            // Cost filter - using category strings, with fallback to isFree for events without category
+            // Cost filter - using category strings
+            // NOTE: For cost dropdown, use strict price-based free (not !registrationEnabled)
+            // because events without registration might still cost money at the door
             if (currentFilters.cost) {
                 const category = event.costCategory || '';
-                // For 'free' filter, use same logic as quick filter: isFree OR no registration
-                if (currentFilters.cost === 'free' && !isFree && category !== 'Free') return false;
-                if (currentFilters.cost === 'under25' && !isFree && !['Free', 'Under $25'].includes(category)) return false;
-                if (currentFilters.cost === 'under50' && !isFree && !['Free', 'Under $25', '$25-50'].includes(category)) return false;
-                if (currentFilters.cost === 'under100' && !isFree && !['Free', 'Under $25', '$25-50', '$50-100'].includes(category)) return false;
-                if (currentFilters.cost === 'over100' && category !== 'Over $100') return false;
+                const isFreeCost = event.isFree === 1 || event.minPrice === 0 || category === 'Free';
+
+                if (currentFilters.cost === 'free') {
+                    // Free = $0 price OR marked as free
+                    if (!isFreeCost) return false;
+                }
+                if (currentFilters.cost === 'under25') {
+                    if (!isFreeCost && !['Under $25'].includes(category)) return false;
+                }
+                if (currentFilters.cost === 'under50') {
+                    if (!isFreeCost && !['Under $25', '$25-50'].includes(category)) return false;
+                }
+                if (currentFilters.cost === 'under100') {
+                    if (!isFreeCost && !['Under $25', '$25-50', '$50-100'].includes(category)) return false;
+                }
+                if (currentFilters.cost === 'over100') {
+                    if (category !== 'Over $100') return false;
+                }
             }
 
             // Committee filter (based on event name prefix)

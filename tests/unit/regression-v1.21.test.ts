@@ -364,9 +364,9 @@ describe('BUG: Free filter consistency across widget', () => {
     expect(widgetContent).toMatch(/const isFree.*=.*event\.isFree.*\|\|.*minPrice.*\|\|.*!event\.registrationEnabled/);
   });
 
-  it('should use isFree variable in cost dropdown filter', () => {
-    // Line ~3854: cost dropdown should use isFree, not just category
-    expect(widgetContent).toMatch(/cost.*===.*'free'.*&&.*!isFree/);
+  it('should use isFreeCost variable in cost dropdown filter', () => {
+    // Line ~3864: cost dropdown should use isFreeCost (price-based), not isFree
+    expect(widgetContent).toMatch(/cost.*===.*'free'[\s\S]*?!isFreeCost/);
   });
 
   it('all isFree calculations should include registrationEnabled (count check)', () => {
@@ -444,5 +444,44 @@ describe('Public popup requirements', () => {
   it('public popup must include Join SBNC button', () => {
     expect(widgetContent).toMatch(/Join.*SBNC.*to.*Participate/i);
     expect(widgetContent).toMatch(/sbnewcomers\.org\/join/);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUG #8: Cost dropdown filter must use price-based free, not !registrationEnabled
+// Fixed in v1.28
+//
+// The cost dropdown (free, under25, under50, etc.) was incorrectly using
+// the same isFree logic as the Free quick filter button. But the Free button
+// includes !registrationEnabled (open events without registration = free to attend).
+// For COST filtering, we need strict price-based determination:
+// - isFreeCost = isFree flag OR minPrice === 0 OR costCategory === 'Free'
+// - NOT including !registrationEnabled (events might cost $ at the door)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('BUG: Cost filter uses price-based free', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('cost filter should define isFreeCost separately from isFree', () => {
+    // Cost filter should have its own isFreeCost variable
+    expect(widgetContent).toMatch(/isFreeCost.*=.*event\.isFree.*===.*1.*\|\|.*minPrice.*===.*0/);
+  });
+
+  it('cost filter isFreeCost should NOT include !registrationEnabled', () => {
+    // The isFreeCost line should NOT contain registrationEnabled
+    const costFilterSection = widgetContent.match(/const isFreeCost.*=.*[^;]+;/);
+    expect(costFilterSection).not.toBeNull();
+    expect(costFilterSection![0]).not.toMatch(/registrationEnabled/);
+  });
+
+  it('cost filter free option should use isFreeCost', () => {
+    expect(widgetContent).toMatch(/cost.*===.*'free'[\s\S]*?!isFreeCost/);
   });
 });
