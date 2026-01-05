@@ -375,7 +375,7 @@ window.CLUBCALENDAR_CONFIG = {
  * │                                                                         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * @version 1.24
+ * @version 1.25
  * @author ClubCalendar
  */
 
@@ -1698,12 +1698,18 @@ window.CLUBCALENDAR_CONFIG = {
     padding: 20px;
     max-height: 60vh !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
 }
 .clubcal-event-description {
-    max-height: 200px !important;
-    overflow-y: auto !important;
+    max-height: 150px !important;
+    min-height: 50px;
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
+    flex-shrink: 1;
 }
 .clubcal-event-popup-meta {
     display: flex;
@@ -4280,7 +4286,7 @@ window.CLUBCALENDAR_CONFIG = {
             const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
             if (plainText) {
                 descriptionHtml = `
-                    <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 200px !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch;">
+                    <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 150px !important; overflow-y: scroll !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch;">
                         ${escapeHtml(plainText)}
                     </div>
                 `;
@@ -4435,8 +4441,10 @@ window.CLUBCALENDAR_CONFIG = {
     function closeEventPopup() {
         const overlay = document.querySelector('.clubcal-popup-overlay');
         const popup = document.querySelector('.clubcal-event-popup');
+        const hoverTooltip = document.querySelector('.clubcal-hover-tooltip');
         if (overlay) overlay.remove();
         if (popup) popup.remove();
+        if (hoverTooltip) hoverTooltip.remove();
     }
 
     /**
