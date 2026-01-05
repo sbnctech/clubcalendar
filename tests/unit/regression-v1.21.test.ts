@@ -423,3 +423,26 @@ describe('Member popup requirements', () => {
     expect(widgetContent).toMatch(/closeEventPopup[\s\S]*?clubcal-hover-tooltip[\s\S]*?remove\(\)/);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Public Popup Requirements
+// Added in v1.27
+//
+// The public popup must include a "Join" call-to-action button
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Public popup requirements', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('public popup must include Join SBNC button', () => {
+    expect(widgetContent).toMatch(/Join.*SBNC.*to.*Participate/i);
+    expect(widgetContent).toMatch(/sbnewcomers\.org\/join/);
+  });
+});
