@@ -558,12 +558,40 @@ describe('v1.33: Cost category computed at transform time', () => {
     expect(widgetContent).toMatch(/function computeCostCategory\(minPrice, isFree, registrationEnabled\)/);
   });
 
-  it('mapApiEventToInternal should call computeCostCategory', () => {
-    expect(widgetContent).toMatch(/costCategory:\s*computeCostCategory\(minPrice, isFree, registrationEnabled\)/);
+  it('mapApiEventToInternal should use server costCategory or compute fallback', () => {
+    // Uses server-provided costCategory if available, otherwise computes
+    expect(widgetContent).toMatch(/costCategory.*\|\|.*computeCostCategory/);
   });
 
   it('mapJsonEventToInternal should set costCategory', () => {
     expect(widgetContent).toMatch(/costCategory:\s*costCategory/);
+  });
+});
+
+describe('v1.33: Server-side pre-computation optimization', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('mapApiEventToInternal should accept pre-computed timeOfDay', () => {
+    expect(widgetContent).toMatch(/timeOfDay:\s*event\.timeOfDay/);
+  });
+
+  it('mapApiEventToInternal should accept pre-computed committee', () => {
+    expect(widgetContent).toMatch(/committee:\s*event\.committee/);
+  });
+
+  it('transformEventsForCalendar should use pre-computed timeOfDay', () => {
+    expect(widgetContent).toMatch(/event\.timeOfDay\s*\|\|\s*deriveTimeOfDay/);
+  });
+
+  it('transformEventsForCalendar should use pre-computed committee', () => {
+    expect(widgetContent).toMatch(/event\.committee\s*\|\|\s*extractCommittee/);
   });
 });
 

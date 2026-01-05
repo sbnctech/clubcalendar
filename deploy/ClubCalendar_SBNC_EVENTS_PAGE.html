@@ -2520,14 +2520,24 @@ window.CLUBCALENDAR_CONFIG = {
      * Maps API response format (Pascal case) to internal event format.
      * API schema: { Id, Name, StartDate, EndDate, Location, Tags,
      *               RegistrationEnabled, RegistrationsLimit, ConfirmedRegistrationsCount }
+     *
+     * Server may provide pre-computed fields (timeOfDay, costCategory, isFree, committee)
+     * to reduce client-side processing time.
      */
     function mapApiEventToInternal(event) {
         const limit = event.RegistrationsLimit;
         const confirmed = event.ConfirmedRegistrationsCount || 0;
         const isFull = limit !== null && confirmed >= limit;
         const minPrice = event.MinPrice || null;
-        const isFree = event.IsFree ? true : false;
         const registrationEnabled = event.RegistrationEnabled !== false;
+
+        // Use server-provided isFree if available, otherwise compute
+        const isFree = event.isFree !== undefined
+            ? event.isFree
+            : (event.IsFree ? true : false);
+
+        // Use server-provided costCategory if available, otherwise compute
+        const costCategory = event.costCategory || computeCostCategory(minPrice, isFree, registrationEnabled);
 
         return {
             id: event.Id,
@@ -2546,7 +2556,10 @@ window.CLUBCALENDAR_CONFIG = {
             hasGuestTickets: event.HasGuestTickets ? 1 : 0,
             registrationOpenDate: event.RegistrationOpenDate || null,
             registrationEnabled: registrationEnabled,
-            costCategory: computeCostCategory(minPrice, isFree, registrationEnabled)
+            costCategory: costCategory,
+            // Use server-provided pre-computed fields for faster rendering
+            timeOfDay: event.timeOfDay || null,
+            committee: event.committee || null
         };
     }
 
@@ -2713,7 +2726,8 @@ window.CLUBCALENDAR_CONFIG = {
      */
     function transformEventsForCalendar(events) {
         return events.map(event => {
-            const timeOfDay = deriveTimeOfDay(event.startDate, event.endDate);
+            // Use server-provided timeOfDay if available, otherwise compute
+            const timeOfDay = event.timeOfDay || deriveTimeOfDay(event.startDate, event.endDate);
             const availability = getAvailability(event);
             const memberAvailability = getMemberAvailability(event);
 
@@ -2725,7 +2739,8 @@ window.CLUBCALENDAR_CONFIG = {
                 classNames: [`clubcal-event-${timeOfDay}`],
                 extendedProps: {
                     originalEvent: event,
-                    category: extractCommittee(event.name),
+                    // Use server-provided committee if available, otherwise extract from name
+                    category: event.committee || extractCommittee(event.name),
                     timeOfDay: timeOfDay,
                     location: event.location,
                     availability: availability,
