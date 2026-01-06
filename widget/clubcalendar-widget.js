@@ -123,8 +123,16 @@
  * │                                                                         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * @version 1.02
+ * @version 1.03
  * @author ClubCalendar
+ *
+ * v1.03 Changes:
+ * - Added external server mode (serverMode, serverEventsUrl, serverMemberEventsUrl)
+ * - Added side panel display for event details (sidePanel, sidePanelPublicOnly)
+ * - Added public audience controls (publicEventClick, publicShowDate, publicShowTime, etc.)
+ * - Added enhanced hover tooltips (hoverTooltipStyle: 'enhanced')
+ * - Added real-time event detail fetching for fresh availability data
+ * - Added audience-based filtering (public shows no location, availability, or PII)
  */
 
 (function() {
@@ -217,6 +225,31 @@
         pastEventsMonthsList: 6,               // Months of past events to show in list view
         futureMonthsLimit: 3,                  // How many months ahead to show
         eventClickBehavior: 'popup',           // 'popup', 'link', or 'both'
+        sidePanel: false,                      // Use side panel instead of centered popup
+        sidePanelPublicOnly: false,            // Only use side panel for public audience
+        // External server mode (v1.03+)
+        serverMode: false,                     // Use external server for event data
+        serverEventsUrl: '',                   // External server events endpoint (public)
+        serverMemberEventsUrl: '',             // External server member events endpoint
+        serverEventDetailUrl: '',              // External server event detail endpoint (real-time)
+        audience: 'member',                    // 'public' or 'member' - controls what data is shown
+        // Public audience display controls (v1.03+)
+        publicEventClick: 'sidePanel',         // 'none' (no click), 'sidePanel', or 'popup'
+        publicShowDate: true,                  // Show date in public event details
+        publicShowTime: true,                  // Show time in public event details
+        publicShowDescription: true,           // Show brief description (max 200 chars)
+        publicDescriptionLength: 200,          // Max characters for public description
+        // Hover tooltip controls (v1.03+)
+        hoverTooltip: true,                    // Show tooltip on hover
+        hoverTooltipStyle: 'enhanced',         // 'browser' (native title), 'enhanced' (custom styled)
+        publicHoverShowTitle: true,            // Show title in public hover
+        publicHoverShowDate: true,             // Show date in public hover
+        publicHoverShowTime: true,             // Show time in public hover
+        publicHoverShowAvailability: false,    // Don't show availability for public (member-only)
+        memberHoverShowTitle: true,            // Show title in member hover
+        memberHoverShowDate: true,             // Show date in member hover
+        memberHoverShowTime: true,             // Show time in member hover
+        memberHoverShowAvailability: true,     // Show availability status for members
         primaryColor: '#2c5aa0',               // WA primary blue
         accentColor: '#d4a800',                // WA secondary gold
         // Typography customization
@@ -614,15 +647,15 @@
     --clubcal-evening: #5c6bc0;
     --clubcal-allday: #66bb6a;
 
-    /* Filter dot colors */
-    --clubcal-dot-justopened: #e91e63;
-    --clubcal-dot-openingsoon: #009688;
-    --clubcal-dot-openings: #4caf50;
-    --clubcal-dot-newbie: #00bcd4;
-    --clubcal-dot-public: #8bc34a;
-    --clubcal-dot-weekend: #9c27b0;
-    --clubcal-dot-free: #ffc107;
-    --clubcal-dot-afterhours: #5c6bc0;
+    /* Filter dot colors - each must be visually distinct */
+    --clubcal-dot-justopened: #e91e63;    /* Pink - urgency, new */
+    --clubcal-dot-openingsoon: #009688;   /* Teal - anticipation */
+    --clubcal-dot-openings: #4caf50;      /* Green - available */
+    --clubcal-dot-newbie: #ff7043;        /* Coral - welcoming (was cyan, too similar to teal) */
+    --clubcal-dot-public: #607d8b;        /* Blue-gray - accessible (was light green, too similar to openings) */
+    --clubcal-dot-weekend: #9c27b0;       /* Purple - leisure */
+    --clubcal-dot-free: #ffc107;          /* Amber - valuable */
+    --clubcal-dot-afterhours: #ff5722;    /* Deep orange - evening warmth (was indigo, same as evening) */
 
     /* Availability colors */
     --clubcal-avail-public: #4caf50;
@@ -814,6 +847,24 @@
     box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
 }
 
+/* --- Search Input --- */
+.clubcal-search-input {
+    padding: 8px 10px;
+    border: 1px solid var(--clubcal-border);
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+    width: 180px;
+}
+.clubcal-search-input:focus {
+    outline: none;
+    border-color: var(--clubcal-primary);
+    box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
+}
+.clubcal-search-input::placeholder {
+    color: #999;
+}
+
 /* --- Quick Filters --- */
 .clubcal-quick-filters {
     display: flex;
@@ -825,22 +876,23 @@
 }
 .clubcal-quick-filter {
     padding: 6px 14px;
-    background: #fff;
-    border: 1px solid var(--clubcal-border);
+    background: #ffffff !important;
+    border: 1px solid var(--clubcal-border) !important;
     border-radius: 20px;
     font-size: 13px;
+    color: #555 !important;
     cursor: pointer;
     transition: all 0.2s;
 }
 .clubcal-quick-filter:hover {
-    background: var(--clubcal-primary);
-    color: white;
-    border-color: var(--clubcal-primary);
+    background: var(--clubcal-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--clubcal-primary) !important;
 }
 .clubcal-quick-filter.active {
-    background: var(--clubcal-primary);
-    color: white;
-    border-color: var(--clubcal-primary);
+    background: var(--clubcal-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--clubcal-primary) !important;
 }
 
 /* --- Clear Button --- */
@@ -940,20 +992,25 @@
     display: inline;
 }
 .clubcalendar-widget .fc-button-primary {
-    background-color: var(--clubcal-primary);
-    border-color: var(--clubcal-primary);
+    background-color: var(--clubcal-primary) !important;
+    border-color: var(--clubcal-primary) !important;
+    color: #ffffff !important;
 }
 .clubcalendar-widget .fc-button-primary:hover {
-    background-color: #234a80;
-    border-color: #234a80;
+    background-color: var(--clubcal-primary-dark, #234a80) !important;
+    border-color: var(--clubcal-primary-dark, #234a80) !important;
+    color: #ffffff !important;
 }
 .clubcalendar-widget .fc-button-primary:disabled {
-    background-color: #6c9bd1;
-    border-color: #6c9bd1;
+    background-color: #6c9bd1 !important;
+    border-color: #6c9bd1 !important;
+    color: #ffffff !important;
+    opacity: 0.65;
 }
 .clubcalendar-widget .fc-button-primary:not(:disabled).fc-button-active {
-    background-color: #1e3d6b;
-    border-color: #1e3d6b;
+    background-color: var(--clubcal-primary-dark, #1e3d6b) !important;
+    border-color: var(--clubcal-primary-dark, #1e3d6b) !important;
+    color: #ffffff !important;
 }
 .clubcalendar-widget .fc-daygrid-day-number {
     color: var(--clubcal-text);
@@ -1269,23 +1326,24 @@
     align-items: center;
     gap: 4px;
     padding: 6px 10px;
-    border: 1px solid var(--clubcal-border);
+    border: 1px solid var(--clubcal-border) !important;
     border-radius: 14px;
-    background: white;
+    background: #ffffff !important;
     font-size: 12px;
-    color: #555;
+    color: #555 !important;
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
 }
 .clubcal-action-btn:hover {
-    background: var(--clubcal-bg-active);
-    border-color: #bbb;
+    background: var(--clubcal-bg-active, #f0f0f0) !important;
+    border-color: #bbb !important;
+    color: #333 !important;
 }
 .clubcal-action-btn.active {
-    background: var(--clubcal-primary);
-    border-color: var(--clubcal-primary);
-    color: white;
+    background: var(--clubcal-primary) !important;
+    border-color: var(--clubcal-primary) !important;
+    color: #ffffff !important;
 }
 .clubcal-action-btn.active .clubcal-filter-dot,
 .clubcal-action-btn.active .clubcal-time-filter-dot,
@@ -1350,6 +1408,8 @@
 }
 .clubcal-event-popup-body {
     padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
 }
 .clubcal-event-popup-meta {
     display: flex;
@@ -1451,6 +1511,177 @@
     text-decoration: underline;
     color: #1e3d6b;
 }
+
+/* --- Side Panel Mode --- */
+/* Alternative to centered popup - slides in from right side */
+.clubcal-side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 380px;
+    max-width: 90vw;
+    background: white;
+    box-shadow: -5px 0 30px rgba(0,0,0,0.2);
+    z-index: 10000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.clubcal-side-panel.open {
+    transform: translateX(0);
+}
+.clubcal-side-panel-header {
+    background: linear-gradient(135deg, var(--clubcal-primary) 0%, var(--clubcal-primary-dark) 100%);
+    color: white;
+    padding: 20px;
+    flex-shrink: 0;
+}
+.clubcal-side-panel-header h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    padding-right: 30px;
+}
+.clubcal-side-panel-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.clubcal-side-panel-close:hover {
+    background: rgba(255,255,255,0.3);
+}
+.clubcal-side-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+.clubcal-side-panel-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.clubcal-side-panel-meta-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--clubcal-text-muted);
+}
+.clubcal-side-panel-meta-item span:first-child {
+    flex-shrink: 0;
+}
+.clubcal-side-panel-meta-item strong {
+    color: var(--clubcal-text);
+}
+.clubcal-side-panel-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--clubcal-text);
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 10px;
+}
+.clubcal-side-panel-description p {
+    margin: 0 0 10px;
+}
+.clubcal-side-panel-actions {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    background: #f9f9f9;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.clubcal-side-panel-actions .clubcal-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+.clubcal-side-panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+.clubcal-side-panel-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+/* Mobile: full-width side panel */
+@media (max-width: 480px) {
+    .clubcal-side-panel {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* --- Enhanced Hover Tooltip --- */
+.clubcal-event-tooltip {
+    position: fixed;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    padding: 12px 16px;
+    z-index: 10001;
+    max-width: 280px;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.15s, transform 0.15s;
+}
+.clubcal-event-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.clubcal-event-tooltip-title {
+    font-weight: 600;
+    color: var(--clubcal-primary);
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+.clubcal-event-tooltip-meta {
+    color: var(--clubcal-text-muted);
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.clubcal-event-tooltip-avail {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.clubcal-event-tooltip-avail.full { color: #c00; }
+.clubcal-event-tooltip-avail.low { color: #f90; }
+.clubcal-event-tooltip-avail.available { color: #090; }
 
 /* --- Expandable Sections (Accordion) --- */
 .clubcal-popup-sections {
@@ -1822,7 +2053,8 @@
         width: 100%;
         min-width: unset !important;
     }
-    .clubcal-filter-group select {
+    .clubcal-filter-group select,
+    .clubcal-search-input {
         width: 100%;
     }
     .clubcal-view-toggle {
@@ -1953,6 +2185,7 @@
         memberAvailability: [],  // Can have multiple: ['public', 'available', 'limited', 'waitlist', 'unavailable']
         quickFilters: [],        // ['weekend', 'openings', 'free', 'afterhours', 'newbie']
         cost: null,              // 'free', 'under25', 'under50', 'under100', 'over100'
+        searchText: '',          // Free text search (matches name and description)
         showPast: false,         // Show past events
         pastMonths: 0            // Number of months back to show (0 = current only)
     };
@@ -1999,18 +2232,70 @@
      * @returns {Promise<Array>} Array of event objects
      */
     async function fetchEvents(pastMonths = 0) {
+        let events;
+
+        // Priority 0: Demo mode (for testing)
+        if (window.DEMO_MODE && window.DEMO_EVENTS) {
+            console.log('ClubCalendar: Using DEMO_EVENTS');
+            // Map WA API format (PascalCase) to internal widget format (camelCase)
+            events = window.DEMO_EVENTS.map(event => ({
+                id: event.Id || event.id,
+                name: event.Name || event.name,
+                startDate: event.StartDate || event.startDate,
+                endDate: event.EndDate || event.endDate,
+                location: event.Location || event.location || '',
+                description: event.Details || event.description || '',
+                limit: event.RegistrationsLimit || event.limit,
+                confirmed: event.ConfirmedRegistrationsCount || event.confirmed || 0,
+                tags: Array.isArray(event.Tags) ? event.Tags.map(t => t.TagName || t).join(', ') : (event.tags || ''),
+                status: event.AccessLevel || event.status || 'Active',
+                minPrice: event.EventFee || event.minPrice || null,
+                maxPrice: event.EventFee || event.maxPrice || null,
+                isFree: (event.EventFee === 0 || event.isFree) ? 1 : 0,
+                hasGuestTickets: (event.AccessLevel === 'Public' || event.hasGuestTickets) ? 1 : 0,
+                registrationUrl: event.Url || event.registrationUrl,
+                parentEventId: event.ParentEventId || event.parentEventId
+            }));
+        }
         // Priority 1: JSON file URL (preferred, most portable)
-        if (CONFIG.eventsUrl) {
-            return fetchEventsFromJson(pastMonths);
+        else if (CONFIG.eventsUrl) {
+            events = await fetchEventsFromJson(pastMonths);
         }
-
         // Priority 2: Live WA API
-        if (CONFIG.useLiveApi) {
-            return fetchEventsLive(pastMonths);
+        else if (CONFIG.useLiveApi) {
+            events = await fetchEventsLive(pastMonths);
+        }
+        // Priority 3: SQLite API (legacy)
+        else {
+            events = await fetchEventsFromSqlite(pastMonths);
         }
 
-        // Priority 3: SQLite API (legacy)
-        return fetchEventsFromSqlite(pastMonths);
+        // Filter out parent events when their sessions exist
+        // This prevents showing both the parent (spanning) and individual sessions
+        return filterParentEventsWithSessions(events);
+    }
+
+    /**
+     * Filters out parent events when their expanded sessions exist.
+     * Shows only the individual sessions, not the parent event.
+     */
+    function filterParentEventsWithSessions(events) {
+        // Find all parentEventIds (these are IDs of parent events that have sessions)
+        const parentIds = new Set();
+        for (const event of events) {
+            if (event.parentEventId) {
+                parentIds.add(event.parentEventId);
+                parentIds.add(String(event.parentEventId));
+            }
+        }
+
+        // Filter out events whose ID is in parentIds (they have sessions)
+        if (parentIds.size === 0) return events;
+
+        return events.filter(event => {
+            const eventId = event.id;
+            return !parentIds.has(eventId) && !parentIds.has(String(eventId));
+        });
     }
 
     /**
@@ -2086,10 +2371,11 @@
      * @param {number} pastMonths - Number of months back to include (0 = current only)
      */
     async function fetchEventsFromSqlite(pastMonths = 0) {
-        // Use date('now', 'start of day') to include all events for today
+        // Include events from the past week to show on calendar grid
+        // (e.g., December days visible when viewing January)
         const dateFilter = pastMonths > 0
             ? `date(StartDate) >= date('now', '-${pastMonths} months')`
-            : "date(StartDate) >= date('now')";
+            : "date(StartDate) >= date('now', '-7 days')";
 
         const sql = `SELECT
             Id, Name, StartDate, EndDate, Location,
@@ -2209,11 +2495,41 @@
             const availability = getAvailability(event);
             const memberAvailability = getMemberAvailability(event);
 
+            // Determine if this is a real multi-day event or a recurring series
+            // Real multi-day (trips, retreats): show as spanning bars
+            // Series (workshops, classes): show only on start date
+            let effectiveEnd = event.endDate;
+            if (event.startDate && event.endDate) {
+                const start = new Date(event.startDate);
+                const end = new Date(event.endDate);
+                const durationDays = (end - start) / (1000 * 60 * 60 * 24);
+
+                // Check if it's a real multi-day event (trip, retreat, overnight)
+                // Note: Series/sessions are handled by filterParentEventsWithSessions
+                const nameLower = (event.name || '').toLowerCase();
+                const isMultiDayEvent = nameLower.includes('trip') ||
+                    nameLower.includes('retreat') ||
+                    nameLower.includes('overnight') ||
+                    nameLower.includes('getaway') ||
+                    nameLower.includes('ski') ||
+                    nameLower.includes('camping') ||
+                    nameLower.includes('snow sports') ||
+                    nameLower.includes('adventure') ||
+                    nameLower.includes('mammoth') ||
+                    nameLower.includes('vacation') ||
+                    nameLower.includes('excursion');
+
+                // If spans multiple days but NOT a multi-day event keyword, it's a series
+                if (durationDays > 1 && !isMultiDayEvent) {
+                    effectiveEnd = event.startDate; // Show only on start date
+                }
+            }
+
             return {
                 id: event.id,
                 title: getCleanTitle(event.name),
                 start: event.startDate,
-                end: event.endDate,
+                end: effectiveEnd,
                 classNames: [`clubcal-event-${timeOfDay}`],
                 extendedProps: {
                     originalEvent: event,
@@ -2744,6 +3060,10 @@
                         <button class="clubcal-view-btn" data-view="listMonth" style="font-weight: 600;">List</button>
                     </div>
                 </div>
+                <div class="clubcal-filter-group clubcal-search-group">
+                    <label>Search</label>
+                    <input type="text" id="clubcal-filter-search" placeholder="Search events..." class="clubcal-search-input">
+                </div>
             `;
 
             // Interest filter and Cost filter side by side
@@ -2806,23 +3126,23 @@
             html += '</div>'; // End filter bar
         }
 
-        // Filter row - all on one line
+        // Filter row - all on one line (dots removed per user feedback)
         html += `
             <div class="clubcal-filter-row">
-                <button class="clubcal-action-btn" data-filter="justopened"><span class="clubcal-filter-dot justopened"></span> Just Opened</button>
-                <button class="clubcal-action-btn" data-filter="openingsoon"><span class="clubcal-filter-dot openingsoon"></span> Opening Soon</button>
-                <button class="clubcal-action-btn" data-filter="openings"><span class="clubcal-filter-dot openings"></span> Openings for Any Member</button>
+                <button class="clubcal-action-btn" data-filter="justopened">Just Opened</button>
+                <button class="clubcal-action-btn" data-filter="openingsoon">Opening Soon</button>
+                <button class="clubcal-action-btn" data-filter="openings">Has Openings</button>
                 <span style="color:#ccc; margin: 0 4px;">|</span>
-                <button class="clubcal-action-btn" data-filter="weekend"><span class="clubcal-filter-dot weekend"></span> Weekend</button>
-                <button class="clubcal-action-btn" data-filter="afterhours"><span class="clubcal-filter-dot afterhours"></span> After Hours</button>
-                <button class="clubcal-action-btn" data-time="morning"><span class="clubcal-time-filter-dot morning"></span> Morning</button>
-                <button class="clubcal-action-btn" data-time="afternoon"><span class="clubcal-time-filter-dot afternoon"></span> Afternoon</button>
-                <button class="clubcal-action-btn" data-time="evening"><span class="clubcal-time-filter-dot evening"></span> Evening</button>
+                <button class="clubcal-action-btn" data-filter="weekend">Weekend</button>
+                <button class="clubcal-action-btn" data-filter="afterhours">After Hours</button>
+                <button class="clubcal-action-btn" data-time="morning">Morning</button>
+                <button class="clubcal-action-btn" data-time="afternoon">Afternoon</button>
+                <button class="clubcal-action-btn" data-time="evening">Evening</button>
                 <span style="color:#ccc; margin: 0 4px;">|</span>
-                <button class="clubcal-action-btn" data-filter="free"><span class="clubcal-filter-dot free"></span> Free</button>
-                <button class="clubcal-action-btn" data-filter="newbie"><span class="clubcal-filter-dot newbie"></span> Openings for Newbies</button>
-                <button class="clubcal-action-btn" data-filter="public"><span class="clubcal-filter-dot public"></span> Open to Public</button>
-                <button class="clubcal-action-btn" data-avail="limited"><span class="clubcal-avail-dot limited"></span> Few Spots Left</button>
+                <button class="clubcal-action-btn" data-filter="free">Free</button>
+                <button class="clubcal-action-btn" data-filter="newbie">Newbie-Friendly</button>
+                <button class="clubcal-action-btn" data-filter="public">Open to Public</button>
+                <button class="clubcal-action-btn" data-avail="limited">Few Spots Left</button>
             </div>
             <div id="clubcal-active-filters" class="clubcal-active-filters"></div>
         `;
@@ -2885,7 +3205,7 @@
      * Uses vanilla JS (no jQuery dependency).
      */
     function bindFilterEvents() {
-        const container = document.querySelector('.clubcal-container');
+        const container = document.querySelector('.clubcalendar-widget');
         if (!container) return;
 
         // Tab switching
@@ -2901,6 +3221,27 @@
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', applyFilters);
         });
+
+        // Search input - filter on input with debounce
+        const searchInput = document.getElementById('clubcal-filter-search');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentFilters.searchText = searchInput.value.trim();
+                    applyFilters();
+                }, 300); // 300ms debounce
+            });
+            // Also support Enter key
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    clearTimeout(searchTimeout);
+                    currentFilters.searchText = searchInput.value.trim();
+                    applyFilters();
+                }
+            });
+        }
 
         // View toggle buttons
         container.querySelectorAll('.clubcal-view-btn').forEach(btn => {
@@ -3017,6 +3358,9 @@
             switch (action) {
                 case 'closePopup':
                     closeEventPopup();
+                    break;
+                case 'closeSidePanel':
+                    closeSidePanel();
                     break;
                 case 'toggleSection':
                     if (section) togglePopupSection(section);
@@ -3147,6 +3491,10 @@
             if (el) el.value = '';
         });
 
+        // Clear search input
+        const searchInput = document.getElementById('clubcal-filter-search');
+        if (searchInput) searchInput.value = '';
+
         // Remove active class from filter buttons
         document.querySelectorAll('.clubcal-quick-filter').forEach(btn => {
             btn.classList.remove('active');
@@ -3164,6 +3512,7 @@
             memberAvailability: [],
             quickFilters: [],
             cost: null,
+            searchText: '',
             showPast: currentFilters.showPast,  // Keep past selection state
             pastMonths: currentFilters.pastMonths  // Keep past months selection
         };
@@ -3228,6 +3577,11 @@
             tags.push(`<span class="clubcal-active-filter-tag">${availLabels[a] || a}</span>`);
         });
 
+        // Search text
+        if (currentFilters.searchText) {
+            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Search:</span> "${currentFilters.searchText}"</span>`);
+        }
+
         // Show count if filters active
         if (tags.length > 0) {
             tags.unshift(`<span class="clubcal-filter-count">${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''}</span>`);
@@ -3271,6 +3625,20 @@
                 const keywords = INTEREST_KEYWORDS[currentFilters.interest] || [];
                 const matches = keywords.some(kw => nameLower.includes(kw.toLowerCase()));
                 if (!matches) return false;
+            }
+
+            // Search text filter - matches name or description
+            if (currentFilters.searchText) {
+                const searchLower = currentFilters.searchText.toLowerCase();
+                const descLower = (event.description || '').toLowerCase();
+                const locationLower = (event.location || '').toLowerCase();
+                const tagsLower = (event.tags || '').toLowerCase();
+                if (!nameLower.includes(searchLower) &&
+                    !descLower.includes(searchLower) &&
+                    !locationLower.includes(searchLower) &&
+                    !tagsLower.includes(searchLower)) {
+                    return false;
+                }
             }
 
             // Quick filters (AND logic - all must match)
@@ -3400,40 +3768,20 @@
                     hour12: true
                 }).toLowerCase();
 
-                // Calculate which filter criteria this event matches
+                // Calculate which filter criteria this event matches (used for filtering logic)
                 const dayOfWeek = startDate.getDay();
                 const eventHour = startDate.getHours();
-                const dots = [];
 
-                // Weekend (purple dot)
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
-                    dots.push('<span class="clubcal-filter-dot weekend" title="Weekend"></span>');
-                }
-                // Has Openings (green dot)
-                if (availability && availability.status !== 'full') {
-                    dots.push('<span class="clubcal-filter-dot openings" title="Openings for Any Member"></span>');
-                }
-                // Free (yellow dot)
-                if (isFree) {
-                    dots.push('<span class="clubcal-filter-dot free" title="Free"></span>');
-                }
-                // After Hours (indigo dot) - weekends OR after 5pm on weekdays
+                // Calculate filter flags (used by filter logic, no longer displayed as dots)
                 const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
                 const isAfter5pmWeekday = dayOfWeek >= 1 && dayOfWeek <= 5 && eventHour >= 17;
-                if (isWeekend || isAfter5pmWeekday) {
-                    dots.push('<span class="clubcal-filter-dot afterhours" title="After Hours"></span>');
-                }
-                // Openings for Newbies (cyan dot)
                 const isNewbieFriendly = eventTags.some(t =>
                     t.toLowerCase().includes('newbie') ||
                     t.toLowerCase().includes('new member') ||
                     t.toLowerCase().includes('orientation')
                 );
-                if (isNewbieFriendly) {
-                    dots.push('<span class="clubcal-filter-dot newbie" title="Openings for Newbies"></span>');
-                }
 
-                // Just Opened (pink dot) - registration opened within last 7 days
+                // Just Opened / Opening Soon flags
                 const now = new Date();
                 let isJustOpened = false;
                 let isOpeningSoon = false;
@@ -3447,13 +3795,6 @@
                     isJustOpened = regOpenDate >= sevenDaysAgo && regOpenDate <= now;
                     isOpeningSoon = regOpenDate > now && regOpenDate <= sevenDaysFromNow;
                 }
-                if (isJustOpened) {
-                    dots.push('<span class="clubcal-filter-dot justopened" title="Just Opened"></span>');
-                }
-                // Opening Soon (orange dot)
-                if (isOpeningSoon) {
-                    dots.push('<span class="clubcal-filter-dot openingsoon" title="Opening Soon"></span>');
-                }
 
                 // Shorten title - remove "(Registration Opens...)" and similar
                 let shortTitle = arg.event.title
@@ -3462,9 +3803,8 @@
                     .replace(/\s*\(Opens[^)]*\)/gi, '')
                     .trim();
 
-                const dotsHtml = dots.length > 0
-                    ? `<span class="clubcal-dots-container" style="display:inline-flex;gap:2px;margin-left:4px;">${dots.join('')}</span>`
-                    : '';
+                // Dots removed per user feedback - cleaner look
+                const dotsHtml = '';
 
                 // Check if we're in list view
                 const isListView = arg.view.type === 'listMonth' || arg.view.type === 'listWeek' || arg.view.type === 'listDay';
@@ -3522,9 +3862,55 @@
                 };
             },
             eventDidMount: function(info) {
+                // Set up tooltip based on config
+                if (!CONFIG.hoverTooltip) {
+                    return; // No tooltip
+                }
+
                 const props = info.event.extendedProps;
-                const memberAvail = props.memberAvailability;
-                info.el.title = `${info.event.title}\n${memberAvail.label}`;
+                const isPublic = CONFIG.audience === 'public' || CONFIG.memberLevel === 'public';
+
+                if (CONFIG.hoverTooltipStyle === 'browser') {
+                    // Simple browser title tooltip
+                    let tooltipParts = [];
+                    if (isPublic) {
+                        if (CONFIG.publicHoverShowTitle) tooltipParts.push(info.event.title);
+                        if (CONFIG.publicHoverShowDate || CONFIG.publicHoverShowTime) {
+                            const d = new Date(info.event.start);
+                            if (CONFIG.publicHoverShowDate) {
+                                tooltipParts.push(d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+                            }
+                            if (CONFIG.publicHoverShowTime) {
+                                tooltipParts.push(d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
+                            }
+                        }
+                    } else {
+                        if (CONFIG.memberHoverShowTitle) tooltipParts.push(info.event.title);
+                        if (CONFIG.memberHoverShowDate || CONFIG.memberHoverShowTime) {
+                            const d = new Date(info.event.start);
+                            if (CONFIG.memberHoverShowDate) {
+                                tooltipParts.push(d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+                            }
+                            if (CONFIG.memberHoverShowTime) {
+                                tooltipParts.push(d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
+                            }
+                        }
+                        if (CONFIG.memberHoverShowAvailability && props.memberAvailability) {
+                            tooltipParts.push(props.memberAvailability.label);
+                        }
+                    }
+                    info.el.title = tooltipParts.join('\n');
+                }
+                // Enhanced tooltip is handled by eventMouseEnter/Leave
+            },
+            eventMouseEnter: function(info) {
+                if (!CONFIG.hoverTooltip || CONFIG.hoverTooltipStyle !== 'enhanced') {
+                    return;
+                }
+                showEnhancedTooltip(info.event, info.jsEvent);
+            },
+            eventMouseLeave: function(info) {
+                hideEnhancedTooltip();
             },
             height: 'auto',
             moreLinkClick: 'popover'
@@ -3582,10 +3968,12 @@
     async function handleCalendarDatesChange(dateInfo) {
         const viewStart = dateInfo.start;
 
-        // If we haven't set the earliest date yet, set it to start of today
+        // If we haven't set the earliest date yet, set it to 7 days ago
+        // (matching the default SQL query lookback for calendar grid visibility)
         if (!earliestLoadedDate) {
             const now = new Date();
             earliestLoadedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            earliestLoadedDate.setDate(earliestLoadedDate.getDate() - 7);
         }
 
         // Check if user navigated to a month before our earliest loaded events
@@ -3622,13 +4010,15 @@
 
     /**
      * Handles click on calendar event.
+     * - Public audience: Side panel or popup (configurable)
+     * - Members: Navigate directly to WA event details page
      */
     function handleEventClick(info) {
         const event = info.event;
         const props = event.extendedProps;
         const originalEvent = props.originalEvent;
 
-        showEventPopup({
+        const eventData = {
             title: event.title,
             category: props.category,
             start: event.start,
@@ -3638,8 +4028,292 @@
             price: props.price,
             isFree: props.isFree,
             tags: props.tags,
-            id: originalEvent.id
+            id: originalEvent.id,
+            description: originalEvent.description || ''
+        };
+
+        const isPublic = CONFIG.audience === 'public' || CONFIG.memberLevel === 'public';
+
+        // For public audience, check publicEventClick setting
+        if (isPublic) {
+            if (CONFIG.publicEventClick === 'none') {
+                // No click action for public
+                return;
+            } else if (CONFIG.publicEventClick === 'popup') {
+                showEventPopup(eventData);
+                return;
+            } else {
+                // Default to sidePanel for public
+                showEventSidePanel(eventData);
+                return;
+            }
+        }
+
+        // For members: navigate directly to event details page
+        // This takes them to the WA event page where they can register
+        window.location.href = `https://sbnewcomers.org/event-${originalEvent.id}`;
+    }
+
+    /**
+     * Shows event details in a side panel (slides in from right).
+     * Used primarily for public audience - shows limited info.
+     * Fetches real-time availability from server if configured.
+     */
+    async function showEventSidePanel(event) {
+        // Remove existing panel
+        closeSidePanel();
+
+        const isPublic = CONFIG.audience === 'public' || CONFIG.memberLevel === 'public';
+
+        const startDate = new Date(event.start);
+        const dateStr = startDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
         });
+        const timeStr = startDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+
+        // For public: simple description, no member details
+        // For members: full details with real-time availability
+        let detailHtml = '';
+        let availabilityHtml = '';
+        let locationHtml = '';
+        let actionsHtml = '';
+
+        if (isPublic) {
+            // PUBLIC VIEW: Configurable info display
+            // Brief description (configurable length, stripped of HTML)
+            if (CONFIG.publicShowDescription && event.description) {
+                const maxLen = CONFIG.publicDescriptionLength || 200;
+                const stripped = stripHtml(event.description);
+                const briefDesc = stripped.substring(0, maxLen) + (stripped.length > maxLen ? '...' : '');
+                detailHtml = `<div class="clubcal-side-panel-description"><p>${escapeHtml(briefDesc)}</p></div>`;
+            }
+            // No location, no availability, no registration info for public
+            actionsHtml = `<button class="clubcal-btn clubcal-btn-secondary" data-action="closeSidePanel">Close</button>`;
+
+            // Override date/time HTML based on config
+            if (!CONFIG.publicShowDate) {
+                dateStr = '';
+            }
+            if (!CONFIG.publicShowTime) {
+                timeStr = '';
+            }
+        } else {
+            // MEMBER VIEW: Full details with real-time availability
+            // Fetch fresh availability if server mode is enabled
+            let freshAvailability = event.availability;
+            if (CONFIG.serverMode && CONFIG.serverEventDetailUrl) {
+                try {
+                    const detailUrl = `${CONFIG.serverEventDetailUrl}/${event.id}?audience=member`;
+                    const response = await fetch(detailUrl);
+                    if (response.ok) {
+                        const detail = await response.json();
+                        freshAvailability = detail.availability || event.availability;
+                        // Update description if available
+                        if (detail.description) {
+                            event.description = detail.description;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[ClubCalendar] Could not fetch real-time availability:', e);
+                }
+            }
+
+            // Location (members only)
+            if (event.location) {
+                locationHtml = `
+                    <div class="clubcal-side-panel-meta-item">
+                        <span>📍</span>
+                        <strong>${escapeHtml(event.location)}</strong>
+                    </div>`;
+            }
+
+            // Availability (members only)
+            if (freshAvailability) {
+                if (freshAvailability.status === 'full') {
+                    availabilityHtml = '<span style="color: #c00;">Sold Out / Waitlist</span>';
+                } else if (freshAvailability.status === 'low') {
+                    availabilityHtml = `<span style="color: #f90;">Only ${freshAvailability.spots} spots left!</span>`;
+                } else if (freshAvailability.spots) {
+                    availabilityHtml = `<span style="color: #090;">${freshAvailability.spots} spots available</span>`;
+                } else {
+                    availabilityHtml = '<span style="color: #090;">Open registration</span>';
+                }
+                availabilityHtml = `
+                    <div class="clubcal-side-panel-meta-item">
+                        <span>🎟️</span>
+                        ${availabilityHtml}
+                    </div>`;
+            }
+
+            // Full description
+            if (event.description) {
+                detailHtml = `<div class="clubcal-side-panel-description">${event.description}</div>`;
+            }
+
+            actionsHtml = `
+                <a href="https://sbnewcomers.org/event-${event.id}" target="_blank" class="clubcal-btn clubcal-btn-primary">
+                    View & Register
+                </a>
+                <button class="clubcal-btn clubcal-btn-secondary" data-action="closeSidePanel">Close</button>`;
+        }
+
+        // Guests Welcome badge
+        const tagsHtml = (event.tags && (event.tags.includes('public event') || event.tags.includes('public')))
+            ? '<div class="clubcal-side-panel-meta-item"><span style="background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-size:11px;">Guests Welcome</span></div>'
+            : '';
+
+        const panelHtml = `
+            <div class="clubcal-side-panel-overlay" data-action="closeSidePanel"></div>
+            <div class="clubcal-side-panel">
+                <div class="clubcal-side-panel-header">
+                    <span class="clubcal-event-popup-category">${escapeHtml(event.category || 'Event')}</span>
+                    <h3>${escapeHtml(event.title)}</h3>
+                    <button class="clubcal-side-panel-close" data-action="closeSidePanel">×</button>
+                </div>
+                <div class="clubcal-side-panel-body">
+                    <div class="clubcal-side-panel-meta">
+                        <div class="clubcal-side-panel-meta-item">
+                            <span>📅</span>
+                            <strong>${dateStr}</strong>
+                        </div>
+                        <div class="clubcal-side-panel-meta-item">
+                            <span>🕐</span>
+                            <strong>${timeStr}</strong>
+                        </div>
+                        ${locationHtml}
+                        ${availabilityHtml}
+                        ${tagsHtml}
+                    </div>
+                    ${detailHtml}
+                </div>
+                <div class="clubcal-side-panel-actions">
+                    ${actionsHtml}
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', panelHtml);
+
+        // Animate in after a brief delay (for CSS transition)
+        requestAnimationFrame(() => {
+            const overlay = document.querySelector('.clubcal-side-panel-overlay');
+            const panel = document.querySelector('.clubcal-side-panel');
+            if (overlay) overlay.classList.add('open');
+            if (panel) panel.classList.add('open');
+        });
+    }
+
+    /**
+     * Strips HTML tags from a string.
+     */
+    function stripHtml(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
+    }
+
+    /**
+     * Closes the side panel.
+     */
+    function closeSidePanel() {
+        const overlay = document.querySelector('.clubcal-side-panel-overlay');
+        const panel = document.querySelector('.clubcal-side-panel');
+        if (overlay) {
+            overlay.classList.remove('open');
+            setTimeout(() => overlay.remove(), 300);
+        }
+        if (panel) {
+            panel.classList.remove('open');
+            setTimeout(() => panel.remove(), 300);
+        }
+    }
+
+    /**
+     * Shows enhanced tooltip on event hover.
+     * Content varies based on public/member audience and config settings.
+     */
+    function showEnhancedTooltip(event, mouseEvent) {
+        hideEnhancedTooltip(); // Remove any existing
+
+        const props = event.extendedProps;
+        const isPublic = CONFIG.audience === 'public' || CONFIG.memberLevel === 'public';
+        const startDate = new Date(event.start);
+
+        let html = '';
+
+        // Title
+        const showTitle = isPublic ? CONFIG.publicHoverShowTitle : CONFIG.memberHoverShowTitle;
+        if (showTitle) {
+            html += `<div class="clubcal-event-tooltip-title">${escapeHtml(event.title)}</div>`;
+        }
+
+        // Date and time
+        const showDate = isPublic ? CONFIG.publicHoverShowDate : CONFIG.memberHoverShowDate;
+        const showTime = isPublic ? CONFIG.publicHoverShowTime : CONFIG.memberHoverShowTime;
+        let metaParts = [];
+        if (showDate) {
+            metaParts.push(startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+        }
+        if (showTime) {
+            metaParts.push(startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
+        }
+        if (metaParts.length > 0) {
+            html += `<div class="clubcal-event-tooltip-meta">${metaParts.map(p => `<span>${p}</span>`).join('')}</div>`;
+        }
+
+        // Availability (members only, if configured)
+        const showAvail = isPublic ? CONFIG.publicHoverShowAvailability : CONFIG.memberHoverShowAvailability;
+        if (showAvail && props.memberAvailability) {
+            let availClass = 'available';
+            if (props.memberAvailability.status === 'full') availClass = 'full';
+            else if (props.memberAvailability.status === 'low') availClass = 'low';
+            html += `<div class="clubcal-event-tooltip-avail ${availClass}">${props.memberAvailability.label}</div>`;
+        }
+
+        if (!html) return; // Nothing to show
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'clubcal-event-tooltip';
+        tooltip.innerHTML = html;
+        document.body.appendChild(tooltip);
+
+        // Position near mouse
+        const x = mouseEvent.clientX + 15;
+        const y = mouseEvent.clientY + 15;
+
+        // Adjust if tooltip would go off screen
+        const rect = tooltip.getBoundingClientRect();
+        let finalX = x;
+        let finalY = y;
+        if (x + rect.width > window.innerWidth - 10) {
+            finalX = mouseEvent.clientX - rect.width - 15;
+        }
+        if (y + rect.height > window.innerHeight - 10) {
+            finalY = mouseEvent.clientY - rect.height - 15;
+        }
+
+        tooltip.style.left = finalX + 'px';
+        tooltip.style.top = finalY + 'px';
+
+        // Animate in
+        requestAnimationFrame(() => tooltip.classList.add('visible'));
+    }
+
+    /**
+     * Hides the enhanced tooltip.
+     */
+    function hideEnhancedTooltip() {
+        const tooltip = document.querySelector('.clubcal-event-tooltip');
+        if (tooltip) {
+            tooltip.classList.remove('visible');
+            setTimeout(() => tooltip.remove(), 150);
+        }
     }
 
     /**
