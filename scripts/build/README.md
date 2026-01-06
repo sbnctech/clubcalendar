@@ -105,6 +105,17 @@ Different settings for logged-in members vs anonymous visitors:
 }
 ```
 
+### Event Click Behavior
+
+The widget handles event clicks differently based on user status:
+
+| User Type | Click Behavior |
+|-----------|----------------|
+| **Public (anonymous)** | Shows popup with title, date/time, description, and "Join SBNC to Participate" button |
+| **Member (logged in)** | Navigates directly to WA event details page for registration |
+
+**Important:** Public users never navigate to event detail pages (members-only content). Instead, they see an informative popup encouraging them to join the organization.
+
 ## Generating Certification Tests
 
 After creating a custom build, generate certification tests:

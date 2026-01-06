@@ -1107,6 +1107,20 @@
     border-color: var(--clubcal-primary-dark, #1e3d6b) !important;
     color: #ffffff !important;
 }
+.clubcalendar-widget .fc-prev-button,
+.clubcalendar-widget .fc-next-button {
+    background-color: var(--clubcal-primary) !important;
+    border: 1px solid var(--clubcal-primary) !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+    min-width: 36px;
+    min-height: 36px;
+}
+.clubcalendar-widget .fc-prev-button:hover,
+.clubcalendar-widget .fc-next-button:hover {
+    background-color: var(--clubcal-primary-dark, #234a80) !important;
+    border-color: var(--clubcal-primary-dark, #234a80) !important;
+}
 .clubcalendar-widget .fc-daygrid-day-number,
 .clubcalendar-widget .fc-daygrid-day-number:link,
 .clubcalendar-widget .fc-daygrid-day-number:visited,
@@ -1313,6 +1327,34 @@
     border-radius: 10px;
     font-size: 12px;
     font-weight: 600;
+}
+.clubcal-filter-dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 2px;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--clubcal-info-dark);
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.15s;
+    line-height: 1;
+}
+.clubcal-filter-dismiss:hover {
+    background: rgba(0,0,0,0.1);
+    opacity: 1;
+}
+.clubcal-event-count {
+    display: block;
+    font-size: 12px;
+    color: var(--clubcal-text-muted);
+    margin-top: 6px;
+    text-align: center;
 }
 .clubcalendar-widget .fc-daygrid-event {
     padding: 2px 4px;
@@ -1616,9 +1658,9 @@
     flex-direction: column;
 }
 .clubcal-event-description {
-    max-height: 150px !important;
+    max-height: 300px !important;
     min-height: 50px;
-    overflow-y: scroll !important;
+    overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
     flex-shrink: 1;
@@ -2991,7 +3033,7 @@
             action: 'TEMPLATE',
             text: event.name || 'Event',
             dates: `${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}`,
-            details: `View event details and register: https://sbnewcomers.org/event-${event.id}`,
+            details: `View event details and register: https://sbnewcomers.org/Events/${event.id}`,
             location: event.location || '',
             sf: 'true'
         });
@@ -3013,7 +3055,7 @@
             subject: event.name || 'Event',
             startdt: startDate.toISOString(),
             enddt: endDate.toISOString(),
-            body: `View event details and register: https://sbnewcomers.org/event-${event.id}`,
+            body: `View event details and register: https://sbnewcomers.org/Events/${event.id}`,
             location: event.location || ''
         });
 
@@ -3043,7 +3085,7 @@
             title: event.name || 'Event',
             st: formatYahooDate(startDate),
             dur: duration,
-            desc: `View event details and register: https://sbnewcomers.org/event-${event.id}`,
+            desc: `View event details and register: https://sbnewcomers.org/Events/${event.id}`,
             in_loc: event.location || ''
         });
 
@@ -3294,6 +3336,7 @@
                         <button class="clubcal-view-btn active" data-view="dayGridMonth">Calendar</button>
                         <button class="clubcal-view-btn" data-view="listMonth">List</button>
                     </div>
+                    <span id="clubcal-event-count" class="clubcal-event-count"></span>
                 </div>
                 <div class="clubcal-filter-group clubcal-search-group">
                     <label>Search</label>
@@ -3633,6 +3676,58 @@
     function bindDelegatedEvents() {
         // Use event delegation on document for popup and dynamic content
         document.addEventListener('click', (e) => {
+            // Handle dismiss button clicks
+            const dismissBtn = e.target.closest('.clubcal-filter-dismiss');
+            if (dismissBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const filterType = dismissBtn.dataset.filterType;
+                const filterValue = dismissBtn.dataset.filterValue;
+
+                switch (filterType) {
+                    case 'interest':
+                        currentFilters.interest = null;
+                        const interestSelect = document.getElementById('clubcal-interest-filter');
+                        if (interestSelect) interestSelect.value = '';
+                        break;
+                    case 'committee':
+                        currentFilters.committee = null;
+                        const committeeSelect = document.getElementById('clubcal-committee-filter');
+                        if (committeeSelect) committeeSelect.value = '';
+                        break;
+                    case 'cost':
+                        currentFilters.cost = null;
+                        const costSelect = document.getElementById('clubcal-cost-filter');
+                        if (costSelect) costSelect.value = '';
+                        break;
+                    case 'quickFilter':
+                        currentFilters.quickFilters = (currentFilters.quickFilters || []).filter(qf => qf !== filterValue);
+                        const qfBtn = document.querySelector(`.clubcal-action-btn[data-filter="${filterValue}"]`);
+                        if (qfBtn) qfBtn.classList.remove('active');
+                        break;
+                    case 'timeOfDay':
+                        currentFilters.timeOfDay = (currentFilters.timeOfDay || []).filter(t => t !== filterValue);
+                        const todBtn = document.querySelector(`.clubcal-time-filter-btn[data-time="${filterValue}"]`);
+                        if (todBtn) todBtn.classList.remove('active');
+                        break;
+                    case 'memberAvailability':
+                        currentFilters.memberAvailability = (currentFilters.memberAvailability || []).filter(a => a !== filterValue);
+                        break;
+                    case 'search':
+                        currentFilters.searchText = '';
+                        const searchInput = document.getElementById('clubcal-search-input');
+                        if (searchInput) searchInput.value = '';
+                        break;
+                    case 'myEvents':
+                        currentFilters.myEvents = false;
+                        const myEventsBtn = document.querySelector('.clubcal-action-btn[data-filter="myregistered"]');
+                        if (myEventsBtn) myEventsBtn.classList.remove('active');
+                        break;
+                }
+                filterAndRender();
+                return;
+            }
+
             const target = e.target.closest('[data-action]');
             if (!target) return;
 
@@ -3664,7 +3759,7 @@
                     break;
                 case 'openEvent':
                     if (eventId) {
-                        window.open(`https://sbnewcomers.org/event-${eventId}`, '_blank');
+                        window.open(`https://sbnewcomers.org/Events/${eventId}`, '_blank');
                     }
                     break;
             }
@@ -3825,12 +3920,12 @@
                 'books': 'Books', 'discussion': 'Discussion', 'wellness': 'Wellness',
                 'social': 'Social', 'games': 'Games'
             };
-            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Interest:</span> ${interestLabels[currentFilters.interest] || currentFilters.interest}</span>`);
+            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Interest:</span> ${interestLabels[currentFilters.interest] || currentFilters.interest}<span class="clubcal-filter-dismiss" data-filter-type="interest" data-filter-value="">×</span></span>`);
         }
 
         // Committee
         if (currentFilters.committee) {
-            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Committee:</span> ${currentFilters.committee}</span>`);
+            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Committee:</span> ${currentFilters.committee}<span class="clubcal-filter-dismiss" data-filter-type="committee" data-filter-value="">×</span></span>`);
         }
 
         // Cost
@@ -3839,7 +3934,7 @@
                 'free': 'Free', 'under25': 'Under $25', 'under50': 'Under $50',
                 'under100': 'Under $100', 'over100': '$100+'
             };
-            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Cost:</span> ${costLabels[currentFilters.cost] || currentFilters.cost}</span>`);
+            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Cost:</span> ${costLabels[currentFilters.cost] || currentFilters.cost}<span class="clubcal-filter-dismiss" data-filter-type="cost" data-filter-value="">×</span></span>`);
         }
 
         // Quick filters
@@ -3850,29 +3945,29 @@
             'myregistered': 'My Registered', 'mywaitlisted': 'My Waitlisted', 'public': 'Open to Public'
         };
         (currentFilters.quickFilters || []).forEach(qf => {
-            tags.push(`<span class="clubcal-active-filter-tag">${quickFilterLabels[qf] || qf}</span>`);
+            tags.push(`<span class="clubcal-active-filter-tag">${quickFilterLabels[qf] || qf}<span class="clubcal-filter-dismiss" data-filter-type="quickFilter" data-filter-value="${qf}">×</span></span>`);
         });
 
         // Time of day
         const timeLabels = { 'morning': 'Morning', 'afternoon': 'Afternoon', 'evening': 'Evening' };
         (currentFilters.timeOfDay || []).forEach(t => {
-            tags.push(`<span class="clubcal-active-filter-tag">${timeLabels[t] || t}</span>`);
+            tags.push(`<span class="clubcal-active-filter-tag">${timeLabels[t] || t}<span class="clubcal-filter-dismiss" data-filter-type="timeOfDay" data-filter-value="${t}">×</span></span>`);
         });
 
         // Member availability
         const availLabels = { 'public': 'Guests Welcome', 'available': 'Spots Open', 'limited': 'Few Spots Left' };
         (currentFilters.memberAvailability || []).forEach(a => {
-            tags.push(`<span class="clubcal-active-filter-tag">${availLabels[a] || a}</span>`);
+            tags.push(`<span class="clubcal-active-filter-tag">${availLabels[a] || a}<span class="clubcal-filter-dismiss" data-filter-type="memberAvailability" data-filter-value="${a}">×</span></span>`);
         });
 
         // Search text
         if (currentFilters.searchText) {
-            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Search:</span> "${currentFilters.searchText}"</span>`);
+            tags.push(`<span class="clubcal-active-filter-tag"><span class="clubcal-active-filter-label">Search:</span> "${currentFilters.searchText}"<span class="clubcal-filter-dismiss" data-filter-type="search" data-filter-value="">×</span></span>`);
         }
 
         // My Events filter
         if (currentFilters.myEvents) {
-            tags.push(`<span class="clubcal-active-filter-tag" style="background: linear-gradient(135deg, var(--clubcal-morning), var(--clubcal-afternoon), var(--clubcal-evening)); color: white;">My Events</span>`);
+            tags.push(`<span class="clubcal-active-filter-tag" style="background: linear-gradient(135deg, var(--clubcal-morning), var(--clubcal-afternoon), var(--clubcal-evening)); color: white;">My Events<span class="clubcal-filter-dismiss" data-filter-type="myEvents" data-filter-value="" style="color: white;">×</span></span>`);
         }
 
         // Show count if filters active
@@ -4036,6 +4131,12 @@
 
         // Update active filters display
         updateActiveFiltersDisplay();
+
+        // Update event count display
+        const eventCountEl = document.getElementById('clubcal-event-count');
+        if (eventCountEl) {
+            eventCountEl.textContent = `Showing ${filteredEvents.length} of ${allEvents.length} events`;
+        }
 
         // Update calendar
         if (calendarInstance) {
@@ -4320,16 +4421,21 @@
 
     /**
      * Handles click on calendar event.
-     * - Public users: show "join to participate" popup
-     * - Members: navigate directly to WA event details page
+     * - Public/Guest users (not logged in): show "join to participate" popup
+     * - Members (logged in with waContactId): navigate directly to WA event details page
      */
     function handleEventClick(info) {
         const event = info.event;
         const props = event.extendedProps;
         const originalEvent = props.originalEvent;
 
+        // Check if user is a logged-in member (has contact ID)
+        // If they have a waContactId, they're logged in and should be treated as a member
+        const isMember = !!CONFIG.waContactId;
+
         // Public/non-logged-in users: show "join to participate" popup
-        if (CONFIG.memberLevel === 'public') {
+        if (!isMember) {
+            console.log('ClubCalendar: Public user clicked event, showing popup. memberLevel:', CONFIG.memberLevel, 'waContactId:', CONFIG.waContactId);
             showPublicEventPopup({
                 title: event.title,
                 start: event.start,
@@ -4340,7 +4446,8 @@
 
         // For members: navigate directly to event details page
         // This takes them to the WA event page where they can register
-        window.location.href = `https://sbnewcomers.org/event-${originalEvent.id}`;
+        console.log('ClubCalendar: Member clicked event, navigating to:', `https://sbnewcomers.org/Events/${originalEvent.id}`);
+        window.location.href = `https://sbnewcomers.org/Events/${originalEvent.id}`;
     }
 
     /**
@@ -4376,12 +4483,11 @@
         // Build initial description HTML (may be empty, will fetch if needed)
         let descriptionHtml = '';
         if (rawDesc) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = rawDesc;
-            const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+            // Convert HTML to text while preserving paragraph breaks
+            const plainText = htmlToTextWithParagraphs(rawDesc);
             if (plainText) {
                 descriptionHtml = `
-                    <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 150px !important; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch;">
+                    <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 300px !important; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch; white-space: pre-line;">
                         ${escapeHtml(plainText)}
                     </div>
                 `;
@@ -4453,12 +4559,10 @@
                 if (desc) {
                     const descContainer = document.getElementById('clubcal-popup-desc-container');
                     if (descContainer) {
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = desc;
-                        const plainText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+                        const plainText = htmlToTextWithParagraphs(desc);
                         if (plainText) {
                             descContainer.innerHTML = `
-                                <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 150px !important; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch;">
+                                <div class="clubcal-event-description" style="margin: 16px 0; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 14px; color: #444; line-height: 1.6; max-height: 300px !important; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch; white-space: pre-line;">
                                     ${escapeHtml(plainText)}
                                 </div>
                             `;
@@ -4521,7 +4625,7 @@
         ` : '';
 
         // Build WA event URL for registration
-        const waEventUrl = `https://sbnewcomers.org/event-${event.id}`;
+        const waEventUrl = `https://sbnewcomers.org/Events/${event.id}`;
 
         // Action buttons (no Add to Calendar)
         const actionButtons = `
@@ -4760,6 +4864,30 @@
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    }
+
+    /**
+     * Converts HTML to plain text while preserving paragraph breaks.
+     * Converts <p>, <br>, <div> to newlines for readable formatting.
+     * Uses placeholders to survive HTML parsing.
+     */
+    function htmlToTextWithParagraphs(html) {
+        if (!html) return '';
+        // Use placeholders that won't be collapsed by HTML parsing
+        let text = html.replace(/<\/p>/gi, '[[PARA]]');
+        text = text.replace(/<\/div>/gi, '[[DIV]]');
+        text = text.replace(/<br\s*\/?>/gi, '[[BR]]');
+        // Strip remaining HTML tags
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = text;
+        text = (tempDiv.textContent || tempDiv.innerText || '').trim();
+        // Replace placeholders with actual newlines
+        text = text.replace(/\[\[PARA\]\]/g, '\n\n');
+        text = text.replace(/\[\[DIV\]\]/g, '\n');
+        text = text.replace(/\[\[BR\]\]/g, '\n');
+        // Collapse multiple newlines to max 2
+        text = text.replace(/\n{3,}/g, '\n\n');
+        return text;
     }
 
     /**

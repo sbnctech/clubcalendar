@@ -412,7 +412,7 @@ describe('Member popup requirements', () => {
 
   it('member popup must include View & Register button', () => {
     expect(widgetContent).toMatch(/View.*&.*Register|Register.*&.*View/i);
-    expect(widgetContent).toMatch(/waEventUrl.*=.*sbnewcomers\.org\/event-/);
+    expect(widgetContent).toMatch(/waEventUrl.*=.*sbnewcomers\.org\/Events\//);
   });
 
   it('member popup must include Add to Calendar button', () => {
@@ -638,5 +638,118 @@ describe('v1.33: List view CSS fixes', () => {
 
   it('popup buttons should have min-width', () => {
     expect(widgetContent).toMatch(/clubcal-event-popup-actions .clubcal-btn[\s\S]*?min-width:/);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v1.34 Regression Tests
+// Performance optimization: Async registration loading
+// Calendar renders immediately, registration borders added after
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('v1.34: Async registration loading', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('should NOT block on registrationsPromise before initCalendar', () => {
+    // v1.33 had: await registrationsPromise; initCalendar();
+    // v1.34 has: initCalendar(); registrationsPromise.then(...)
+    // The await registrationsPromise should NOT appear before initCalendar
+    const initCalendarIndex = widgetContent.indexOf('initCalendar();');
+    const awaitRegBeforeInit = widgetContent.substring(0, initCalendarIndex).includes('await registrationsPromise;');
+    expect(awaitRegBeforeInit).toBe(false);
+  });
+
+  it('should refresh calendar after registrations load asynchronously', () => {
+    // After registrations load, we refresh to show borders
+    // v1.34+ uses remove/re-add event sources pattern instead of refetchEvents
+    expect(widgetContent).toMatch(/registrationsPromise\.then\(\(\)/);
+    // Check for the refresh pattern (either refetchEvents or remove/re-add sources)
+    const hasRefetch = widgetContent.includes('calendarInstance.refetchEvents()');
+    const hasSourceRefresh = widgetContent.includes('calendarInstance.getEventSources()') &&
+                             widgetContent.includes('calendarInstance.addEventSource');
+    expect(hasRefetch || hasSourceRefresh).toBe(true);
+  });
+
+  it('should have comment indicating async registration loading', () => {
+    expect(widgetContent).toMatch(/ASYNC.*registration.*borders/i);
+  });
+});
+
+describe('v1.34: Timing instrumentation', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('should have timing for init start', () => {
+    expect(widgetContent).toMatch(/\[TIMING\] init\(\) started/);
+  });
+
+  it('should have timing for injectStyles', () => {
+    expect(widgetContent).toMatch(/\[TIMING\] injectStyles:/);
+  });
+
+  it('should have timing for FullCalendar loaded', () => {
+    expect(widgetContent).toMatch(/\[TIMING\] FullCalendar loaded:/);
+  });
+
+  it('should have timing for events fetch', () => {
+    expect(widgetContent).toMatch(/\[TIMING\] Events fetch total:/);
+  });
+
+  it('should have timing for initCalendar', () => {
+    expect(widgetContent).toMatch(/\[TIMING\] initCalendar:/);
+  });
+
+  it('should have timing for total to first render', () => {
+    expect(widgetContent).toMatch(/\[TIMING\] TOTAL to first render:/);
+  });
+
+  it('should have timing for registrations (async)', () => {
+    expect(widgetContent).toMatch(/\[TIMING\] Registrations total:/);
+  });
+
+  it('should use performance.now() for timing', () => {
+    expect(widgetContent).toMatch(/const t0 = performance\.now\(\)/);
+  });
+});
+
+describe('v1.34: Hover prefetch for descriptions', () => {
+  let widgetContent: string;
+
+  beforeAll(() => {
+    const fs = require('fs');
+    const path = require('path');
+    const widgetPath = path.join(__dirname, '../../deploy/ClubCalendar_SBNC_EVENTS_PAGE.html');
+    widgetContent = fs.readFileSync(widgetPath, 'utf-8');
+  });
+
+  it('should have descriptionCache object', () => {
+    expect(widgetContent).toMatch(/const descriptionCache = \{\}/);
+  });
+
+  it('should have prefetchDescription function', () => {
+    expect(widgetContent).toMatch(/function prefetchDescription\(eventId\)/);
+  });
+
+  it('should have eventMouseEnter handler for prefetch', () => {
+    expect(widgetContent).toMatch(/eventMouseEnter:/);
+    expect(widgetContent).toMatch(/prefetchDescription\(originalEvent\.id\)/);
+  });
+
+  it('should check cache before fetching in popup', () => {
+    expect(widgetContent).toMatch(/descriptionCache\[event\.id\]/);
+    expect(widgetContent).toMatch(/Using prefetched description/);
   });
 });
